@@ -3,9 +3,6 @@ KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
 OBJS=kstart.o kmain.o display.o
 
-run: image
-	screen qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm -curses
-
 image: boot kernel
 	ld -Ttext 0x7C00 --oformat binary boot.o -o $(IMAGE)
 	cat $(KERNEL) >> $(IMAGE)
@@ -27,3 +24,6 @@ boot: boot.s
 
 clean:
 	rm -rf *.o *.d $(KERNEL) $(IMAGE)
+
+run: image
+	screen qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm -curses

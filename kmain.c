@@ -1,7 +1,6 @@
 #include "display.h"
 
 void kmain() {
-  set_caret(0, 0);
   putc('H');
   putc('e');
   putc('l');
