@@ -5,7 +5,7 @@ OBJS=kstart.o kmain.o display.o
 
 image: boot kernel
 	ld -Ttext 0x7C00 --oformat binary boot.o -o $(IMAGE)
-	cat $(KERNEL) >> $(IMAGE)
+	dd if=$(KERNEL) of=$(IMAGE) seek=1 conv=sync
 
 kernel: $(LD_SCRIPT) $(OBJS)
 	ld -T $(LD_SCRIPT) $(OBJS) -o $(KERNEL)
