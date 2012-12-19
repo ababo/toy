@@ -31,18 +31,18 @@ _start: xorw %ax, %ax
         movw %ax, %ss
         movw $LOAD_ADDRESS, %sp
 
+        movw $msg, %si
+        call puts                       /* display message */
+
         movw $1, %ax
         movw $(LOAD_ADDRESS + SECTOR_SIZE), %bx
         movw $((KERNEL_LIMIT_ADDRESS - KERNEL_ADDRESS) / SECTOR_SIZE), %cx
         call load                       /* load kernel */
 
-        movw $msg, %si
-        call puts                       /* display message */
-
         xorw %ax, %ax
         movw %ax, %es
         movl $PML4_ADDRESS, %edi
-        
+
         pushw %di                       /* fill the buffer with zeros */
         mov $0x1000, %ecx
         xor %eax, %eax
@@ -157,7 +157,7 @@ gdt:    .quad 0                         /* null segment */
 gdti:   .word . - gdt - 1
         .long gdt
 
-msg:    .asciz "Hello World!\r\n"
+msg:    .asciz "Loading kernel...\r\n"
 
         .org SECTOR_SIZE - 2
         .word MAGIC_WORD

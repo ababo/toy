@@ -8,11 +8,5 @@ kstart: movw $DATA_SEGMENT, %ax
         movw %ax, %es
         movw %ax, %fs
         movw %ax, %gs
-
-        movl $0xB8000, %edi
-        movq $500, %rcx
-        movq $0x1F201F201F201F20, %rax
-        rep stosq
-        jmp .
-
         call kmain
+        hlt

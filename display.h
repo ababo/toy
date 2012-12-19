@@ -18,12 +18,14 @@
 #define COLOR_HIGH_YELLOW 14
 #define COLOR_WHITE 15
 
-#define ROWS_NUMBER 80
-#define COLUMNS_NUMBER 25
+#define ROWS_NUMBER 25
+#define COLUMNS_NUMBER 80
 
-void set_foreground (int color);
-void set_background (int color);
-void set_caret (int row, int column);
+void set_foreground (unsigned int color);
+void set_background (unsigned int color);
+void set_caret (unsigned int row, unsigned int column);
+
+void clrscr (void);
 void putc (char chr);
 
-#endif /* DISPLAY_H */
+#endif // DISPLAY_H
