@@ -1,6 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include "util.h"
+
 #define COLOR_BLACK 0
 #define COLOR_LOW_BLUE 1
 #define COLOR_LOW_GREEN 2
@@ -18,14 +20,31 @@
 #define COLOR_HIGH_YELLOW 14
 #define COLOR_WHITE 15
 
-#define ROWS_NUMBER 25
-#define COLUMNS_NUMBER 80
+#define ROW_NUMBER 25
+#define COL_NUMBER 80
 
-void set_foreground (unsigned int color);
-void set_background (unsigned int color);
-void set_caret (unsigned int row, unsigned int column);
+#define VIDEO_RAM_ADDR 0xB8000
 
-void clrscr (void);
-void putc (char chr);
+struct chr_cell {
+  char chr;
+  unsigned char fcolor : 4;
+  unsigned char bcolor : 4;
+};
+
+static inline volatile struct chr_cell *get_chr_cell (int row, int col) {
+  return (struct chr_cell*)VIDEO_RAM_ADDR + row * COL_NUMBER + col;
+}
+
+void init_display (int fcolor, int bcolor);
+
+int get_caret_row ();
+int get_caret_col ();
+void set_caret (int row, int col);
+
+bool get_cursor ();
+void set_cursor (bool visible);
+
+int putchar (int chr);
+int printf (char *format, ...);
 
 #endif // DISPLAY_H

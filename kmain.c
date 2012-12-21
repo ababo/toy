@@ -1,21 +1,8 @@
 #include "display.h"
 
 void kmain(void) {
-  set_background(COLOR_LOW_BLUE);
-  set_foreground(COLOR_WHITE);
-  clrscr();
+  init_display(COLOR_WHITE, COLOR_LOW_BLUE);
+  set_cursor(true);
   set_caret(12, 33);
-  putc('H');
-  putc('e');
-  putc('l');
-  putc('l');
-  putc('o');
-  putc(' ');
-  putc('K');
-  putc('e');
-  putc('r');
-  putc('n');
-  putc('e');
-  putc('l');
-  putc('!');
+  printf("Hello Kernel!");
 };

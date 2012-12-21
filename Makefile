@@ -25,5 +25,8 @@ boot: boot.s
 clean:
 	rm -rf *.o *.d $(KERNEL) $(IMAGE)
 
-run: image
+runt: image
 	screen qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm -curses
+
+run: image
+	qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm
