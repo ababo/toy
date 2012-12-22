@@ -1,7 +1,7 @@
 IMAGE=floppy.img
 KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
-OBJS=kstart.o kmain.o display.o
+OBJS=kstart.o kmain.o display.o util.o
 
 image: boot kernel
 	ld -Ttext 0x7C00 --oformat binary boot.o -o $(IMAGE)

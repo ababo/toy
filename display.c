@@ -1,12 +1,70 @@
 #include "display.h"
 
+static int frame_top = 0, frame_left = 0;
+static int frame_height = ROW_NUMBER, frame_width = COL_NUMBER;
+static int frame_fcolor = COLOR_WHITE, frame_bcolor = COLOR_BLACK;
 static int caret_row = 0, caret_col = 0;
 static bool cursor = false;
 
-void init_display (int fcolor, int bcolor) {
-  for (int row = 0; row < ROW_NUMBER; row++)
-    for (int col = 0; col < COL_NUMBER; col++)
-      *get_chr_cell(row, col) = (struct chr_cell) { 0, fcolor, bcolor };
+int get_frame_top () {
+  return frame_top;
+}
+
+int get_frame_left () {
+  return frame_left;
+}
+
+int get_frame_height () {
+  return frame_height;
+}
+
+int get_frame_width () {
+  return frame_width;
+}
+
+int get_frame_fcolor () {
+  return frame_fcolor;
+}
+
+int get_frame_bcolor () {
+  return frame_bcolor;
+}
+
+void set_frame (int top, int left, int height, int width, int fcolor,
+                int bcolor) {
+  if (top < 0 || top >= ROW_NUMBER || left < 0 || left >= COL_NUMBER ||
+      height < 1 || height > ROW_NUMBER - top || width < 1 ||
+      width > COL_NUMBER - top || fcolor < COLOR_BLACK || bcolor > COLOR_WHITE)
+    return;
+  frame_top = top, frame_left = left, frame_height = height,
+    frame_width = width, frame_fcolor = fcolor, frame_bcolor = bcolor;
+}
+
+void clear_frame () {
+  for (int row = 0; row < frame_height; row++)
+    for (int col = 0; col < frame_width; col++)
+      *get_chr_cell(frame_top + row, frame_left + col) =
+        (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
+}
+
+bool get_cursor () {
+  return cursor;
+}
+
+static void put_cursor (int row, int col) {
+  int off = row * COL_NUMBER + col;
+  outb(0x3D4, 0x0F);
+  outb(0x3D5, (unsigned char)(off & 0xFF));
+  outb(0x3D4, 0x0E);
+  outb(0x3D5, (unsigned char)((off >> 8) & 0xFF));
+}
+
+void set_cursor (bool visible) {
+  cursor = visible;
+  if (visible)
+    put_cursor(frame_top + caret_row, frame_left + caret_col);
+  else
+    put_cursor(ROW_NUMBER, 0);
 }
 
 int get_caret_row () {
@@ -17,97 +75,57 @@ int get_caret_col () {
   return caret_col;
 }
 
-static inline void set_cursor_pos (int row, int col) {
-  int pos = row * COL_NUMBER + col;
-  outb(0x3D4, 0x0F);
-  outb(0x3D5, (unsigned char)(pos & 0xFF));
-  outb(0x3D4, 0x0E);
-  outb(0x3D5, (unsigned char)((pos >> 8) & 0xFF));
-}
-
 void set_caret (int row, int col) {
-  if (row < 0 || row >= ROW_NUMBER || col < 0 || col >= COL_NUMBER)
+  if (row < 0 || row >= frame_height || col < 0 || col >= frame_width)
     return;
   caret_row = row, caret_col = col;
   if (cursor)
-    set_cursor_pos(row, col);
+    put_cursor(frame_top + row, frame_left + col);
 }
 
-bool get_cursor () {
-  return cursor;
+static void scroll_frame () {
+  for (int row = 1; row < frame_height; row++)
+    for (int col = 0; col < frame_width; col++)
+      *get_chr_cell(frame_top + row - 1, frame_left + col) =
+        *get_chr_cell(frame_top + row, frame_left + col);
+
+  for (int col = 0; col < frame_width; col++)
+    *get_chr_cell(frame_top + frame_width - 1, frame_left + col) =
+      (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
 }
 
-void set_cursor (bool visible) {
-  cursor = visible;
-  set_cursor_pos(visible ? caret_row : ROW_NUMBER, visible ? caret_col : 0);
+static void put_char (char chr) {
+  switch (chr) {
+  case '\r': 
+    caret_col = 0;
+    break;
+  case '\n':
+  new_line:
+    caret_col = 0, caret_row++;
+    if (caret_row == frame_height) {
+      scroll_frame();
+      caret_row--;
+    }
+    break;
+    // TODO: implement other escapes
+  default:
+    *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
+      (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
+    if (++caret_col == frame_width) {
+      caret_col = 0;
+      goto new_line;
+    }
+    break;
+  }
 }
 
 int putchar (int chr) {
-
+  put_char(chr);
+  if (cursor)
+    put_cursor(frame_top + caret_row, frame_left + caret_col);
+  return chr;
 }
 
 int printf (char *format, ...) {
 
 }
-
-
-/*
-#define VIDEO_RAM_PTR 0xB8000
-
-static int fcolor = COLOR_WHITE;
-static int bcolor = COLOR_BLACK;
-static int drow = 0, dcolumn = 0;
-
-void set_foreground (unsigned int color) {
-  if (color > COLOR_WHITE)
-    return;
-  fcolor = color;
-}
-
-void set_background (unsigned int color) {
-  if (color > COLOR_WHITE)
-    return;
-  bcolor = color;
-}
-
-void set_caret (unsigned int row, unsigned int column) {
-  if (row >= ROWS_NUMBER || column >= COLUMNS_NUMBER)
-    return;
-  drow = row, dcolumn = column;
-}
-
-struct pixel {
-  char chr;
-  unsigned char fcolor : 4;
-  unsigned char bcolor : 4;
-};
-
-static inline struct pixel *get_pixel (unsigned int row, unsigned int column) {
-  return (struct pixel*)VIDEO_RAM_PTR + row * COLUMNS_NUMBER + column;
-}
-
-void clrscr () {
-  drow = dcolumn = 0;
-  for (unsigned int row = 0; row < ROWS_NUMBER; row++)
-    for (unsigned int column = 0; column < COLUMNS_NUMBER; column++) {
-      volatile struct pixel *pixel = get_pixel(row, column);
-      pixel->chr = 0, pixel->fcolor = fcolor, pixel->bcolor = bcolor;
-    }
-}
-
-void putc (char chr) {
-  if (chr == '\n') {
-  new_line:
-    drow++, dcolumn = 0;
-    if (drow == ROWS_NUMBER)
-      drow = 0;
-    return;
-  }
-
-  volatile struct pixel *pixel = get_pixel(drow, dcolumn);
-  pixel->chr = chr, pixel->fcolor = fcolor, pixel->bcolor = bcolor;
-
-  if (++dcolumn == COLUMNS_NUMBER)
-    goto new_line;
-}
-*/

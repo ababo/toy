@@ -35,14 +35,22 @@ static inline volatile struct chr_cell *get_chr_cell (int row, int col) {
   return (struct chr_cell*)VIDEO_RAM_ADDR + row * COL_NUMBER + col;
 }
 
-void init_display (int fcolor, int bcolor);
+int get_frame_top ();
+int get_frame_left ();
+int get_frame_height ();
+int get_frame_width ();
+int get_frame_fcolor ();
+int get_frame_bcolor ();
+void set_frame (int top, int left, int height, int width, int fcolor,
+                int bcolor);
+void clear_frame ();
+
+bool get_cursor ();
+void set_cursor (bool visible);
 
 int get_caret_row ();
 int get_caret_col ();
 void set_caret (int row, int col);
-
-bool get_cursor ();
-void set_cursor (bool visible);
 
 int putchar (int chr);
 int printf (char *format, ...);
