@@ -4,5 +4,6 @@ SECTIONS {
   .text : { *(.text) }
   .data : { *(.data) }
   .bss : { *(.bss) }
+  .rodata : { *(.rodata) }
   /DISCARD/ : { *(*) }
 }

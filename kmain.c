@@ -1,9 +1,8 @@
 #include "display.h"
 
 void kmain(void) {
-  set_frame(6, 20, 13, 40, COLOR_WHITE, COLOR_LOW_BLUE);
+  set_frame(0, 0, ROW_NUMBER, COL_NUMBER, COLOR_WHITE, COLOR_LOW_BLUE);
   clear_frame();
   set_cursor(true);
-  set_caret(2, 3);
-  printf("Hello Kernel!");
+  printf("Hello from %s v0.00%d!", "kernel", 1);
 };

@@ -90,7 +90,7 @@ static void scroll_frame () {
         *get_chr_cell(frame_top + row, frame_left + col);
 
   for (int col = 0; col < frame_width; col++)
-    *get_chr_cell(frame_top + frame_width - 1, frame_left + col) =
+    *get_chr_cell(frame_top + frame_height - 1, frame_left + col) =
       (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
 }
 
@@ -127,5 +127,47 @@ int putchar (int chr) {
 }
 
 int printf (char *format, ...) {
+  va_list vargs;
+  va_start(vargs, format);
 
+  int num = 0, int_arg;
+  char chr, *str, buf[20];
+  while (chr = *format++)
+    if (chr == '%')
+      switch (*format++) {
+      case '%':
+        put_char('%');
+        num++;
+        break;
+      case 's':
+        str = va_arg(vargs, char*);
+      puts:
+        while (*str) {
+          put_char(*str++);
+          num++;
+        }
+        break;
+      case 'd':
+        int_arg = va_arg(vargs, int);
+        if (int_arg < 0) {
+          put_char('-');
+          int_arg = -int_arg;
+          num++;
+        }
+        str = ultoa(int_arg, buf, 10);
+        goto puts;
+        // TODO: implement other specifiers
+      default:
+        return -1;
+      }
+    else {
+      put_char(chr);
+      num++;
+    }
+  va_end(vargs);
+
+  if (cursor)
+    put_cursor(frame_top + caret_row, frame_left + caret_col);
+
+  return num;
 }

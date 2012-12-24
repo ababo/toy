@@ -16,7 +16,7 @@ kernel: $(LD_SCRIPT) $(OBJS)
 	as $*.s -o $*.o
 
 %.o: %.c
-	gcc -c -m64 -c -fno-builtin -std=c99 $*.c -o $*.o
+	gcc -c -m64 -c -fno-builtin -std=c99 -fno-stack-protector $*.c -o $*.o
 	gcc -MM $*.c > $*.d
 
 boot: boot.s
