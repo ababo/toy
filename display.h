@@ -26,30 +26,30 @@
 #define VIDEO_RAM_ADDR 0xB8000
 
 struct chr_cell {
-  char chr;
-  unsigned char fcolor : 4;
-  unsigned char bcolor : 4;
+  int8_t chr;
+  uint8_t fcolor : 4;
+  uint8_t bcolor : 4;
 };
 
 static inline volatile struct chr_cell *get_chr_cell (int row, int col) {
   return (struct chr_cell*)VIDEO_RAM_ADDR + row * COL_NUMBER + col;
 }
 
-int get_frame_top ();
-int get_frame_left ();
-int get_frame_height ();
-int get_frame_width ();
-int get_frame_fcolor ();
-int get_frame_bcolor ();
+int get_frame_top (void);
+int get_frame_left (void);
+int get_frame_height (void);
+int get_frame_width (void);
+int get_frame_fcolor (void);
+int get_frame_bcolor (void);
 void set_frame (int top, int left, int height, int width, int fcolor,
                 int bcolor);
-void clear_frame ();
+void clear_frame (void);
 
-bool get_cursor ();
+bool get_cursor (void);
 void set_cursor (bool visible);
 
-int get_caret_row ();
-int get_caret_col ();
+int get_caret_row (void);
+int get_caret_col (void);
 void set_caret (int row, int col);
 
 int putchar (int chr);

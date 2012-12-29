@@ -6,27 +6,27 @@ static int frame_fcolor = COLOR_WHITE, frame_bcolor = COLOR_BLACK;
 static int caret_row = 0, caret_col = 0;
 static bool cursor = false;
 
-int get_frame_top () {
+int get_frame_top (void) {
   return frame_top;
 }
 
-int get_frame_left () {
+int get_frame_left (void) {
   return frame_left;
 }
 
-int get_frame_height () {
+int get_frame_height (void) {
   return frame_height;
 }
 
-int get_frame_width () {
+int get_frame_width (void) {
   return frame_width;
 }
 
-int get_frame_fcolor () {
+int get_frame_fcolor (void) {
   return frame_fcolor;
 }
 
-int get_frame_bcolor () {
+int get_frame_bcolor (void) {
   return frame_bcolor;
 }
 
@@ -40,14 +40,14 @@ void set_frame (int top, int left, int height, int width, int fcolor,
     frame_width = width, frame_fcolor = fcolor, frame_bcolor = bcolor;
 }
 
-void clear_frame () {
+void clear_frame (void) {
   for (int row = 0; row < frame_height; row++)
     for (int col = 0; col < frame_width; col++)
       *get_chr_cell(frame_top + row, frame_left + col) =
         (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
 }
 
-bool get_cursor () {
+bool get_cursor (void) {
   return cursor;
 }
 
@@ -67,11 +67,11 @@ void set_cursor (bool visible) {
     put_cursor(ROW_NUMBER, 0);
 }
 
-int get_caret_row () {
+int get_caret_row (void) {
   return caret_row;
 }
 
-int get_caret_col () {
+int get_caret_col (void) {
   return caret_col;
 }
 
@@ -83,7 +83,7 @@ void set_caret (int row, int col) {
     put_cursor(frame_top + row, frame_left + col);
 }
 
-static void scroll_frame () {
+static void scroll_frame (void) {
   for (int row = 1; row < frame_height; row++)
     for (int col = 0; col < frame_width; col++)
       *get_chr_cell(frame_top + row - 1, frame_left + col) =

@@ -1,7 +1,9 @@
 IMAGE=floppy.img
 KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
-OBJS=kstart.o kmain.o display.o util.o
+OBJS=kstart.o kmain.o display.o util.o interrupt.o
+CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector
+VM_OPTIONS=-no-kvm
 
 image: boot kernel
 	ld -Ttext 0x7C00 --oformat binary boot.o -o $(IMAGE)
@@ -16,7 +18,7 @@ kernel: $(LD_SCRIPT) $(OBJS)
 	as $*.s -o $*.o
 
 %.o: %.c
-	gcc -c -m64 -c -fno-builtin -std=c99 -fno-stack-protector $*.c -o $*.o
+	gcc -c $(CC_OPTIONS) $*.c -o $*.o
 	gcc -MM $*.c > $*.d
 
 boot: boot.s
@@ -26,7 +28,7 @@ clean:
 	rm -rf *.o *.d $(KERNEL) $(IMAGE)
 
 runt: image
-	screen qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm -curses
+	screen qemu-system-x86_64 -fda $(IMAGE) -boot a $(VM_OPTIONS) -curses
 
 run: image
-	qemu-system-x86_64 -fda $(IMAGE) -boot a -no-kvm
+	qemu-system-x86_64 -fda $(IMAGE) -boot a $(VM_OPTIONS)
