@@ -17,13 +17,13 @@ typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long uint64_t;
 
-static inline void outb (unsigned short port, unsigned char data) {
-  __asm("outb %%al, %%dx" : : "a"(data), "d"(port));
+static inline void outb(unsigned short port, unsigned char data) {
+  __asm__("outb %%al, %%dx" : : "a"(data), "d"(port));
 }
 
-size_t strlen (char *str);
-char *strrev (char *str);
-char *ultoa (unsigned long value, char *buf, int radix);
+size_t strlen(char *str);
+char *strrev(char *str);
+char *ultoa(unsigned long value, char *buf, int radix);
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)

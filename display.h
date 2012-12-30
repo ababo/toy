@@ -31,28 +31,28 @@ struct chr_cell {
   uint8_t bcolor : 4;
 };
 
-static inline volatile struct chr_cell *get_chr_cell (int row, int col) {
+static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
   return (struct chr_cell*)VIDEO_RAM_ADDR + row * COL_NUMBER + col;
 }
 
-int get_frame_top (void);
-int get_frame_left (void);
-int get_frame_height (void);
-int get_frame_width (void);
-int get_frame_fcolor (void);
-int get_frame_bcolor (void);
-void set_frame (int top, int left, int height, int width, int fcolor,
-                int bcolor);
-void clear_frame (void);
+int get_frame_top(void);
+int get_frame_left(void);
+int get_frame_height(void);
+int get_frame_width(void);
+int get_frame_fcolor(void);
+int get_frame_bcolor(void);
+void set_frame(int top, int left, int height, int width, int fcolor,
+               int bcolor);
+void clear_frame(void);
 
-bool get_cursor (void);
-void set_cursor (bool visible);
+bool get_cursor(void);
+void set_cursor(bool visible);
 
-int get_caret_row (void);
-int get_caret_col (void);
-void set_caret (int row, int col);
+int get_caret_row(void);
+int get_caret_col(void);
+void set_caret(int row, int col);
 
-int putchar (int chr);
-int printf (char *format, ...);
+int putchar(int chr);
+int printf(char *format, ...);
 
 #endif // DISPLAY_H

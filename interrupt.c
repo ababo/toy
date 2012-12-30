@@ -1,18 +1,23 @@
 #include "display.h"
 #include "interrupt.h"
 
-static void default_int_handler (void) {
+static void *default_int_handler(void) {
+  INTR_HANDLER_PROLOG();
   printf("Default interrupt handler called...\n");
+  INTR_HANDLER_EPILOG();
 }
 
-void init_interrupts (void) {
-
+static void *default_int_err_handler(void) {
+  INTR_ERR_HANDLER_PROLOG();
+  printf("Default interrupt handler called (error_code=%d)...\n", error_code);
+  INTR_ERR_HANDLER_EPILOG();
 }
 
-intr_handler get_intr_handler (int intr) {
+static struct idt_desc {
+  
 
-}
+} idt[256];
 
-void set_intr_handler (int intr, intr_handler handler) {
+void init_interrupts(void) {
 
 }

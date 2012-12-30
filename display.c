@@ -6,32 +6,32 @@ static int frame_fcolor = COLOR_WHITE, frame_bcolor = COLOR_BLACK;
 static int caret_row = 0, caret_col = 0;
 static bool cursor = false;
 
-int get_frame_top (void) {
+int get_frame_top(void) {
   return frame_top;
 }
 
-int get_frame_left (void) {
+int get_frame_left(void) {
   return frame_left;
 }
 
-int get_frame_height (void) {
+int get_frame_height(void) {
   return frame_height;
 }
 
-int get_frame_width (void) {
+int get_frame_width(void) {
   return frame_width;
 }
 
-int get_frame_fcolor (void) {
+int get_frame_fcolor(void) {
   return frame_fcolor;
 }
 
-int get_frame_bcolor (void) {
+int get_frame_bcolor(void) {
   return frame_bcolor;
 }
 
-void set_frame (int top, int left, int height, int width, int fcolor,
-                int bcolor) {
+void set_frame(int top, int left, int height, int width, int fcolor,
+               int bcolor) {
   if (top < 0 || top >= ROW_NUMBER || left < 0 || left >= COL_NUMBER ||
       height < 1 || height > ROW_NUMBER - top || width < 1 ||
       width > COL_NUMBER - top || fcolor < COLOR_BLACK || bcolor > COLOR_WHITE)
@@ -40,18 +40,18 @@ void set_frame (int top, int left, int height, int width, int fcolor,
     frame_width = width, frame_fcolor = fcolor, frame_bcolor = bcolor;
 }
 
-void clear_frame (void) {
+void clear_frame(void) {
   for (int row = 0; row < frame_height; row++)
     for (int col = 0; col < frame_width; col++)
       *get_chr_cell(frame_top + row, frame_left + col) =
         (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
 }
 
-bool get_cursor (void) {
+bool get_cursor(void) {
   return cursor;
 }
 
-static void put_cursor (int row, int col) {
+static void put_cursor(int row, int col) {
   int off = row * COL_NUMBER + col;
   outb(0x3D4, 0x0F);
   outb(0x3D5, (unsigned char)(off & 0xFF));
@@ -59,7 +59,7 @@ static void put_cursor (int row, int col) {
   outb(0x3D5, (unsigned char)((off >> 8) & 0xFF));
 }
 
-void set_cursor (bool visible) {
+void set_cursor(bool visible) {
   cursor = visible;
   if (visible)
     put_cursor(frame_top + caret_row, frame_left + caret_col);
@@ -67,15 +67,15 @@ void set_cursor (bool visible) {
     put_cursor(ROW_NUMBER, 0);
 }
 
-int get_caret_row (void) {
+int get_caret_row(void) {
   return caret_row;
 }
 
-int get_caret_col (void) {
+int get_caret_col(void) {
   return caret_col;
 }
 
-void set_caret (int row, int col) {
+void set_caret(int row, int col) {
   if (row < 0 || row >= frame_height || col < 0 || col >= frame_width)
     return;
   caret_row = row, caret_col = col;
@@ -83,7 +83,7 @@ void set_caret (int row, int col) {
     put_cursor(frame_top + row, frame_left + col);
 }
 
-static void scroll_frame (void) {
+static void scroll_frame(void) {
   for (int row = 1; row < frame_height; row++)
     for (int col = 0; col < frame_width; col++)
       *get_chr_cell(frame_top + row - 1, frame_left + col) =
@@ -94,39 +94,39 @@ static void scroll_frame (void) {
       (struct chr_cell) { 0, frame_fcolor, frame_bcolor };
 }
 
-static void put_char (char chr) {
+static void put_char(char chr) {
   switch (chr) {
-  case '\r': 
-    caret_col = 0;
-    break;
-  case '\n':
-  new_line:
-    caret_col = 0, caret_row++;
-    if (caret_row == frame_height) {
-      scroll_frame();
-      caret_row--;
-    }
-    break;
-    // TODO: implement other escapes
-  default:
-    *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
-      (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
-    if (++caret_col == frame_width) {
+    case '\r': 
       caret_col = 0;
-      goto new_line;
-    }
-    break;
+      break;
+    case '\n':
+  new_line:
+      caret_col = 0, caret_row++;
+      if (caret_row == frame_height) {
+        scroll_frame();
+        caret_row--;
+      }
+      break;
+    // TODO: implement other escapes
+    default:
+      *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
+        (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
+      if (++caret_col == frame_width) {
+        caret_col = 0;
+        goto new_line;
+      }
+      break;
   }
 }
 
-int putchar (int chr) {
+int putchar(int chr) {
   put_char(chr);
   if (cursor)
     put_cursor(frame_top + caret_row, frame_left + caret_col);
   return chr;
 }
 
-int printf (char *format, ...) {
+int printf(char *format, ...) {
   va_list vargs;
   va_start(vargs, format);
 
@@ -135,30 +135,30 @@ int printf (char *format, ...) {
   while (chr = *format++)
     if (chr == '%')
       switch (*format++) {
-      case '%':
-        put_char('%');
-        num++;
-        break;
-      case 's':
-        str = va_arg(vargs, char*);
+        case '%':
+          put_char('%');
+          num++;
+          break;
+        case 's':
+          str = va_arg(vargs, char*);
       puts:
-        while (*str) {
-          put_char(*str++);
-          num++;
-        }
-        break;
-      case 'd':
-        int_arg = va_arg(vargs, int);
-        if (int_arg < 0) {
-          put_char('-');
-          int_arg = -int_arg;
-          num++;
-        }
-        str = ultoa(int_arg, buf, 10);
-        goto puts;
-        // TODO: implement other specifiers
-      default:
-        return -1;
+          while (*str) {
+            put_char(*str++);
+            num++;
+          }
+          break;
+        case 'd':
+          int_arg = va_arg(vargs, int);
+          if (int_arg < 0) {
+            put_char('-');
+            int_arg = -int_arg;
+            num++;
+          }
+          str = ultoa(int_arg, buf, 10);
+          goto puts;
+          // TODO: implement other specifiers
+        default:
+          return -1;
       }
     else {
       put_char(chr);
