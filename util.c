@@ -1,7 +1,7 @@
 #include "util.h"
 
-size_t strlen(char *str) {
-  char *chr = str;
+size_t strlen(const char *str) {
+  const char *chr = str;
   while (*chr)
     chr++;
   return (size_t)(chr - str);
@@ -13,6 +13,12 @@ char *strrev(char *str) {
   for (size_t i = 0, j = len - 1; i < half; i++, j = len - i - 1)
     tmp = str[i], str[i] = str[j], str[j] = tmp;
   return str;
+}
+
+void *memset(void *ptr, int value, size_t num) {
+  for (; num > 0; num--)
+    *(uint8_t*)ptr++ = (uint8_t)value;
+  return ptr;
 }
 
 char *ultoa(unsigned long value, char *buf, int radix) {

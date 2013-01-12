@@ -21,9 +21,11 @@ static inline void outb(unsigned short port, unsigned char data) {
   __asm__("outb %%al, %%dx" : : "a"(data), "d"(port));
 }
 
-size_t strlen(char *str);
+size_t strlen(const char *str);
 char *strrev(char *str);
 char *ultoa(unsigned long value, char *buf, int radix);
+
+void *memset(void *ptr, int value, size_t num);
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)
