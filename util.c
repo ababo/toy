@@ -22,16 +22,24 @@ void *memset(void *ptr, int value, size_t num) {
 }
 
 char *ultoa(unsigned long value, char *buf, int radix) {
+  char *str = buf, lbase;
+  if (radix > 0)
+    lbase = 'a';
+  else
+    lbase = 'A', radix = -radix;
+
   if (radix < 2 || radix > 36) {
     *buf = 0;
     return buf;
   }
-  char *str = buf;
+
+  lbase -= 10;
   do {
     int rem = value % radix;
-    *buf++ = rem < 10 ? rem + '0' : rem + 'a' - 10;
+    *buf++ = rem + (rem < 10 ? '0' : lbase);
   }
   while (value /= radix);
+
   *buf = 0;
   return strrev(str);
 }

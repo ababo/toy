@@ -32,10 +32,6 @@ int get_frame_bcolor(void) {
 
 void set_frame(int top, int left, int height, int width, int fcolor,
                int bcolor) {
-  if (top < 0 || top >= ROW_NUMBER || left < 0 || left >= COL_NUMBER ||
-      height < 1 || height > ROW_NUMBER - top || width < 1 ||
-      width > COL_NUMBER - top || fcolor < COLOR_BLACK || bcolor > COLOR_WHITE)
-    return;
   frame_top = top, frame_left = left, frame_height = height,
     frame_width = width, frame_fcolor = fcolor, frame_bcolor = bcolor;
 }
@@ -76,8 +72,6 @@ int get_caret_col(void) {
 }
 
 void set_caret(int row, int col) {
-  if (row < 0 || row >= frame_height || col < 0 || col >= frame_width)
-    return;
   caret_row = row, caret_col = col;
   if (cursor)
     put_cursor(frame_top + row, frame_left + col);
@@ -134,7 +128,7 @@ int printf(char *format, ...) {
   char chr, *str, buf[20];
   while (chr = *format++)
     if (chr == '%')
-      switch (*format++) {
+      switch (chr = *format++) {
         case '%':
           put_char('%');
           num++;
@@ -155,6 +149,11 @@ int printf(char *format, ...) {
             num++;
           }
           str = ultoa(int_arg, buf, 10);
+          goto puts;
+        case 'x':
+        case 'X':
+          int_arg = va_arg(vargs, int);
+          str = ultoa((unsigned int)int_arg, buf, chr == 'x' ? 16 : -16);
           goto puts;
           // TODO: implement other specifiers
         default:
