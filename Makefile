@@ -1,8 +1,8 @@
 IMAGE=floppy.img
 KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
-OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o
-CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector
+OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o apic.o
+CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -Werror
 VM_OPTIONS=-no-kvm
 
 image: boot kernel

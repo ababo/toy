@@ -1,6 +1,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include "mem_map.h"
 #include "util.h"
 
 #define COLOR_BLACK 0
@@ -23,8 +24,6 @@
 #define ROW_NUMBER 25
 #define COL_NUMBER 80
 
-#define VIDEO_RAM_ADDR 0xB8000
-
 struct chr_cell {
   int8_t chr;
   uint8_t fcolor : 4;
@@ -32,7 +31,7 @@ struct chr_cell {
 };
 
 static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
-  return (struct chr_cell*)VIDEO_RAM_ADDR + row * COL_NUMBER + col;
+  return (struct chr_cell*)VIDEO_ADDR + row * COL_NUMBER + col;
 }
 
 int get_frame_top(void);

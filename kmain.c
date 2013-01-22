@@ -1,3 +1,4 @@
+#include "apic.h"
 #include "desc_table.h"
 #include "display.h"
 #include "interrupt.h"
@@ -12,5 +13,6 @@ void kmain(void) {
   printf("Descriptor tables initialized...\n");
   init_interrupts();
   printf("Interrupts initialized...\n");
-  int a = 1 / 0;
+  init_apic();
+  printf("APIC initialized...\n");
 };

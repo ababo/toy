@@ -1,6 +1,21 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
+#include "util.h"
+
+#define INT_VECTOR_NUMBER 34
+
+#define INT_VECTOR_PF 14
+#define INT_VECTOR_SPURIOUS 32
+#define INT_VECTOR_TIMER 33
+
+static inline bool is_int_reserved(int vector) {
+  return vector == 15 || (vector >= 20 && vector <= 31);
+}
+static inline bool is_int_error(int vector) {
+  return vector == 8 || (vector >= 10 && vector <= 14) || vector == 17;
+}
+
 #define ISR_PUSHA()                                                     \
   __asm__("push %rbp\npush %rax\npush %rbx\npush %rcx\npush %rdx");     \
   __asm__("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");       \
@@ -49,5 +64,8 @@ isr_end:                                                                \
   __asm__ goto("movq $%l[isr_begin], %%rax" : : : "memory" : isr_begin);
 
 void init_interrupts(void);
+
+void *get_isr(int vector);
+void set_isr(int vector, void *isr);
 
 #endif // INTERRUPT_H

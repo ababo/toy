@@ -1,13 +1,7 @@
 #include "desc_table.h"
-#include "display.h"
 #include "interrupt.h"
+#include "mem_map.h"
 #include "util.h"
-
-#define TSS_ADDR 0x0
-#define GDT_ADDR 0x80
-#define IDT_ADDR 0x100
-
-#define INTERRUPT_RSP 0x6C00
 
 #define CODE_SEGMENT_TYPE 0b1010
 #define DATA_SEGMENT_TYPE 0b0010
@@ -65,7 +59,7 @@ struct desc_table_info {
 
 static void create_gdt(void) {
   struct task_segment *tss = (struct task_segment*)TSS_ADDR;
-  *tss = (struct task_segment) { .ists = { INTERRUPT_RSP } };
+  *tss = (struct task_segment) { .ists = { INT_STACK_ADDR } };
 
   uint64_t *gdt = (uint64_t*)GDT_ADDR;
   *(struct gdt_desc*)gdt++ = (struct gdt_desc) {};
