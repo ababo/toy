@@ -39,11 +39,19 @@ static void *get_timer_isr(void) {
 }
 
 static inline void reg_write(uint64_t reg, uint64_t value) {
+  printf("reg %X (prev: %X, curr: %X)\n",
+         reg, *(uint64_t*)(APIC_BASE_ADDR + reg), value);
   *(uint64_t*)(APIC_BASE_ADDR + reg) = value;
 }
 
 void init_apic(void) {
+  uint64_t prev = rdmsr(APIC_BASE_MSR);
   wrmsr(APIC_BASE_MSR, APIC_BASE_ADDR | APIC_ENABLE);
+  printf("msr %X (prev: %X, curr: %X)\n",
+         APIC_BASE_MSR, prev, rdmsr(APIC_BASE_MSR));
+
+  reg_write(0x30, 0);
+
   set_isr(INT_VECTOR_SPURIOUS, get_spurious_isr());
   reg_write(APIC_SPURIOUS_REG, APIC_LOCAL_ENABLE | INT_VECTOR_SPURIOUS);
 
@@ -51,12 +59,4 @@ void init_apic(void) {
   reg_write(APIC_TIMER_REG, APIC_TIMER_PERIODIC | INT_VECTOR_TIMER);
   reg_write(APIC_TIMER_INITIAL_REG, 12345);
   reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_4);
-}
-
-void add_timer(bool periodic, uint64_t period, timer_callback callback) {
-
-}
-
-void remove_timer(timer_callback callback) {
-
 }

@@ -2,6 +2,7 @@
 #include "desc_table.h"
 #include "display.h"
 #include "interrupt.h"
+#include "page_table.h"
 #include "util.h"
 
 void kmain(void) {
@@ -13,6 +14,8 @@ void kmain(void) {
   printf("Descriptor tables initialized...\n");
   init_interrupts();
   printf("Interrupts initialized...\n");
+  init_page_tables();
+  printf("Page tables initialized...\n");
   init_apic();
   printf("APIC initialized...\n");
 };
