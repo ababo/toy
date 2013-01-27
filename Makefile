@@ -4,7 +4,7 @@ LD_SCRIPT=kernel.lds
 OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o page_table.o \
      apic.o
 AS_OPTIONS=--64
-CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -Werror
+CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -Werror -O3
 LD_OPTIONS=-melf_x86_64
 VM_OPTIONS=-no-kvm
 

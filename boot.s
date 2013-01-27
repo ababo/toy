@@ -7,18 +7,18 @@
 .set KERNEL_ADDRESS, LOAD_ADDRESS + SECTOR_SIZE
 .set KERNEL_LIMIT_ADDRESS, 0x9F600
 .set PML4_ADDRESS, 0x1000
-.set PAGE_PRESENT_BIT, 1 << 0
-.set PAGE_WRITE_BIT, 1 << 1
-.set PAE_BIT, 1 << 5
-.set PGE_BIT, 1 << 7
+.set PAGE_PRESENT_MASK, 1 << 0
+.set PAGE_WRITE_MASK, 1 << 1
+.set PAE_MASK, 1 << 5
+.set PGE_MASK, 1 << 7
 .set EFER_MSR, 0xC0000080
-.set LME_BIT, 1 << 8
-.set PAGING_BIT, 1 << 0
-.set PROTECTION_BIT, 1 << 31
-.set CODE_SEGMENT_BIT, 1 << 3
-.set CODE_DATA_SEGMENT_BIT, 1 << 4
-.set DEFINED_SEGMENT_BIT, 1 << 7
-.set L_BIT, 1 << 5
+.set LME_MASK, 1 << 8
+.set PAGING_MASK, 1 << 0
+.set PROTECTION_MASK, 1 << 31
+.set CODE_SEGMENT_MASK, 1 << 3
+.set CODE_DATA_SEGMENT_MASK, 1 << 4
+.set DEFINED_SEGMENT_MASK, 1 << 7
+.set L_MASK, 1 << 5
 .set CODE_SEGMENT, 0x0008
 
 .section .text
@@ -54,7 +54,7 @@ _start: xorw %ax, %ax
         shrl $4, %eax
         addl %edi, %eax
         addl $0x1000, %eax
-        orl $(PAGE_PRESENT_BIT | PAGE_WRITE_BIT), %eax
+        orl $(PAGE_PRESENT_MASK | PAGE_WRITE_MASK), %eax
         movl %eax, %es:(%di)
 
         addl $0x1000, %eax              /* prepare PDPT */
@@ -67,7 +67,7 @@ _start: xorw %ax, %ax
         addw $0x300, %ax
         pushw %es
         movw %ax, %es
-        movl $(PAGE_PRESENT_BIT | PAGE_WRITE_BIT), %eax
+        movl $(PAGE_PRESENT_MASK | PAGE_WRITE_MASK), %eax
 
 nextp:  movl %eax, %es:(%di)            /* prepare PT */
         addl $0x1000, %eax
@@ -86,7 +86,7 @@ nextp:  movl %eax, %es:(%di)            /* prepare PT */
 
         lidt idti
 
-        movl $(PAE_BIT | PGE_BIT), %eax
+        movl $(PAE_MASK | PGE_MASK), %eax
         movl %eax, %cr4
 
         movl %edi, %edx                 /* load address of PML4 into cr3 */
@@ -94,11 +94,11 @@ nextp:  movl %eax, %es:(%di)            /* prepare PT */
 
         movl $EFER_MSR, %ecx
         rdmsr
-        orl $LME_BIT, %eax
+        orl $LME_MASK, %eax
         wrmsr
 
         movl %cr0, %ebx
-        orl $(PAGING_BIT | PROTECTION_BIT), %ebx
+        orl $(PAGING_MASK | PROTECTION_MASK), %ebx
         movl %ebx, %cr0
 
         lgdt gdti
@@ -146,11 +146,11 @@ idti:   .word 0
 gdt:    .quad 0                         /* null segment */
         .long 0                         /* code segment */
         .byte 0
-        .byte CODE_SEGMENT_BIT | CODE_DATA_SEGMENT_BIT | DEFINED_SEGMENT_BIT
-        .word L_BIT
+        .byte CODE_SEGMENT_MASK | CODE_DATA_SEGMENT_MASK | DEFINED_SEGMENT_MASK
+        .word L_MASK
         .long 0                         /* data segment */
         .byte 0
-        .byte CODE_DATA_SEGMENT_BIT | DEFINED_SEGMENT_BIT
+        .byte CODE_DATA_SEGMENT_MASK | DEFINED_SEGMENT_MASK
         .word 0
         .align 4
         .word 0

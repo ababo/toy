@@ -126,9 +126,9 @@ int printf(char *format, ...) {
 
   int num = 0, int_arg;
   char chr, *str, buf[20];
-  while (chr = *format++)
+  while ((chr = *format++))
     if (chr == '%')
-      switch (chr = *format++) {
+      switch ((chr = *format++)) {
         case '%':
           put_char('%');
           num++;

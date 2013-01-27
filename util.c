@@ -21,6 +21,13 @@ void *memset(void *ptr, int value, size_t num) {
   return ptr;
 }
 
+void *memcpy(void *dst, const void *src, size_t num) {
+  uint8_t *tmp = (uint8_t*)dst; 
+  for (; num > 0; num--)
+    *tmp++ = *(uint8_t*)src++;
+  return dst;
+}
+
 char *ultoa(unsigned long value, char *buf, int radix) {
   char *str = buf, lbase;
   if (radix > 0)

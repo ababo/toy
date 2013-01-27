@@ -79,7 +79,7 @@ static void create_gdt(void) {
 }
 
 static void create_idt(void) {
-  volatile struct idt_desc *idt = (struct idt_desc*)IDT_ADDR;
+  struct idt_desc *idt = (struct idt_desc*)IDT_ADDR;
   for (int i = 0; i < INT_VECTOR_NUMBER; i++)
     if (!is_int_reserved(i))
       idt[i] = (struct idt_desc) {

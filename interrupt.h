@@ -37,31 +37,27 @@ struct int_stack_frame {
 
 #define ISR_PROLOG()                                                   \
   struct int_stack_frame *stack_frame;                                 \
-  __asm__ goto("jmp %l[isr_end]\n.align 16" : : : "memory" : isr_end); \
-isr_begin:                                                             \
+  __asm__("jmp 2f\n.align 16\n1:");                                    \
   ISR_PUSHA();                                                         \
   __asm__("movq %rsp, %rbp");                                          \
   __asm__("leaq (15 * 8 - 8)(%%rsp), %0" : "=a"(stack_frame));
 
 #define ISR_EPILOG()                                                    \
   ISR_POPA();                                                           \
-  __asm__("iretq");                                                     \
-isr_end:                                                                \
-  __asm__ goto("movq $%l[isr_begin], %%rax" : : : "memory" : isr_begin);
+  __asm__("iretq\n2:\nmovq $1b, %rax");
 
 #define ISR_ERR_PROLOG()                                               \
   struct int_stack_frame *stack_frame;                                 \
-  __asm__ goto("jmp %l[isr_end]\n.align 16" : : : "memory" : isr_end); \
-isr_begin:                                                             \
+  __asm__("jmp 2f\n.align 16\n1:");                                    \
   ISR_PUSHA();                                                         \
   __asm__("movq %rsp, %rbp");                                          \
   __asm__("leaq (15 * 8)(%%rsp), %0" : "=a"(stack_frame));
 
 #define ISR_ERR_EPILOG()                                                \
   ISR_POPA();                                                           \
-  __asm__("addq $8, %rsp\niretq");                                      \
-isr_end:                                                                \
-  __asm__ goto("movq $%l[isr_begin], %%rax" : : : "memory" : isr_begin);
+  __asm__("addq $8, %rsp\niretq\n2:\nmovq $1b, %rax");
+
+#define ISR_CONTAINER(name) static __attribute__ ((noinline)) void *name(void)
 
 void init_interrupts(void);
 

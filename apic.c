@@ -26,13 +26,13 @@
 #define APIC_TIMER_DIVIDE_BY_64 0b1001
 #define APIC_TIMER_DIVIDE_BY_128 0b1010
 
-static void *get_spurious_isr(void) {
+ISR_CONTAINER(get_spurious_isr) {
   ISR_PROLOG();
   printf("#INT spurious\n");
   ISR_EPILOG();
 }
 
-static void *get_timer_isr(void) {
+ISR_CONTAINER(get_timer_isr) {
   ISR_PROLOG();
   printf("#INT timer\n");
   ISR_EPILOG();

@@ -34,7 +34,9 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
 
 size_t strlen(const char *str);
 char *strrev(char *str);
+
 void *memset(void *ptr, int value, size_t num);
+void *memcpy(void *dst, const void *src, size_t num);
 
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);
