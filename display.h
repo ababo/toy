@@ -30,7 +30,7 @@ struct chr_cell {
   uint8_t bcolor : 4;
 };
 
-static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
+static inline struct chr_cell *get_chr_cell(int row, int col) {
   return (struct chr_cell*)VIDEO_ADDR + row * COL_NUMBER + col;
 }
 

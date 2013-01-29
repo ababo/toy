@@ -1,7 +1,7 @@
 #ifndef MEM_MAP_H
 #define MEM_MAP_H
 
-#define TSS_ADDR 0x0
+#define TSS_ADDR 0x10
 #define GDT_ADDR 0x80
 #define IDT_ADDR 0x100
 

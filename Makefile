@@ -3,8 +3,11 @@ KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
 OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o page_table.o \
      apic.o
+CC=gcc
+VM=qemu-system-x86_64
 AS_OPTIONS=--64
-CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -Werror -O3
+OPT=3
+CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(OPT) -Wall
 LD_OPTIONS=-melf_x86_64
 VM_OPTIONS=-no-kvm
 
@@ -21,8 +24,8 @@ kernel: $(LD_SCRIPT) $(OBJS)
 	as $(AS_OPTIONS) $*.s -o $*.o
 
 %.o: %.c
-	gcc -c $(CC_OPTIONS) $*.c -o $*.o
-	gcc -MM $*.c > $*.d
+	$(CC) -c $(CC_OPTIONS) $*.c -o $*.o
+	$(CC) -MM $*.c > $*.d
 
 boot: boot.s
 	as $(AS_OPTIONS) boot.s -o boot.o
@@ -31,7 +34,7 @@ clean:
 	rm -rf *.o *.d $(KERNEL) $(IMAGE)
 
 runt: image
-	screen qemu-system-x86_64 -fda $(IMAGE) -boot a $(VM_OPTIONS) -curses
+	screen $(VM) -fda $(IMAGE) -boot a $(VM_OPTIONS) -curses
 
 run: image
-	qemu-system-x86_64 -fda $(IMAGE) -boot a $(VM_OPTIONS)
+	$(VM) -fda $(IMAGE) -boot a $(VM_OPTIONS)

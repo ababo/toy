@@ -5,6 +5,11 @@
 #include "page_table.h"
 #include "util.h"
 
+ISR_CONTAINER(test) {
+  printf("#DE: jumping to next instruction...\n");
+  stack_frame->rip += 2;
+}
+
 void kmain(void) {
   set_frame(0, 0, ROW_NUMBER, COL_NUMBER, COLOR_WHITE, COLOR_LOW_BLUE);
   clear_frame();
@@ -14,8 +19,11 @@ void kmain(void) {
   printf("Descriptor tables initialized...\n");
   init_interrupts();
   printf("Interrupts initialized...\n");
+  printf("Trying to initiate #DE...\n");
+  set_isr(INT_VECTOR_DE, get_test_isr());
+  __asm__("div %P0" : : "a"(0));
   init_page_tables();
   printf("Page tables initialized...\n");
   init_apic();
   printf("APIC initialized...\n");
-};
+}

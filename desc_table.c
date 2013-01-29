@@ -92,6 +92,7 @@ static void create_idt(void) {
 
 void init_desc_tables(void) {
   create_gdt();
+  for (volatile int i = 0; i < 1; i++); // workaround for clang with -O2/-O3
   create_idt();
 }
 
