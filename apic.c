@@ -26,16 +26,12 @@
 #define APIC_TIMER_DIVIDE_BY_64 0b1001
 #define APIC_TIMER_DIVIDE_BY_128 0b1010
 
-ISR_CONTAINER(get_spurious_isr) {
-  ISR_PROLOG();
-  printf("#INT spurious\n");
-  ISR_EPILOG();
+ISR_CONTAINER(spurious) {
+  printf("#SPURIOUS\n");
 }
 
-ISR_CONTAINER(get_timer_isr) {
-  ISR_PROLOG();
-  printf("#INT timer\n");
-  ISR_EPILOG();
+ISR_CONTAINER(timer) {
+  printf("#TIMER\n");
 }
 
 static inline void reg_write(uint64_t reg, uint64_t value) {

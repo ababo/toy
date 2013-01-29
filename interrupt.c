@@ -13,20 +13,46 @@ static void print_int(const char *mnemonic,
     printf(")\n");
 }
 
-ISR_CONTAINER(get_default_isr) {
-  ISR_PROLOG();
-  print_int("#?", stack_frame, false);
-  ISR_EPILOG();
+#define SIMPLE_ISR(mnemonic)                                            \
+  ISR_CONTAINER(mnemonic) {                                             \
+    print_int("#" #mnemonic, stack_frame,                               \
+              is_int_error(INT_VECTOR_##mnemonic));                     \
 }
 
-ISR_CONTAINER(get_default_err_isr) {
-  ISR_ERR_PROLOG();
-  print_int("#?", stack_frame, true);
-  ISR_ERR_EPILOG();
-}
+SIMPLE_ISR(DE);
+SIMPLE_ISR(NMI);
+SIMPLE_ISR(BP);
+SIMPLE_ISR(OF);
+SIMPLE_ISR(BR);
+SIMPLE_ISR(UD);
+SIMPLE_ISR(NM);
+SIMPLE_ISR(DF)
+SIMPLE_ISR(TS);
+SIMPLE_ISR(NP);
+SIMPLE_ISR(SS);
+SIMPLE_ISR(GP);
+SIMPLE_ISR(PF);
+SIMPLE_ISR(MF);
+SIMPLE_ISR(AC);
+SIMPLE_ISR(MC);
+SIMPLE_ISR(XM);
 
 void init_interrupts(void) {
-  for (int i = 0; i < INT_VECTOR_NUMBER; i++)
-    if (!is_int_reserved(i))
-      set_isr(i, is_int_error(i) ? get_default_err_isr() : get_default_isr());
+  set_isr(INT_VECTOR_DE, get_DE_isr());
+  set_isr(INT_VECTOR_NMI, get_NMI_isr());
+  set_isr(INT_VECTOR_BP, get_BP_isr());
+  set_isr(INT_VECTOR_OF, get_OF_isr());
+  set_isr(INT_VECTOR_BR, get_BR_isr());
+  set_isr(INT_VECTOR_UD, get_UD_isr());
+  set_isr(INT_VECTOR_NM, get_NM_isr());
+  set_isr(INT_VECTOR_DF, get_DF_isr());
+  set_isr(INT_VECTOR_TS, get_TS_isr());
+  set_isr(INT_VECTOR_NP, get_NP_isr());
+  set_isr(INT_VECTOR_SS, get_SS_isr());
+  set_isr(INT_VECTOR_GP, get_GP_isr());
+  set_isr(INT_VECTOR_PF, get_PF_isr());
+  set_isr(INT_VECTOR_MF, get_MF_isr());
+  set_isr(INT_VECTOR_AC, get_AC_isr());
+  set_isr(INT_VECTOR_MC, get_MC_isr());
+  set_isr(INT_VECTOR_XM, get_XM_isr());
 }
