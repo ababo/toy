@@ -42,16 +42,21 @@ struct int_stack_frame {
   uint16_t ss;
 };
 
-#define ISR_CONTAINER(name)                                             \
-  static __attribute__ ((noinline)) void name##_isr();                  \
-  static __attribute__ ((noinline)) void *get_##name##_isr(void) {      \
+#define ISR_IMPL(name)                                                  \
+  static __attribute__ ((noinline))                                     \
+  void name##_isr_impl(struct int_stack_frame *stack_frame,             \
+                       uint64_t data)
+
+#define ISR_GETTER(name, impl_name, data)                               \
+  static __attribute__ ((noinline)) void *name##_isr_getter(void) {     \
     __asm__("jmp 2f\n.align 16\n1:andq $(~0b1111), %rsp");              \
     __asm__("subq $512, %rsp\nfxsave (%rsp)");                          \
     __asm__("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
     __asm__("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
     __asm__("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
     __asm__("leaq (512 + 14 * 8)(%rsp), %rdi");                         \
-    __asm__("callq %P0" : : "i"(name##_isr));                           \
+    __asm__("movabsq $%P0, %%rsi" : : "i"(data));                       \
+    __asm__("callq %P0" : : "i"(impl_name##_isr_impl));                 \
     __asm__("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
     __asm__("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
     __asm__("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
@@ -59,8 +64,12 @@ struct int_stack_frame {
     void *isr;                                                          \
     __asm__("iretq\n2:\nmovq $1b, %0" : "=m"(isr));                     \
     return isr;                                                         \
-  }                                                                     \
-  void name##_isr(struct int_stack_frame *stack_frame)
+  }
+
+#define ISR_DEFINE(name, data)                  \
+  ISR_IMPL(name);                               \
+  ISR_GETTER(name, name, data)                  \
+  ISR_IMPL(name)
 
 void init_interrupts(void);
 

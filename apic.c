@@ -26,11 +26,11 @@
 #define APIC_TIMER_DIVIDE_BY_64 0b1001
 #define APIC_TIMER_DIVIDE_BY_128 0b1010
 
-ISR_CONTAINER(spurious) {
+ISR_DEFINE(spurious, 0) {
   printf("#SPURIOUS\n");
 }
 
-ISR_CONTAINER(timer) {
+ISR_DEFINE(timer, 0) {
   printf("#TIMER\n");
 }
 
@@ -48,10 +48,10 @@ void init_apic(void) {
 
   reg_write(0x30, 0);
 
-  set_isr(INT_VECTOR_SPURIOUS, get_spurious_isr());
+  set_isr(INT_VECTOR_SPURIOUS, spurious_isr_getter());
   reg_write(APIC_SPURIOUS_REG, APIC_LOCAL_ENABLE | INT_VECTOR_SPURIOUS);
 
-  set_isr(INT_VECTOR_TIMER, get_timer_isr());
+  set_isr(INT_VECTOR_TIMER, timer_isr_getter());
   reg_write(APIC_TIMER_REG, APIC_TIMER_PERIODIC | INT_VECTOR_TIMER);
   reg_write(APIC_TIMER_INITIAL_REG, 12345);
   reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_4);

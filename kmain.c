@@ -5,7 +5,7 @@
 #include "page_table.h"
 #include "util.h"
 
-ISR_CONTAINER(test) {
+ISR_DEFINE(test, 0) {
   printf("#DE: jumping to next instruction...\n");
   stack_frame->rip += 2;
 }
@@ -20,8 +20,9 @@ void kmain(void) {
   init_interrupts();
   printf("Interrupts initialized...\n");
   printf("Trying to initiate #DE...\n");
-  set_isr(INT_VECTOR_DE, get_test_isr());
+  set_isr(INT_VECTOR_DE, test_isr_getter());
   __asm__("div %P0" : : "a"(0));
+  printf("Returned from #DE...\n");
   init_page_tables();
   printf("Page tables initialized...\n");
   init_apic();
