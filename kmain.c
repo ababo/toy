@@ -21,7 +21,7 @@ void kmain(void) {
   printf("Interrupts initialized...\n");
   printf("Trying to initiate #DE...\n");
   set_isr(INT_VECTOR_DE, test_isr_getter());
-  __asm__("div %P0" : : "a"(0));
+  asm("div %P0" : : "a"(0));
   printf("Returned from #DE...\n");
   init_page_tables();
   printf("Page tables initialized...\n");

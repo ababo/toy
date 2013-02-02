@@ -50,5 +50,5 @@ void init_page_tables(void) {
       .present = true, .write = true, .address0 = i
     };
   
-  __asm__("mov %0, %%cr3" : : "d"(pml4));
+  asm("mov %0, %%cr3" : : "d"(pml4));
 }

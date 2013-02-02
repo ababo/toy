@@ -78,7 +78,7 @@ static void create_gdt(void) {
   };
 
   struct desc_table_info gdti = { (8 * 3) + (16 * 1) - 1, GDT_ADDR };
-  __asm__("lgdt %0\nmovw $(8 * 3), %%ax\nltr %%ax" : : "m"(gdti));
+  asm("lgdt %0\nmovw $(8 * 3), %%ax\nltr %%ax" : : "m"(gdti));
 }
 
 static void create_idt(void) {
@@ -90,7 +90,7 @@ static void create_idt(void) {
       };
 
   struct desc_table_info idti = { 16 * INT_VECTOR_NUMBER - 1, IDT_ADDR };
-  __asm__("lidt %0" : : "m"(idti));
+  asm("lidt %0" : : "m"(idti));
 }
 
 void init_desc_tables(void) {
@@ -99,7 +99,7 @@ void init_desc_tables(void) {
   create_idt();
 }
 
-void *get_isr(int vector) {
+volatile void *get_isr(int vector) {
   struct idt_desc *idt = (struct idt_desc*)IDT_ADDR + vector;
   return (void*)(idt->handler0 + ((uint64_t)idt->handler1 << 16) +
                  ((uint64_t)idt->handler2 << 32));

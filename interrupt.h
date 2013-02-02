@@ -42,28 +42,28 @@ struct int_stack_frame {
   uint16_t ss;
 };
 
-#define ISR_IMPL(name)                                                  \
-  static __attribute__ ((noinline))                                     \
-  void name##_isr_impl(struct int_stack_frame *stack_frame,             \
+#define ISR_IMPL(name)                                          \
+  static __attribute__ ((noinline))                             \
+  void name##_isr_impl(struct int_stack_frame *stack_frame,     \
                        uint64_t data)
 
-#define ISR_GETTER(name, impl_name, data)                               \
-  static __attribute__ ((noinline)) void *name##_isr_getter(void) {     \
-    __asm__("jmp 2f\n.align 16\n1:andq $(~0b1111), %rsp");              \
-    __asm__("subq $512, %rsp\nfxsave (%rsp)");                          \
-    __asm__("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
-    __asm__("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
-    __asm__("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
-    __asm__("leaq (512 + 14 * 8)(%rsp), %rdi");                         \
-    __asm__("movabsq $%P0, %%rsi" : : "i"(data));                       \
-    __asm__("callq %P0" : : "i"(impl_name##_isr_impl));                 \
-    __asm__("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
-    __asm__("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
-    __asm__("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
-    __asm__("fxrstor (%rsp)\naddq $(512 + 8), %rsp");                   \
-    void *isr;                                                          \
-    __asm__("iretq\n2:\nmovq $1b, %0" : "=m"(isr));                     \
-    return isr;                                                         \
+#define ISR_GETTER(name, impl_name, data)                           \
+  static __attribute__ ((noinline)) void *name##_isr_getter(void) { \
+    asm("jmp 2f\n.align 16\n1:andq $(~0b1111), %rsp");              \
+    asm("subq $512, %rsp\nfxsave (%rsp)");                          \
+    asm("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
+    asm("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
+    asm("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
+    asm("leaq (512 + 14 * 8)(%rsp), %rdi");                         \
+    asm("movabsq $%P0, %%rsi" : : "i"(data));                       \
+    asm("callq %P0" : : "i"(impl_name##_isr_impl));                 \
+    asm("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
+    asm("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
+    asm("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
+    asm("fxrstor (%rsp)\naddq $(512 + 8), %rsp");                   \
+    void *isr;                                                      \
+    asm("iretq\n2:\nmovq $1b, %0" : "=m"(isr));                     \
+    return isr;                                                     \
   }
 
 #define ISR_DEFINE(name, data)                  \
@@ -73,7 +73,7 @@ struct int_stack_frame {
 
 void init_interrupts(void);
 
-void *get_isr(int vector);
+volatile void *get_isr(int vector);
 void set_isr(int vector, void *isr);
 
 #endif // INTERRUPT_H

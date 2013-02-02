@@ -9,7 +9,7 @@ ISR_IMPL(default) {
     printf(", error_code: %X)\n", stack_frame->error_code);
   else
     printf(")\n");
-  __asm__("hlt");
+  asm("hlt");
 }
 
 #define ISR_SIMPLE_GETTER(mnemonic)                                     \
