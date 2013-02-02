@@ -71,7 +71,10 @@ static void create_gdt(void) {
   };
   *(struct gdt_desc*)gdt++ = (struct gdt_desc) {
     .type = TSS_SEGMENT_TYPE, .nonsys = false, .present = true,
-    .base0 = TSS_ADDR, .limit0 = sizeof(struct task_segment) - 1
+    .base0 = (uint16_t)TSS_ADDR, .base1 = (uint8_t)(TSS_ADDR >> 16),
+    .limit0 = sizeof(struct task_segment) - 1,
+    .base2 = (uint8_t)(TSS_ADDR >> 24),
+    .base3 = (uint32_t)((uint64_t)TSS_ADDR >> 32)
   };
 
   struct desc_table_info gdti = { (8 * 3) + (16 * 1) - 1, GDT_ADDR };
