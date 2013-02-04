@@ -20,6 +20,8 @@
 .set DEFINED_SEGMENT_MASK, 1 << 7
 .set L_MASK, 1 << 5
 .set CODE_SEGMENT, 0x0008
+.set SYS_CONTROL_PORT_A, 0x92
+.set A20_LINE_MASK, 2
 
 .section .text
 .code16
@@ -39,16 +41,20 @@ _start: xorw %ax, %ax
         movw $((KERNEL_LIMIT_ADDRESS - KERNEL_ADDRESS) / SECTOR_SIZE), %cx
         call load                       /* load kernel */
 
+        inb $SYS_CONTROL_PORT_A, %al
+        orb $A20_LINE_MASK, %al
+        outb %al, $SYS_CONTROL_PORT_A   /* enable A20 gate */
+
         xorw %ax, %ax
         movw %ax, %es
         movl $PML4_ADDRESS, %edi
 
-        pushw %di                       /* fill the buffer with zeros */
-        mov $0x1000, %ecx
-        xor %eax, %eax
+        pushl %edi                      /* fill the buffer with zeros */
+        movl $0x1000, %ecx
+        xorl %eax, %eax
         cld
         rep stosl
-        pop %di
+        popl %edi
 
         movw %es, %ax                   /* prepare PML4 */
         shrl $4, %eax
@@ -75,7 +81,7 @@ nextp:  movl %eax, %es:(%di)            /* prepare PT */
         addl $0x1000, %eax
         movw %es, %bx
         incw %bx
-        movw %bx, %es 
+        movw %bx, %es
         cmpl $0x200000, %eax
         jb nextp
         popw %es

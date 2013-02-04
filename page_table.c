@@ -30,25 +30,25 @@ void init_page_tables(void) {
   };
   memset(&pml4[1], 0, 8 * (PAGE_TABLE_SIZE - 1));
 
-  struct page_desc *pdpt0 = (struct page_desc*)PDPT0_ADDR; 
+  struct page_desc *pdpt0 = (struct page_desc*)PDPT0_ADDR;
   pdpt0[0] = (struct page_desc) {
     .present = true, .write = true, .address0 = (uint32_t)(PD0_ADDR >> 12),
     .address1 = (uint32_t)((uint64_t)PD0_ADDR >> 32)
   };
   memset(&pdpt0[1], 0, 8 * (PAGE_TABLE_SIZE - 1));
 
-  struct page_desc *pd0 = (struct page_desc*)PD0_ADDR; 
+  struct page_desc *pd0 = (struct page_desc*)PD0_ADDR;
   pd0[0] = (struct page_desc) {
     .present = true, .write = true, .address0 = (uint32_t)(PT0_ADDR >> 12),
     .address1 = (uint32_t)((uint64_t)PT0_ADDR >> 32)
   };
   memset(&pd0[1], 0, 8 * (PAGE_TABLE_SIZE - 1));
 
-  struct page_desc *pt0 = (struct page_desc*)PT0_ADDR; 
+  struct page_desc *pt0 = (struct page_desc*)PT0_ADDR;
   for (uint32_t i = 0; i < PAGE_TABLE_SIZE; i++)
     pt0[i] = (struct page_desc) {
       .present = true, .write = true, .address0 = i
     };
-  
+
   asm("mov %0, %%cr3" : : "d"(pml4));
 }
