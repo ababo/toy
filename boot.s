@@ -22,6 +22,9 @@
 .set CODE_SEGMENT, 0x0008
 .set SYS_CONTROL_PORT_A, 0x92
 .set A20_LINE_MASK, 2
+.set MEMORY_MAP_ADDRESS, 0x500
+.set MEMORY_MAP_RECORD_SIZE, 24
+.set MEMORY_MAP_SIGNATURE, 0x534D4150
 
 .section .text
 .code16
@@ -40,6 +43,19 @@ _start: xorw %ax, %ax
         movw $(LOAD_ADDRESS + SECTOR_SIZE), %bx
         movw $((KERNEL_LIMIT_ADDRESS - KERNEL_ADDRESS) / SECTOR_SIZE), %cx
         call load                       /* load kernel */
+
+        xorl %ebx, %ebx                 /* store memory map */
+        movw %bx, %es
+        movl $0, MEMORY_MAP_ADDRESS
+        movw $(MEMORY_MAP_ADDRESS + 8), %di
+        movl $MEMORY_MAP_SIGNATURE, %edx
+nextmr: movl $MEMORY_MAP_RECORD_SIZE, %ecx
+        movl $0xE820, %eax
+        int $0x15
+        incl MEMORY_MAP_ADDRESS
+        addw $MEMORY_MAP_RECORD_SIZE, %di
+        orl %ebx, %ebx
+        jnz nextmr
 
         inb $SYS_CONTROL_PORT_A, %al
         orb $A20_LINE_MASK, %al

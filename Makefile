@@ -1,8 +1,8 @@
 IMAGE=floppy.img
 KERNEL=kernel.bin
 LD_SCRIPT=kernel.lds
-OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o page_table.o \
-     apic.o
+OBJS=kstart.o kmain.o display.o util.o desc_table.o interrupt.o mem_map.o \
+	page_table.o apic.o
 CC=gcc
 VM=qemu-system-x86_64
 AS_OPTIONS=--64
