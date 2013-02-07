@@ -14,5 +14,5 @@ kstart: movw $DATA_SEGMENT, %ax
         orq $OSFXSR_MASK, %rdx
         movq %rdx, %cr4
 
-        call kmain
+        callq kmain
         hlt

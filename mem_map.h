@@ -7,10 +7,10 @@
 
 #define TSS_ADDR 0x5000
 #define GDT_ADDR 0x5080
-#define IDT_ADDR 0x5100
+#define IDT_ADDR 0x5100 // up to 0x6000
 
+#define INT_STACK_ADDR 0x7000 // down to 0x6000
 #define KMAIN_STACK_ADDR 0x7C00
-#define INT_STACK_ADDR 0x7E00
 
 #define KERNEL_ADDR 0x7E00
 

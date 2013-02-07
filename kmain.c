@@ -24,9 +24,12 @@ void kmain(void) {
   set_isr(INT_VECTOR_DE, test_isr_getter());
   asm("div %P0" : : "a"(0));
   printf("Returned from #DE.\n");
-  printf("Usable memory size: %d MiB.\n", get_usable_memory_size() / 0x100000);
+  printf("Usable memory size: %d MiB.\n",
+         ROUND_DIV(get_usable_memory_size(), 0x100000));
+
+  /*
   init_page_tables();
   printf("Page tables initialized.\n");
   init_apic();
-  printf("APIC initialized.\n");
+  printf("APIC initialized.\n");*/
 }

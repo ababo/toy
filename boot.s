@@ -37,12 +37,12 @@ _start: xorw %ax, %ax
         movw $LOAD_ADDRESS, %sp
 
         movw $msg, %si
-        call puts                       /* display message */
+        callw puts                      /* display message */
 
         movw $1, %ax
         movw $(LOAD_ADDRESS + SECTOR_SIZE), %bx
         movw $((KERNEL_LIMIT_ADDRESS - KERNEL_ADDRESS) / SECTOR_SIZE), %cx
-        call load                       /* load kernel */
+        callw load                      /* load kernel */
 
         xorl %ebx, %ebx                 /* store memory map */
         movw %bx, %es
