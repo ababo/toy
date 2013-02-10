@@ -16,12 +16,12 @@
 
 #define VIDEO_ADDR 0xB8000
 
-#define PML4_ADDR 0x100000
-#define PDPT0_ADDR 0x101000
-#define PD0_ADDR 0x102000
-#define PT0_ADDR 0x103000
+#define PAGE_MAP_TEMP_ADDR 0x100000
+#define PAGE_MAP_PHYS_ADDR 0x200000
 
 #define APIC_BASE_ADDR 0xFEE00000
+
+#define PAGE_MAP_ADDR 0x100000000L
 
 uint64_t get_usable_memory_size(void);
 

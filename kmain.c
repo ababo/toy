@@ -3,7 +3,7 @@
 #include "display.h"
 #include "interrupt.h"
 #include "mem_map.h"
-#include "page_table.h"
+#include "page_map.h"
 #include "util.h"
 
 ISR_DEFINE(test, 0) {
@@ -26,10 +26,10 @@ void kmain(void) {
   printf("Returned from #DE.\n");
   printf("Usable memory size: %d MiB.\n",
          ROUND_DIV(get_usable_memory_size(), 0x100000));
+  init_page_map(PAGE_MAP_PHYS_ADDR, 256 * (1L << 30));
+  printf("Page map initialized.\n");
 
   /*
-  init_page_tables();
-  printf("Page tables initialized.\n");
   init_apic();
   printf("APIC initialized.\n");*/
 }

@@ -48,6 +48,9 @@ void *memcpy(void *dst, const void *src, size_t num);
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);
 
-#define ROUND_DIV(dividend, divisor) ((dividend + divisor - 1) / divisor)
+#define ROUND_DIV(dividend, divisor) \
+  (((dividend) + (divisor) - 1) / (divisor))
+#define BLOCK_NUM(num, num_per_block) \
+  (((num) + (num_per_block) - 1) / (num_per_block))
 
 #endif // UTIL_H
