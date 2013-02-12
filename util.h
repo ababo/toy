@@ -52,5 +52,8 @@ char *ultoa(unsigned long value, char *buf, int radix);
   (((dividend) + (divisor) - 1) / (divisor))
 #define BLOCK_NUM(num, num_per_block) \
   (((num) + (num_per_block) - 1) / (num_per_block))
+#define INT_BITS(value, low, high)              \
+  (value << (sizeof(value) * 8 - 1 - high) >>   \
+   (sizeof(value) * 8 - 1 - high + low))
 
 #endif // UTIL_H
