@@ -26,8 +26,13 @@ void kmain(void) {
   printf("Returned from #DE.\n");
   printf("Usable memory size: %d MiB.\n",
          ROUND_DIV(get_usable_memory_size(), 0x100000));
-  init_page_map(0x200000, 256 * (1L << 30));
+  init_page_map(PAGE_MAP_ADDR, 256 * (1L << 30));
   printf("Page map initialized.\n");
+
+  map_page(APIC_BASE_ADDR, APIC_BASE_ADDR,
+           PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
+
+  printf("apic 30h: %X\n", *(uint32_t*)(APIC_BASE_ADDR + 0x30));
 
   /*
   init_apic();

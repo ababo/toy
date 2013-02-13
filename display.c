@@ -90,7 +90,7 @@ static void scroll_frame(void) {
 
 static void put_char(char chr) {
   switch (chr) {
-    case '\r': 
+    case '\r':
       caret_col = 0;
       break;
     case '\n':

@@ -18,9 +18,9 @@
 
 #define PAGE_MAP_TEMP_ADDR 0x100000
 
-#define APIC_BASE_ADDR 0xFEE00000
+#define PAGE_MAP_ADDR 0x200000
 
-#define PAGE_MAP_ADDR 0x100000000L
+#define APIC_BASE_ADDR 0xFEE00000
 
 uint64_t get_usable_memory_size(void);
 

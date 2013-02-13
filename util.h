@@ -11,6 +11,10 @@ typedef int bool;
 #define true 1
 #define false 0
 
+static inline const char *bool_str(bool value) {
+  return value ? "true" : "false";
+}
+
 typedef unsigned long size_t;
 
 typedef char int8_t;
