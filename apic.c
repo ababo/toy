@@ -2,10 +2,12 @@
 #include "display.h"
 #include "mem_map.h"
 #include "interrupt.h"
+#include "page_map.h"
 #include "util.h"
 
 #define APIC_BASE_MSR 0x1B
 
+#define APIC_EOI_REG 0xB0
 #define APIC_SPURIOUS_REG 0x0F0
 #define APIC_TIMER_REG 0x320
 #define APIC_TIMER_INITIAL_REG 0x380
@@ -26,33 +28,33 @@
 #define APIC_TIMER_DIVIDE_BY_64 0b1001
 #define APIC_TIMER_DIVIDE_BY_128 0b1010
 
+static inline uint32_t reg_read(int reg) {
+  return *(volatile uint32_t*)((uint64_t)APIC_BASE_ADDR + reg);
+}
+
+static inline void reg_write(int reg, uint32_t value) {
+  *(volatile uint32_t*)((uint64_t)APIC_BASE_ADDR + reg) = value;
+}
+
 ISR_DEFINE(spurious, 0) {
   printf("#SPURIOUS\n");
+  reg_write(APIC_EOI_REG, 0);
 }
 
 ISR_DEFINE(timer, 0) {
   printf("#TIMER\n");
-}
-
-static inline void reg_write(uint64_t reg, uint64_t value) {
-  printf("reg %X (prev: %X, curr: %X)\n",
-         reg, *(uint64_t*)(APIC_BASE_ADDR + reg), value);
-  *(uint64_t*)(APIC_BASE_ADDR + reg) = value;
+  reg_write(APIC_EOI_REG, 0);
 }
 
 void init_apic(void) {
-  uint64_t prev = rdmsr(APIC_BASE_MSR);
   wrmsr(APIC_BASE_MSR, APIC_BASE_ADDR | APIC_ENABLE);
-  printf("msr %X (prev: %X, curr: %X)\n",
-         APIC_BASE_MSR, prev, rdmsr(APIC_BASE_MSR));
-
-  reg_write(0x30, 0);
-
+  map_page(APIC_BASE_ADDR, APIC_BASE_ADDR,
+           PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
   set_isr(INT_VECTOR_SPURIOUS, spurious_isr_getter());
   reg_write(APIC_SPURIOUS_REG, APIC_LOCAL_ENABLE | INT_VECTOR_SPURIOUS);
 
   set_isr(INT_VECTOR_TIMER, timer_isr_getter());
   reg_write(APIC_TIMER_REG, APIC_TIMER_PERIODIC | INT_VECTOR_TIMER);
-  reg_write(APIC_TIMER_INITIAL_REG, 12345);
-  reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_4);
+  reg_write(APIC_TIMER_INITIAL_REG, 10000000);
+  reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_128);
 }

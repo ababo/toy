@@ -15,4 +15,5 @@ kstart: movw $DATA_SEGMENT, %ax
         movq %rdx, %cr4
 
         callq kmain
-        hlt
+halt:   hlt
+        jmp halt

@@ -105,10 +105,8 @@ static void put_char(char chr) {
     default:
       *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
         (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
-      if (++caret_col == frame_width) {
-        caret_col = 0;
+      if (++caret_col == frame_width)
         goto new_line;
-      }
       break;
   }
 }
