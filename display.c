@@ -1,10 +1,32 @@
 #include "display.h"
+#include "mem_map.h"
+
+struct chr_cell {
+  int8_t chr;
+  uint8_t fcolor : 4;
+  uint8_t bcolor : 4;
+};
 
 static int frame_top = 0, frame_left = 0;
 static int frame_height = ROW_NUMBER, frame_width = COL_NUMBER;
 static int frame_fcolor = COLOR_WHITE, frame_bcolor = COLOR_BLACK;
 static int caret_row = 0, caret_col = 0;
 static bool cursor = false;
+
+static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
+  return (struct chr_cell*)VIDEO_ADDR + row * COL_NUMBER + col;
+}
+
+void get_cell(int row, int col, char *chr, int *fore_color, int *back_color) {
+  volatile struct chr_cell *cell = get_chr_cell(row, col);
+  *chr = cell->chr, *fore_color = cell->fcolor, *back_color = cell->bcolor;
+}
+
+void set_cell(int row, int col, char chr, int fore_color, int back_color) {
+  *get_chr_cell(row, col) = (struct chr_cell) {
+    chr, (uint8_t)fore_color, (uint8_t)back_color
+  };
+}
 
 int get_frame_top(void) {
   return frame_top;

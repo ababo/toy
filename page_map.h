@@ -23,10 +23,10 @@ void init_page_map(uint64_t map_phys_addr, uint64_t mapped_virt_size);
 uint64_t get_map_phys_addr(void);
 uint64_t get_mapped_virt_size(void);
 bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
-                      uint16_t *avail_data);
+                      int *avail_data);
 
 void map_page(uint64_t virt_addr, uint64_t phys_addr, int flags,
-              uint16_t avail_data); // only 14-bits of avail_data are usable
+              int avail_data); // only 14-bits of avail_data are usable
 void unmap_page(uint64_t virt_addr);
 
 #endif // PAGE_MAP_H

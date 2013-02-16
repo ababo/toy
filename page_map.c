@@ -39,7 +39,7 @@ static inline struct page_desc *get_page_desc(uint64_t virt_addr) {
 }
 
 bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
-                      uint16_t *avail_data) {
+                      int *avail_data) {
   struct page_desc *pd = get_page_desc(virt_addr);
   if (!pd->present)
     return false;
@@ -51,7 +51,7 @@ bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
 }
 
 void map_page(uint64_t virt_addr, uint64_t phys_addr, int flags,
-              uint16_t avail_data) {
+              int avail_data) {
   struct page_desc *pd = get_page_desc(virt_addr);
 
   *pd = (struct page_desc) {

@@ -28,6 +28,12 @@ typedef unsigned long uint64_t;
 
 #define asm __asm__ __volatile__
 
+static inline uint8_t inb(uint16_t port) {
+  uint8_t value;
+  asm("inb %%dx, %%al" : "=a"(value) : "d"(port));
+  return value;
+}
+
 static inline void outb(uint16_t port, uint8_t value) {
   asm("outb %%al, %%dx" : : "a"(value), "d"(port));
 }

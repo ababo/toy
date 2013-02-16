@@ -42,8 +42,32 @@ ISR_DEFINE(spurious, 0) {
 }
 
 ISR_DEFINE(timer, 0) {
-  printf("#TIMER\n");
+  static int fired = 0;
+  if (!(++fired % APIC_TIMER_FREQ)) {
+    printf("#TIMER (%d Hz, fired: %d K)\n", APIC_TIMER_FREQ, fired / 1000);
+  }
   reg_write(APIC_EOI_REG, 0);
+}
+
+static void init_timer(void) {
+  set_isr(INT_VECTOR_TIMER, timer_isr_getter());
+  reg_write(APIC_TIMER_REG, INT_VECTOR_TIMER);
+  reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_1);
+
+  outb(0x61, (inb(0x61) & 0x0C) | 1); // enable PIT
+  outb(0x43, 0xB0);
+
+  reg_write(APIC_TIMER_INITIAL_REG, -1); // wait for 10 ms
+  outb(0x42, 0x9C);
+  outb(0x42, 0x2E);
+  while (!(inb(0x61) & 0x20));
+
+  uint64_t ticked = -1 - reg_read(APIC_TIMER_CURRENT_REG);
+  reg_write(APIC_TIMER_REG, APIC_TIMER_PERIODIC | INT_VECTOR_TIMER);
+  reg_write(APIC_TIMER_INITIAL_REG,
+            (uint32_t)(ticked * 100 / APIC_TIMER_FREQ));
+
+  outb(0x61, inb(0x61) & 0x0C); // disable PIT
 }
 
 void init_apic(void) {
@@ -53,8 +77,5 @@ void init_apic(void) {
   set_isr(INT_VECTOR_SPURIOUS, spurious_isr_getter());
   reg_write(APIC_SPURIOUS_REG, APIC_LOCAL_ENABLE | INT_VECTOR_SPURIOUS);
 
-  set_isr(INT_VECTOR_TIMER, timer_isr_getter());
-  reg_write(APIC_TIMER_REG, APIC_TIMER_PERIODIC | INT_VECTOR_TIMER);
-  reg_write(APIC_TIMER_INITIAL_REG, 10000000);
-  reg_write(APIC_TIMER_DIVIDE_REG, APIC_TIMER_DIVIDE_BY_128);
+  init_timer();
 }
