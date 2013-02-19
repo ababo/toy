@@ -6,6 +6,8 @@ typedef __builtin_va_list va_list;
 #define va_end(vargs) __builtin_va_end(vargs)
 #define va_arg(vargs, arg_type) __builtin_va_arg(vargs, arg_type)
 
+#define NULL 0
+
 typedef int bool;
 
 #define true 1
@@ -52,8 +54,10 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
 size_t strlen(const char *str);
 char *strrev(char *str);
 
-void *memset(void *ptr, int value, size_t num);
-void *memcpy(void *dst, const void *src, size_t num);
+void *memset(void *ptr, int value, size_t size);
+void *memcpy(void *dst, const void *src, size_t size);
+int memcmp(const void *buf1, const void *buf2, size_t size);
+void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);

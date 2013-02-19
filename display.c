@@ -19,7 +19,12 @@ static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
 
 void get_cell(int row, int col, char *chr, int *fore_color, int *back_color) {
   volatile struct chr_cell *cell = get_chr_cell(row, col);
-  *chr = cell->chr, *fore_color = cell->fcolor, *back_color = cell->bcolor;
+  if (chr)
+    *chr = cell->chr;
+  if (fore_color)
+    *fore_color = cell->fcolor;
+  if (back_color)
+    *back_color = cell->bcolor;
 }
 
 void set_cell(int row, int col, char chr, int fore_color, int back_color) {
@@ -174,6 +179,9 @@ int printf(char *format, ...) {
         case 'X':
           int_arg = va_arg(vargs, int);
           str = ultoa((unsigned int)int_arg, buf, chr == 'x' ? 16 : -16);
+          goto puts;
+        case 'c':
+          buf[0] = (char)va_arg(vargs, int), buf[1] = 0, str = buf;
           goto puts;
           // TODO: implement other specifiers
         default:

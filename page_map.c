@@ -44,9 +44,12 @@ bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
   if (!pd->present)
     return false;
 
-  *phys_addr = ((uint64_t)pd->address1 << 32) + (pd->address0 << 12);
-  *flags = (*(uint8_t*)pd & FLAGS_MASK) | (pd->noexec << NOEXEC_FLAG_SHIFT);
-  *avail_data = pd->avail0 | (pd->avail1 << 3);
+  if (phys_addr)
+    *phys_addr = ((uint64_t)pd->address1 << 32) + (pd->address0 << 12);
+  if (flags)
+    *flags = (*(uint8_t*)pd & FLAGS_MASK) | (pd->noexec << NOEXEC_FLAG_SHIFT);
+  if (avail_data)
+    *avail_data = pd->avail0 | (pd->avail1 << 3);
   return true;
 }
 

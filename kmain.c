@@ -1,3 +1,4 @@
+#include "acpi.h"
 #include "apic.h"
 #include "desc_table.h"
 #include "display.h"
@@ -30,4 +31,6 @@ void kmain(void) {
   printf("Page map initialized.\n");
   init_apic();
   printf("APIC initialized.\n");
+  init_acpi();
+  printf("ACPI initialized.\n");
 }
