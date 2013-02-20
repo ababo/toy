@@ -33,4 +33,13 @@ void kmain(void) {
   printf("APIC initialized.\n");
   init_acpi();
   printf("ACPI initialized.\n");
+
+  const struct acpi_madt_entry_header *h = 0;
+  while ((h = next_acpi_madt_entry(h)))
+    if (h->type == ACPI_MADT_LAPIC_TYPE) {
+      const struct acpi_madt_lapic_entry *e =
+        (const struct acpi_madt_lapic_entry*)h;
+      printf("CPU core detected (acpi_cpuid: %X, apic_id: %X, usable: %s)\n",
+             e->acpi_cpuid, e->apic_id, bool_str(e->flags & 1));
+    }
 }

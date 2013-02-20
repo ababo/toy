@@ -9,7 +9,7 @@ AS_OPTIONS=--64
 OPT=3
 CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(OPT) -Wall
 LD_OPTIONS=-melf_x86_64
-VM_OPTIONS=-no-kvm
+VM_OPTIONS=-no-kvm -smp 4
 
 image: boot kernel
 	ld -Ttext 0x7C00 --oformat binary boot.o -o $(IMAGE)

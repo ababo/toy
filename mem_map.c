@@ -14,7 +14,7 @@ struct memory_map {
     uint32_t type;
     uint32_t present : 1;
     uint32_t nonvolatile : 1;
-  } entries[1];
+  } entries[];
 };
 
 uint64_t get_usable_memory_size(void) {
