@@ -18,9 +18,7 @@ static inline uint64_t get_page_map_size(size_t mapped_virt_size) {
   return (pd_num + pdpt_num + 1) * 4096;
 }
 
-void init_page_map(uint64_t map_phys_addr, uint64_t mapped_virt_size);
-
-uint64_t get_map_phys_addr(void);
+uint64_t get_page_map_phys_addr(void);
 uint64_t get_mapped_virt_size(void);
 bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
                       int *avail_data);
@@ -28,5 +26,7 @@ bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
 void map_page(uint64_t virt_addr, uint64_t phys_addr, int flags,
               int avail_data); // only 14-bits of avail_data are usable
 void unmap_page(uint64_t virt_addr);
+
+void init_page_map(uint64_t map_phys_addr, uint64_t mapped_virt_size);
 
 #endif // PAGE_MAP_H

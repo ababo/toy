@@ -1,4 +1,4 @@
-#include "mem_map.h"
+#include "addr_map.h"
 #include "page_map.h"
 
 #define FLAGS_MASK 0b1111010
@@ -24,7 +24,7 @@ struct page_desc {
 static uint64_t phys_addr;
 static uint64_t virt_size;
 
-uint64_t get_map_phys_addr(void) {
+uint64_t get_page_map_phys_addr(void) {
   return phys_addr;
 }
 
@@ -35,7 +35,7 @@ uint64_t get_mapped_virt_size(void) {
 static inline struct page_desc *get_page_desc(uint64_t virt_addr) {
   uint64_t entry = virt_addr >> 21, table = entry >> 9;
   entry = entry & (512 - 1), table += 2 + (table >> 9);
-  return (struct page_desc*)(PAGE_MAP_ADDR + (table << 12) + (entry << 3));
+  return (struct page_desc*)(ADDR_PAGE_MAP + (table << 12) + (entry << 3));
 }
 
 bool get_page_mapping(uint64_t virt_addr, uint64_t *phys_addr, int *flags,
@@ -142,8 +142,9 @@ static void create_map(uint64_t map_virt_addr, uint64_t map_phys_addr,
 }
 
 void init_page_map(uint64_t map_phys_addr, uint64_t mapped_virt_size) {
-  create_map(PAGE_MAP_TEMP_ADDR, PAGE_MAP_TEMP_ADDR, PAGE_MAP_ADDR,
+  create_map(ADDR_PAGE_MAP_TEMP, ADDR_PAGE_MAP_TEMP, ADDR_PAGE_MAP,
              map_phys_addr, get_page_map_size(mapped_virt_size));
-  create_map(PAGE_MAP_ADDR, map_phys_addr, 0, 0, mapped_virt_size);
+  create_map(ADDR_PAGE_MAP, map_phys_addr, 0, 0, mapped_virt_size);
   phys_addr = map_phys_addr, virt_size = mapped_virt_size;
+  LOG_DEBUG("init_page_map: done");
 }

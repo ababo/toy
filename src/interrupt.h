@@ -73,7 +73,7 @@ struct int_stack_frame {
 
 void init_interrupts(void);
 
-volatile void *get_isr(int vector);
+void *get_isr(int vector);
 void set_isr(int vector, void *isr);
 
 #endif // INTERRUPT_H

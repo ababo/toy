@@ -1,5 +1,5 @@
 #include "acpi.h"
-#include "mem_map.h"
+#include "addr_map.h"
 #include "page_map.h"
 
 #define RSDP_SIGNATURE "RSD PTR "
@@ -26,10 +26,10 @@ const struct acpi_srat *get_acpi_srat(void) {
 
 static void init_root_tables(void) {
   rsdp = (struct acpi_rsdp*)
-    memmem((void*)EBDA_ADDR, EBDA_NEXT_ADDR - EBDA_ADDR, RSDP_SIGNATURE, 8);
+    memmem((void*)ADDR_EBDA, ADDR_AFTER_EBDA - ADDR_EBDA, RSDP_SIGNATURE, 8);
   if (!rsdp)
     rsdp = (struct acpi_rsdp*)
-      memmem((void*)BIOS_ROM_ADDR, BIOS_ROM_NEXT_ADDR - BIOS_ROM_ADDR,
+      memmem((void*)ADDR_BIOS_ROM, ADDR_AFTER_BIOS_ROM - ADDR_BIOS_ROM,
              RSDP_SIGNATURE, 8);
 
   if (rsdp) { // make sure RSDT and XSDT are mapped
@@ -69,7 +69,7 @@ static void *find_psdt_table(char signature[4]) {
   return NULL;
 }
 
-bool next_acpi_entry(const void *table, void *entry_pptr, int type) {
+bool get_next_acpi_entry(const void *table, void *entry_pptr, int type) {
   if (!table || !entry_pptr)
     return false;
 
@@ -101,4 +101,10 @@ void init_acpi(void) {
   init_root_tables();
   madt = find_psdt_table(MADT_SIGNATURE);
   srat = find_psdt_table(SRAT_SIGNATURE);
+  LOG_DEBUG("init_acpi: RSDP: %X", get_acpi_rsdp());
+  LOG_DEBUG("init_acpi: RSDT: %X", get_acpi_rsdt());
+  LOG_DEBUG("init_acpi: XSDT: %X", (uint64_t)get_acpi_xsdt() >> 32);
+  LOG_DEBUG("init_acpi: MADT: %X", get_acpi_madt());
+  LOG_DEBUG("init_acpi: SRAT: %X", get_acpi_srat());
+  LOG_DEBUG("init_acpi: done");
 }

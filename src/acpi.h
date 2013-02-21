@@ -141,7 +141,7 @@ static inline const struct acpi_xsdt *get_acpi_xsdt(void) {
 }
 
 // ignores type if a given type parameter is equal to -1
-bool next_acpi_entry(const void *table, void *entry_pptr, int type);
+bool get_next_acpi_entry(const void *table, void *entry_pptr, int type);
 
 void init_acpi(void);
 

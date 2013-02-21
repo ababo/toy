@@ -6,10 +6,9 @@ typedef __builtin_va_list va_list;
 #define va_end(vargs) __builtin_va_end(vargs)
 #define va_arg(vargs, arg_type) __builtin_va_arg(vargs, arg_type)
 
-#define NULL 0
+#define NULL (void*)0
 
 typedef int bool;
-
 #define true 1
 #define false 0
 
@@ -61,6 +60,17 @@ void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);
+
+int putchar(int chr);
+int printf(char *format, ...);
+
+#define LOG_ERROR(format, ...) { printf(format, ##__VA_ARGS__); printf("\n"); }
+#define LOG_INFO(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
+#ifdef DEBUG
+#define LOG_DEBUG(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
+#else
+#define LOG_DEBUG(format, ...)
+#endif
 
 #define ROUND_DIV(dividend, divisor) \
   (((dividend) + (divisor) - 1) / (divisor))

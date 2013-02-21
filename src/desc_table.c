@@ -1,6 +1,5 @@
-#include "desc_table.h"
+#include "addr_map.h"
 #include "interrupt.h"
-#include "mem_map.h"
 #include "util.h"
 
 #define CODE_SEGMENT_TYPE 0b1010
@@ -58,10 +57,10 @@ struct desc_table_info {
 } __attribute__((packed));
 
 static void create_gdt(void) {
-  struct task_segment *tss = (struct task_segment*)TSS_ADDR;
-  *tss = (struct task_segment) { .ists = { INT_STACK_ADDR } };
+  struct task_segment *tss = (struct task_segment*)ADDR_TSS;
+  *tss = (struct task_segment) { .ists = { ADDR_INT_STACK } };
 
-  uint64_t *gdt = (uint64_t*)GDT_ADDR;
+  uint64_t *gdt = (uint64_t*)ADDR_GDT;
   *(struct gdt_desc*)gdt++ = (struct gdt_desc) {};
   *(struct gdt_desc*)gdt++ = (struct gdt_desc) {
     .type = CODE_SEGMENT_TYPE, .nonsys = true, .present = true, .bits64 = true
@@ -71,25 +70,25 @@ static void create_gdt(void) {
   };
   *(struct gdt_desc*)gdt++ = (struct gdt_desc) {
     .type = TSS_SEGMENT_TYPE, .nonsys = false, .present = true,
-    .base0 = (uint16_t)TSS_ADDR, .base1 = (uint8_t)(TSS_ADDR >> 16),
+    .base0 = (uint16_t)ADDR_TSS, .base1 = (uint8_t)(ADDR_TSS >> 16),
     .limit0 = sizeof(struct task_segment) - 1,
-    .base2 = (uint8_t)(TSS_ADDR >> 24),
-    .base3 = (uint32_t)((uint64_t)TSS_ADDR >> 32)
+    .base2 = (uint8_t)(ADDR_TSS >> 24),
+    .base3 = (uint32_t)((uint64_t)ADDR_TSS >> 32)
   };
 
-  struct desc_table_info gdti = { (8 * 3) + (16 * 1) - 1, GDT_ADDR };
+  struct desc_table_info gdti = { (8 * 3) + (16 * 1) - 1, ADDR_GDT };
   asm("lgdt %0\nmovw $(8 * 3), %%ax\nltr %%ax" : : "m"(gdti));
 }
 
 static void create_idt(void) {
-  struct idt_desc *idt = (struct idt_desc*)IDT_ADDR;
+  struct idt_desc *idt = (struct idt_desc*)ADDR_IDT;
   for (int i = 0; i < INT_VECTORS_NUMBER; i++)
     if (!is_int_reserved(i))
       idt[i] = (struct idt_desc) {
         .cs = 8, .ist = 1, .type = INT_GATE_TYPE, .present = false
       };
 
-  struct desc_table_info idti = { 16 * INT_VECTORS_NUMBER - 1, IDT_ADDR };
+  struct desc_table_info idti = { 16 * INT_VECTORS_NUMBER - 1, ADDR_IDT };
   asm("lidt %0" : : "m"(idti));
 }
 
@@ -97,16 +96,17 @@ void init_desc_tables(void) {
   create_gdt();
   for (volatile int i = 0; i < 1; i++); // workaround for clang with -O2/-O3
   create_idt();
+  LOG_DEBUG("init_desc_tables: done");
 }
 
-volatile void *get_isr(int vector) {
-  struct idt_desc *idt = (struct idt_desc*)IDT_ADDR + vector;
+void *get_isr(int vector) {
+  struct idt_desc *idt = (struct idt_desc*)ADDR_IDT + vector;
   return (void*)(idt->handler0 + ((uint64_t)idt->handler1 << 16) +
                  ((uint64_t)idt->handler2 << 32));
 }
 
 void set_isr(int vector, void *isr) {
-  struct idt_desc *idt = (struct idt_desc*)IDT_ADDR + vector;
+  struct idt_desc *idt = (struct idt_desc*)ADDR_IDT + vector;
   uint64_t isri = (uint64_t)isr;
   idt->present = isri != 0;
   idt->handler0 = (uint16_t)isri;

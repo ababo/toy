@@ -1,4 +1,3 @@
-#include "display.h"
 #include "interrupt.h"
 
 ISR_IMPL(default) {
@@ -52,4 +51,5 @@ void init_interrupts(void) {
   set_isr(INT_VECTOR_AC, AC_isr_getter());
   set_isr(INT_VECTOR_MC, MC_isr_getter());
   set_isr(INT_VECTOR_XM, XM_isr_getter());
+  LOG_DEBUG("init_interrupts: done");
 }
