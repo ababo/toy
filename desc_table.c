@@ -83,13 +83,13 @@ static void create_gdt(void) {
 
 static void create_idt(void) {
   struct idt_desc *idt = (struct idt_desc*)IDT_ADDR;
-  for (int i = 0; i < INT_VECTOR_NUMBER; i++)
+  for (int i = 0; i < INT_VECTORS_NUMBER; i++)
     if (!is_int_reserved(i))
       idt[i] = (struct idt_desc) {
         .cs = 8, .ist = 1, .type = INT_GATE_TYPE, .present = false
       };
 
-  struct desc_table_info idti = { 16 * INT_VECTOR_NUMBER - 1, IDT_ADDR };
+  struct desc_table_info idti = { 16 * INT_VECTORS_NUMBER - 1, IDT_ADDR };
   asm("lidt %0" : : "m"(idti));
 }
 

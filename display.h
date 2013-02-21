@@ -20,8 +20,8 @@
 #define COLOR_HIGH_YELLOW 14
 #define COLOR_WHITE 15
 
-#define ROW_NUMBER 25
-#define COL_NUMBER 80
+#define ROWS_NUMBER 25
+#define COLS_NUMBER 80
 
 // low level API (no concern of frames)
 void get_cell(int row, int col, char *chr, int *fore_color, int *back_color);

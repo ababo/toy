@@ -8,13 +8,13 @@ struct chr_cell {
 };
 
 static int frame_top = 0, frame_left = 0;
-static int frame_height = ROW_NUMBER, frame_width = COL_NUMBER;
+static int frame_height = ROWS_NUMBER, frame_width = COLS_NUMBER;
 static int frame_fcolor = COLOR_WHITE, frame_bcolor = COLOR_BLACK;
 static int caret_row = 0, caret_col = 0;
 static bool cursor = false;
 
 static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
-  return (struct chr_cell*)VIDEO_ADDR + row * COL_NUMBER + col;
+  return (struct chr_cell*)VIDEO_ADDR + row * COLS_NUMBER + col;
 }
 
 void get_cell(int row, int col, char *chr, int *fore_color, int *back_color) {
@@ -75,7 +75,7 @@ bool get_cursor(void) {
 }
 
 static void put_cursor(int row, int col) {
-  int off = row * COL_NUMBER + col;
+  int off = row * COLS_NUMBER + col;
   outb(0x3D4, 0x0F);
   outb(0x3D5, (unsigned char)(off & 0xFF));
   outb(0x3D4, 0x0E);
@@ -87,7 +87,7 @@ void set_cursor(bool visible) {
   if (visible)
     put_cursor(frame_top + caret_row, frame_left + caret_col);
   else
-    put_cursor(ROW_NUMBER, 0);
+    put_cursor(ROWS_NUMBER, 0);
 }
 
 int get_caret_row(void) {

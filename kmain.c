@@ -5,6 +5,7 @@
 #include "interrupt.h"
 #include "mem_map.h"
 #include "page_map.h"
+#include "schedule.h"
 #include "util.h"
 
 ISR_DEFINE(test, 0) {
@@ -13,7 +14,7 @@ ISR_DEFINE(test, 0) {
 }
 
 void kmain(void) {
-  set_frame(0, 0, ROW_NUMBER, COL_NUMBER, COLOR_WHITE, COLOR_LOW_BLUE);
+  set_frame(0, 0, ROWS_NUMBER, COLS_NUMBER, COLOR_WHITE, COLOR_LOW_BLUE);
   clear_frame();
   set_cursor(true);
   printf("Display initialized.\n");
@@ -33,10 +34,6 @@ void kmain(void) {
   printf("APIC initialized.\n");
   init_acpi();
   printf("ACPI initialized.\n");
-
-  const struct acpi_madt_lapic *e = NULL;
-  while (next_acpi_entry(get_acpi_madt(), &e, ACPI_MADT_LAPIC_TYPE))
-    printf("CPU core detected (acpi_cpuid: %X, apic_id: %X, usable: %s)\n",
-           e->acpi_cpuid, e->apic_id, bool_str(e->enabled));
-  printf("ACPI SRAT: %X\n", get_acpi_srat());
+  init_scheduler();
+  printf("Scheduler initialized.\n");
 }
