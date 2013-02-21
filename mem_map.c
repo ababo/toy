@@ -13,7 +13,8 @@ struct memory_map {
     uint64_t size;
     uint32_t type;
     uint32_t present : 1;
-    uint32_t nonvolatile : 1;
+    uint32_t non_volat : 1;
+    uint32_t reserved : 30;
   } entries[];
 };
 

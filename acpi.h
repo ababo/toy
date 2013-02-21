@@ -40,43 +40,95 @@ struct acpi_xsdt {
 struct acpi_madt {
   struct acpi_header header;
   uint32_t lapic_addr;
-  uint32_t flags;
+  uint32_t pcat_compat : 1;
+  uint32_t reserved : 31;
 } __attribute__((packed));
 
 #define ACPI_MADT_LAPIC_TYPE 0
 #define ACPI_MADT_IOAPIC_TYPE 1
 #define ACPI_MADT_INTSRCOVER_TYPE 2
 
-struct acpi_madt_entry_header {
+struct acpi_entry_header {
   uint8_t type;
   uint8_t length;
 };
 
-struct acpi_madt_lapic_entry {
-  struct acpi_madt_entry_header header;
+struct acpi_madt_lapic {
+  struct acpi_entry_header header;
   uint8_t acpi_cpuid;
   uint8_t apic_id;
-  uint32_t flags;
+  uint32_t enabled : 1;
+  uint32_t reserved : 31;
 } __attribute__((packed));
 
-struct acpi_madt_ioapic_entry {
-  struct acpi_madt_entry_header header;
+struct acpi_madt_ioapic {
+  struct acpi_entry_header header;
   uint8_t ioapic_id;
   uint8_t reserved;
   uint32_t ioapic_addr;
   uint32_t int_base;
 } __attribute__((packed));
 
-struct acpi_madt_intsrcover_entry {
-  struct acpi_madt_entry_header header;
+struct acpi_madt_intsrcover {
+  struct acpi_entry_header header;
   uint8_t bus_src;
   uint8_t irq_src;
   uint32_t int_pin;
-  uint16_t flags;
+  uint16_t polarity : 2;
+  uint16_t trigger_mode : 2;
+  uint16_t reserved : 12;
+} __attribute__((packed));
+
+struct acpi_srat {
+  struct acpi_header header;
+  uint32_t reserved0;
+  uint64_t reserved1;
+} __attribute__((packed));
+
+#define ACPI_SRAT_LAPIC_TYPE 0
+#define ACPI_SRAT_MEMORY_TYPE 1
+#define ACPI_SRAT_LX2APIC_TYPE 2
+
+struct acpi_srat_lapic {
+  struct acpi_entry_header header;
+  uint8_t prox_domain0;
+  uint8_t apic_id;
+  uint32_t enabled : 1;
+  uint32_t reserved : 31;
+  uint8_t lsapic_eid;
+  uint16_t prox_domain1;
+  uint8_t prox_domain2;
+  uint32_t clock_domain;
+} __attribute__((packed));
+
+struct acpi_srat_memory {
+  struct acpi_entry_header header;
+  uint32_t prox_domain;
+  uint16_t reserved0;
+  uint64_t base_addr;
+  uint64_t length;
+  uint32_t reserved1;
+  uint32_t enabled : 1;
+  uint32_t hot_plug : 1;
+  uint32_t non_volat : 1;
+  uint32_t reserved2 : 29;
+  uint64_t reserved3;
+} __attribute__((packed));
+
+struct acpi_srat_lx2apic {
+  struct acpi_entry_header header;
+  uint16_t reserved0;
+  uint32_t prox_domain;
+  uint32_t x2apic_id;
+  uint32_t enabled : 1;
+  uint32_t reserved1 : 31;
+  uint32_t clock_domain;
+  uint32_t reserved2;
 } __attribute__((packed));
 
 const struct acpi_rsdp *get_acpi_rsdp(void);
 const struct acpi_madt *get_acpi_madt(void);
+const struct acpi_srat *get_acpi_srat(void);
 
 static inline const struct acpi_rsdt *get_acpi_rsdt(void) {
   const struct acpi_rsdp *rsdp = get_acpi_rsdp();
@@ -88,8 +140,8 @@ static inline const struct acpi_xsdt *get_acpi_xsdt(void) {
   return rsdp ? (struct acpi_xsdt*)rsdp->xsdt_addr : NULL;
 }
 
-const struct acpi_madt_entry_header*
-next_acpi_madt_entry(const struct acpi_madt_entry_header *entry);
+// ignores type if a given type parameter is equal to -1
+bool next_acpi_entry(const void *table, void *entry_pptr, int type);
 
 void init_acpi(void);
 

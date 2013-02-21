@@ -22,7 +22,7 @@ void *memset(void *ptr, int value, size_t size) {
 }
 
 void *memcpy(void *dst, const void *src, size_t size) {
-  uint8_t *tmp = (uint8_t*)dst;
+  uint8_t *tmp = dst;
   for (; size > 0; size--)
     *tmp++ = *(uint8_t*)src++;
   return dst;
@@ -40,7 +40,7 @@ int memcmp(const void *buf1, const void *buf2, size_t size) {
 void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2) {
   for(; size1 >= size2; size1--, buf1++)
     if (!memcmp(buf1, buf2, size2))
-      return (char*)buf1;
+      return (void*)buf1;
   return NULL;
 }
 

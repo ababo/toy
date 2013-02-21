@@ -34,12 +34,9 @@ void kmain(void) {
   init_acpi();
   printf("ACPI initialized.\n");
 
-  const struct acpi_madt_entry_header *h = 0;
-  while ((h = next_acpi_madt_entry(h)))
-    if (h->type == ACPI_MADT_LAPIC_TYPE) {
-      const struct acpi_madt_lapic_entry *e =
-        (const struct acpi_madt_lapic_entry*)h;
-      printf("CPU core detected (acpi_cpuid: %X, apic_id: %X, usable: %s)\n",
-             e->acpi_cpuid, e->apic_id, bool_str(e->flags & 1));
-    }
+  const struct acpi_madt_lapic *e = NULL;
+  while (next_acpi_entry(get_acpi_madt(), &e, ACPI_MADT_LAPIC_TYPE))
+    printf("CPU core detected (acpi_cpuid: %X, apic_id: %X, usable: %s)\n",
+           e->acpi_cpuid, e->apic_id, bool_str(e->enabled));
+  printf("ACPI SRAT: %X\n", get_acpi_srat());
 }

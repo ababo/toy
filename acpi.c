@@ -6,9 +6,11 @@
 #define RSDT_SIGNATURE "RSDT"
 #define XSDT_SIGNATURE "XSDT"
 #define MADT_SIGNATURE "APIC"
+#define SRAT_SIGNATURE "SRAT"
 
 static const struct acpi_rsdp *rsdp;
 static const struct acpi_madt *madt;
+static const struct acpi_srat *srat;
 
 const struct acpi_rsdp *get_acpi_rsdp(void) {
   return rsdp;
@@ -16,6 +18,10 @@ const struct acpi_rsdp *get_acpi_rsdp(void) {
 
 const struct acpi_madt *get_acpi_madt(void) {
   return madt;
+}
+
+const struct acpi_srat *get_acpi_srat(void) {
+  return srat;
 }
 
 static void init_root_tables(void) {
@@ -63,23 +69,36 @@ static void *find_psdt_table(char signature[4]) {
   return NULL;
 }
 
-const struct acpi_madt_entry_header*
-next_acpi_madt_entry(const struct acpi_madt_entry_header *entry) {
-  const struct acpi_madt *madt = get_acpi_madt();
-  if (!madt)
-    return NULL;
+bool next_acpi_entry(const void *table, void *entry_pptr, int type) {
+  if (!table || !entry_pptr)
+    return false;
 
-  if (!entry)
-    return (struct acpi_madt_entry_header*)(madt + 1);
+  int tsize;
+  if (table == get_acpi_madt())
+    tsize = sizeof(struct acpi_madt);
+  else if (table == get_acpi_srat())
+    tsize = sizeof(struct acpi_srat);
+  else
+    return false;
 
-  uint64_t eaddr = (uint64_t)entry + entry->length;
-  if (eaddr - (uint64_t)madt >= madt->header.length)
-    return NULL;
+  const struct acpi_entry_header **entry = entry_pptr;
+  if (*entry)
+    *entry = (void*)((uint64_t)*entry + (*entry)->length);
+  else
+    *entry = (void*)((uint64_t)table + tsize);
 
-  return (struct acpi_madt_entry_header*)eaddr;
+  int length = ((struct acpi_header*)table)->length;
+  while ((uint64_t)*entry - (uint64_t)table < length)
+    if (type == -1 || (*entry)->type == type)
+      return true;
+    else
+      *entry = (void*)((uint64_t)*entry + (*entry)->length);
+
+  return false;
 }
 
 void init_acpi(void) {
   init_root_tables();
-  madt = (struct acpi_madt*)find_psdt_table(MADT_SIGNATURE);
+  madt = find_psdt_table(MADT_SIGNATURE);
+  srat = find_psdt_table(SRAT_SIGNATURE);
 }
