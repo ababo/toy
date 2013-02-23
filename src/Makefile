@@ -11,7 +11,7 @@ OPT=3
 CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(OPT) -Wall \
 	-DDEBUG
 LD_OPTIONS=-melf_x86_64
-VM_OPTIONS=-no-kvm -smp 4
+VM_OPTIONS=-no-kvm -smp 4,cores=2
 
 _OBJS=$(patsubst %,$(BIN)/%.o,$(OBJS))
 

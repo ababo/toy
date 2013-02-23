@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-#define CPU_VENDOR_UNKNOWN 0
+#define CPU_VENDOR_UNKNOWN -1
 #define CPU_VENDOR_INTEL 1
 #define CPU_VENDOR_AMD 2
 

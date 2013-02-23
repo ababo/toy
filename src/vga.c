@@ -17,7 +17,8 @@ static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
   return (struct chr_cell*)ADDR_VIDEO + row * VGA_COLS_NUMBER + col;
 }
 
-void get_vga_cell(int row, int col, char *chr, int *fore_color, int *back_color) {
+void get_vga_cell(int row, int col, char *chr, int *fore_color,
+                  int *back_color) {
   volatile struct chr_cell *cell = get_chr_cell(row, col);
   if (chr)
     *chr = cell->chr;
@@ -109,7 +110,7 @@ void init_vga(void) {
                 VGA_COLOR_LOW_BLUE);
   clear_vga_frame();
   set_vga_cursor(true);
-  LOG_DEBUG("init_vga: done");
+  LOG_DEBUG("done");
 }
 
 static void scroll_frame(void) {
@@ -125,24 +126,24 @@ static void scroll_frame(void) {
 
 static void put_char(char chr) {
   switch (chr) {
-    case '\r':
-      caret_col = 0;
-      break;
-    case '\n':
+  case '\r':
+    caret_col = 0;
+    break;
+  case '\n':
   new_line:
-      caret_col = 0, caret_row++;
-      if (caret_row == frame_height) {
-        scroll_frame();
-        caret_row--;
-      }
-      break;
+    caret_col = 0, caret_row++;
+    if (caret_row == frame_height) {
+      scroll_frame();
+      caret_row--;
+    }
+    break;
     // TODO: implement other escapes
-    default:
-      *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
-        (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
-      if (++caret_col == frame_width)
-        goto new_line;
-      break;
+  default:
+    *get_chr_cell(frame_top + caret_row, frame_left + caret_col) =
+      (struct chr_cell) { chr, frame_fcolor, frame_bcolor };
+    if (++caret_col == frame_width)
+      goto new_line;
+    break;
   }
 }
 
@@ -162,38 +163,38 @@ int printf(char *format, ...) {
   while ((chr = *format++))
     if (chr == '%')
       switch ((chr = *format++)) {
-        case '%':
-          put_char('%');
-          num++;
-          break;
-        case 's':
-          str = va_arg(vargs, char*);
+      case '%':
+        put_char('%');
+        num++;
+        break;
+      case 's':
+        str = va_arg(vargs, char*);
       puts:
-          while (*str) {
-            put_char(*str++);
-            num++;
-          }
-          break;
-        case 'd':
-          int_arg = va_arg(vargs, int);
-          if (int_arg < 0) {
-            put_char('-');
-            int_arg = -int_arg;
-            num++;
-          }
-          str = ultoa(int_arg, buf, 10);
-          goto puts;
-        case 'x':
-        case 'X':
-          int_arg = va_arg(vargs, int);
-          str = ultoa((unsigned int)int_arg, buf, chr == 'x' ? 16 : -16);
-          goto puts;
-        case 'c':
-          buf[0] = (char)va_arg(vargs, int), buf[1] = 0, str = buf;
-          goto puts;
-          // TODO: implement other specifiers
-        default:
-          return -1;
+        while (*str) {
+          put_char(*str++);
+          num++;
+        }
+        break;
+      case 'd':
+        int_arg = va_arg(vargs, int);
+        if (int_arg < 0) {
+          put_char('-');
+          int_arg = -int_arg;
+          num++;
+        }
+        str = ultoa(int_arg, buf, 10);
+        goto puts;
+      case 'x':
+      case 'X':
+        int_arg = va_arg(vargs, int);
+        str = ultoa((unsigned int)int_arg, buf, chr == 'x' ? 16 : -16);
+        goto puts;
+      case 'c':
+        buf[0] = (char)va_arg(vargs, int), buf[1] = 0, str = buf;
+        goto puts;
+        // TODO: implement other specifiers
+      default:
+        return -1;
       }
     else {
       put_char(chr);

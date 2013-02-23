@@ -64,7 +64,9 @@ char *ultoa(unsigned long value, char *buf, int radix);
 int putchar(int chr);
 int printf(char *format, ...);
 
-#define LOG_ERROR(format, ...) { printf(format, ##__VA_ARGS__); printf("\n"); }
+#define LOG_ERROR(format, ...)                          \
+  { printf("%s: ", __func__);                           \
+    printf(format, ##__VA_ARGS__); printf("\n"); }
 #define LOG_INFO(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
 #ifdef DEBUG
 #define LOG_DEBUG(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
@@ -79,5 +81,11 @@ int printf(char *format, ...);
 #define INT_BITS(value, low, high)              \
   (value << (sizeof(value) * 8 - 1 - high) >>   \
    (sizeof(value) * 8 - 1 - high + low))
+
+static inline int bsr(uint64_t value) {
+  uint64_t index;
+  asm("bsrq %1, %0" : "=r"(index) : "mr"(value));
+  return (int)index;
+}
 
 #endif // UTIL_H

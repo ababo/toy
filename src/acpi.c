@@ -101,10 +101,7 @@ void init_acpi(void) {
   init_root_tables();
   madt = find_psdt_table(MADT_SIGNATURE);
   srat = find_psdt_table(SRAT_SIGNATURE);
-  LOG_DEBUG("init_acpi: RSDP: %X", get_acpi_rsdp());
-  LOG_DEBUG("init_acpi: RSDT: %X", get_acpi_rsdt());
-  LOG_DEBUG("init_acpi: XSDT: %X", (uint64_t)get_acpi_xsdt() >> 32);
-  LOG_DEBUG("init_acpi: MADT: %X", get_acpi_madt());
-  LOG_DEBUG("init_acpi: SRAT: %X", get_acpi_srat());
-  LOG_DEBUG("init_acpi: done");
+  LOG_DEBUG("RSDP: %X, RSDT: %X, XSDT: %X, MADT: %X, SRAT: %X",
+            get_acpi_rsdp(), get_acpi_rsdt(), (uint64_t)get_acpi_xsdt() >> 32,
+            get_acpi_madt(), get_acpi_srat());
 }

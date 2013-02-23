@@ -96,7 +96,7 @@ void init_desc_tables(void) {
   create_gdt();
   for (volatile int i = 0; i < 1; i++); // workaround for clang with -O2/-O3
   create_idt();
-  LOG_DEBUG("init_desc_tables: done");
+  LOG_DEBUG("done");
 }
 
 void *get_isr(int vector) {

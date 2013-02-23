@@ -146,5 +146,5 @@ void init_page_map(uint64_t map_phys_addr, uint64_t mapped_virt_size) {
              map_phys_addr, get_page_map_size(mapped_virt_size));
   create_map(ADDR_PAGE_MAP, map_phys_addr, 0, 0, mapped_virt_size);
   phys_addr = map_phys_addr, virt_size = mapped_virt_size;
-  LOG_DEBUG("init_page_map: done");
+  LOG_DEBUG("done");
 }

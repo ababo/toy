@@ -78,5 +78,5 @@ void init_apic(void) {
 
   init_timer();
 
-  LOG_DEBUG("init_apic: done");
+  LOG_DEBUG("done");
 }

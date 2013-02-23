@@ -24,7 +24,8 @@
 #define VGA_COLS_NUMBER 80
 
 // low level API (no concern of frames)
-void get_vga_cell(int row, int col, char *chr, int *fore_color, int *back_color);
+void get_vga_cell(int row, int col, char *chr, int *fore_color,
+                  int *back_color);
 void set_vga_cell(int row, int col, char chr, int fore_color, int back_color);
 
 int get_vga_frame_top(void);
