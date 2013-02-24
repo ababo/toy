@@ -104,4 +104,5 @@ void init_acpi(void) {
   LOG_DEBUG("RSDP: %X, RSDT: %X, XSDT: %X, MADT: %X, SRAT: %X",
             get_acpi_rsdp(), get_acpi_rsdt(), (uint64_t)get_acpi_xsdt() >> 32,
             get_acpi_madt(), get_acpi_srat());
+  LOG_DEBUG("done");
 }

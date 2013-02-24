@@ -11,38 +11,40 @@ OPT=3
 CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(OPT) -Wall \
 	-DDEBUG
 LD_OPTIONS=-melf_x86_64
-VM_OPTIONS=-no-kvm -smp 4,cores=2
+VM_OPTIONS=-no-kvm -smp sockets=2,cores=4,threads=2
 
 _OBJS=$(patsubst %,$(BIN)/%.o,$(OBJS))
 
-all: image
+.PHONY: all run runt clean
 
-bin:
+all: $(IMAGE)
+
+$(BIN):
 	mkdir -p $(BIN)
 
-boot: $(SRC)/boot.s bin
+$(BIN)/boot.o: $(SRC)/boot.s $(BIN)
 	as $(AS_OPTIONS) $(SRC)/boot.s -o $(BIN)/boot.o
 
 -include $(_OBJS:.o=.d)
 
-$(BIN)/%.o: $(SRC)/%.s bin
+$(BIN)/%.o: $(SRC)/%.s $(BIN)
 	as $(AS_OPTIONS) $(SRC)/$*.s -o $(BIN)/$*.o
 
-$(BIN)/%.o: $(SRC)/%.c bin
+$(BIN)/%.o: $(SRC)/%.c $(BIN)
 	$(CC) -c $(CC_OPTIONS) $(SRC)/$*.c -o $(BIN)/$*.o
 	$(CC) -MM -MT '$(BIN)/$*.o' $(SRC)/$*.c > $(BIN)/$*.d
 
-kernel: $(LD_SCRIPT) $(_OBJS)
+$(KERNEL): $(LD_SCRIPT) $(_OBJS)
 	ld $(LD_OPTIONS) -T $(LD_SCRIPT) $(_OBJS) -o $(KERNEL)
 
-image: boot kernel
+$(IMAGE): $(BIN)/boot.o $(KERNEL)
 	ld -Ttext 0x7C00 --oformat binary $(BIN)/boot.o -o $(IMAGE)
 	dd if=$(KERNEL) of=$(IMAGE) seek=1 conv=sync
 
-runt: image
+runt: $(IMAGE)
 	screen $(VM) -fda $(IMAGE) -boot a $(VM_OPTIONS) -curses
 
-run: image
+run: $(IMAGE)
 	$(VM) -fda $(IMAGE) -boot a $(VM_OPTIONS)
 
 clean:
