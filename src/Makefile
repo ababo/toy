@@ -1,9 +1,11 @@
 SRC=../src
 BIN=../bin
+BINSTAMP=$(BIN)/.dirstamp
 IMAGE=$(BIN)/floppy.img
 KERNEL=$(BIN)/kernel.bin
 LD_SCRIPT=$(SRC)/kernel.lds
 OBJS=kstart kmain util vga desc_table interrupt page_map acpi apic cpu_info
+AS=as
 CC=gcc
 VM=qemu-system-x86_64
 AS_OPTIONS=--64
@@ -19,18 +21,19 @@ _OBJS=$(patsubst %,$(BIN)/%.o,$(OBJS))
 
 all: $(IMAGE)
 
-$(BIN):
+$(BINSTAMP):
 	mkdir -p $(BIN)
+	touch $@
 
-$(BIN)/boot.o: $(SRC)/boot.s $(BIN)
-	as $(AS_OPTIONS) $(SRC)/boot.s -o $(BIN)/boot.o
+$(BIN)/boot.o: $(SRC)/boot.s $(BINSTAMP)
+	$(AS) $(AS_OPTIONS) $(SRC)/boot.s -o $(BIN)/boot.o
 
 -include $(_OBJS:.o=.d)
 
-$(BIN)/%.o: $(SRC)/%.s $(BIN)
-	as $(AS_OPTIONS) $(SRC)/$*.s -o $(BIN)/$*.o
+$(BIN)/%.o: $(SRC)/%.s $(BINSTAMP)
+	$(AS) $(AS_OPTIONS) $(SRC)/$*.s -o $(BIN)/$*.o
 
-$(BIN)/%.o: $(SRC)/%.c $(BIN)
+$(BIN)/%.o: $(SRC)/%.c $(BINSTAMP)
 	$(CC) -c $(CC_OPTIONS) $(SRC)/$*.c -o $(BIN)/$*.o
 	$(CC) -MM -MT '$(BIN)/$*.o' $(SRC)/$*.c > $(BIN)/$*.d
 
