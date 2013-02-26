@@ -9,10 +9,10 @@
 
 struct cpu_desc {
   uint8_t apic_id;
-  uint8_t domain;
-  uint8_t chip;
-  uint8_t core;
   uint8_t thread;
+  uint8_t core;
+  uint8_t chip;
+  uint32_t domain;
 };
 
 int get_cpu_vendor(void);

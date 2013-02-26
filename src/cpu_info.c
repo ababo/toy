@@ -47,9 +47,10 @@ static bool get_chip_multithreading(int *chip_threads_max) {
   return support;
 }
 
-static void get_bits_intel(uint32_t cpuid_func_max, uint32_t cpuid_ex_func_max,
-                           int chip_threads_max, int *thread_bits,
-                           int *core_bits) {
+static void get_thread_core_bits_intel(uint32_t cpuid_func_max,
+                                       uint32_t cpuid_ex_func_max,
+                                       int chip_threads_max, int *thread_bits,
+                                       int *core_bits) {
   uint32_t eax;
   if (cpuid_func_max >= 0xB) {
     asm("movl $0xB, %%eax\nxorl %%ecx, %%ecx\ncpuid" :
@@ -71,9 +72,10 @@ static void get_bits_intel(uint32_t cpuid_func_max, uint32_t cpuid_ex_func_max,
     *core_bits = 0, *thread_bits = bsr(chip_threads_max - 1) + 1;
 }
 
-static void get_bits_amd(uint32_t cpuid_func_max, uint32_t cpuid_ex_func_max,
-                         int chip_threads_max, int *thread_bits,
-                         int *core_bits) {
+static void get_thread_core_bits_amd(uint32_t cpuid_func_max,
+                                     uint32_t cpuid_ex_func_max,
+                                     int chip_threads_max, int *thread_bits,
+                                     int *core_bits) {
   if (cpuid_ex_func_max >= 0x80000008) {
     uint32_t ecx;
     asm("movl $0x80000008, %%eax\ncpuid" : "=c"(ecx) : : "eax", "ebx", "edx");
@@ -89,26 +91,58 @@ static void get_bits_amd(uint32_t cpuid_func_max, uint32_t cpuid_ex_func_max,
     *core_bits = bsr(chip_threads_max - 1) + 1, *thread_bits = 0;
 }
 
-void init_cpu_info(void) {
+static void get_thread_core_bits(int *thread_bits, int *core_bits) {
   uint32_t cpuid_func_max, cpuid_ex_func_max;
   asm("xorl %%eax, %%eax\ncpuid" :
       "=a"(cpuid_func_max) : : "ebx", "ecx", "edx");
   asm("movl $0x80000000, %%eax\ncpuid" :
       "=a"(cpuid_ex_func_max) : : "ebx", "ecx", "edx");
 
-  int chip_threads_max, thread_bits, core_bits;
+  int chip_threads_max;
   if (get_cpu_vendor() != CPU_VENDOR_UNKNOWN &&
       get_chip_multithreading(&chip_threads_max)) {
     if (get_cpu_vendor() == CPU_VENDOR_INTEL)
-      get_bits_intel(cpuid_func_max, cpuid_ex_func_max, chip_threads_max,
-                     &thread_bits, &core_bits);
+      get_thread_core_bits_intel(cpuid_func_max, cpuid_ex_func_max,
+                                 chip_threads_max, thread_bits, core_bits);
     else
-      get_bits_amd(cpuid_func_max, cpuid_ex_func_max, chip_threads_max,
-                   &thread_bits, &core_bits);
-    LOG_DEBUG("thread_bits: %d, core_bits: %d", thread_bits, core_bits);
+      get_thread_core_bits_amd(cpuid_func_max, cpuid_ex_func_max,
+                               chip_threads_max, thread_bits, core_bits);
+    LOG_DEBUG("thread_bits: %d, core_bits: %d", *thread_bits, *core_bits);
   }
   else
-    thread_bits = core_bits = 0;
+    *thread_bits = *core_bits = 0;
+}
 
+void fill_cpu_info(int thread_bits, int core_bits) {
+  int i = 0;
+  struct acpi_madt_lapic *mentry = NULL;
+  while (get_next_acpi_entry(get_acpi_madt(), &mentry, ACPI_MADT_LAPIC_TYPE))
+    if (mentry->enabled) {
+      info[i].apic_id = mentry->apic_id;
+      info[i].thread = mentry->apic_id & ((1 << thread_bits) - 1);
+      info[i].core = (mentry->apic_id >> thread_bits) & ((1 << core_bits) - 1);
+      info[i].chip = mentry->apic_id >> (thread_bits + core_bits);
+
+      struct acpi_srat_lapic *sentry = NULL;
+      while (get_next_acpi_entry(get_acpi_srat(), &sentry,
+                                 ACPI_SRAT_LAPIC_TYPE))
+        if (sentry->enabled && sentry->apic_id == mentry->apic_id)
+          info[i].domain = sentry->prox_domain0 +
+            ((uint32_t)sentry->prox_domain1 << 8) +
+            ((uint32_t)sentry->prox_domain2 << 24);
+
+      LOG_DEBUG("CPU: apic_id: %X, thread: %d, core: %d, chip: %d, domain: %X",
+                info[i].apic_id, info[i].thread, info[i].core, info[i].chip,
+                info[i].domain);
+      i++;
+    }
+
+  num = i;
+}
+
+void init_cpu_info(void) {
+  int thread_bits, core_bits;
+  get_thread_core_bits(&thread_bits, &core_bits);
+  fill_cpu_info(thread_bits, core_bits);
   LOG_DEBUG("done");
 }

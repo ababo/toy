@@ -1,13 +1,12 @@
 #include "interrupt.h"
 
 ISR_IMPL(default) {
-  printf("#%s (ss: %X, rsp: %X, rflags: %X, cs: %X, rip: %X", data << 8 >> 8,
+  printf("#%s: ss: %X, rsp: %X, rflags: %X, cs: %X, rip: %X", data << 8 >> 8,
          stack_frame->ss, stack_frame->rsp, stack_frame->rflags,
          stack_frame->cs, stack_frame->rip);
   if (is_int_error(data >> 56))
-    printf(", error_code: %X)\n", stack_frame->error_code);
-  else
-    printf(")\n");
+    printf(", error_code: %X", stack_frame->error_code);
+  printf("\n");
   asm("hlt");
 }
 
