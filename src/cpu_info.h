@@ -17,7 +17,6 @@ struct cpu_desc {
 
 int get_cpu_vendor(void);
 int get_cpus(void);
-int get_cpu_bsp(void);
 const struct cpu_desc *get_cpu_info(void);
 
 void init_cpu_info(void);

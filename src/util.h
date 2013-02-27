@@ -27,6 +27,11 @@ typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long uint64_t;
 
+#define UINT8_MAX (uint8_t)0xff
+#define UINT16_MAX (uint16_t)0xffff
+#define UINT32_MAX (uint32_t)0xffffffff
+#define UINT64_MAX (uint64_t)0xffffffffffffffffL
+
 #define asm __asm__ __volatile__
 
 static inline uint8_t inb(uint16_t port) {

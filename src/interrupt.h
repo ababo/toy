@@ -23,8 +23,8 @@
 #define INT_VECTOR_MC 18 // machine check
 #define INT_VECTOR_XM 19 // SIMD floating-point exception
 
-#define INT_VECTOR_SPURIOUS 32
-#define INT_VECTOR_TIMER 33
+#define INT_VECTOR_APIC_SPURIOUS 32
+#define INT_VECTOR_APIC_TIMER 33
 
 static inline bool is_int_reserved(int vector) {
   return vector == 15 || (vector >= 20 && vector <= 31);
@@ -71,9 +71,9 @@ struct int_stack_frame {
   ISR_GETTER(name, name, data)                  \
   ISR_IMPL(name)
 
-void init_interrupts(void);
-
 void *get_isr(int vector);
 void set_isr(int vector, void *isr);
+
+void init_interrupts(void);
 
 #endif // INTERRUPT_H
