@@ -17,3 +17,17 @@ kstart: movw $DATA_SEGMENT, %ax
         callq kmain
 halt:   hlt
         jmp halt
+
+.code16
+.global apcpus
+.global apboot
+
+apcpus: .long 0
+
+apboot: xorw %ax, %ax
+        movw %ax, %es
+        movw %ax, %ds
+        movw %ax, %ss
+
+        incl apcpus
+        hlt

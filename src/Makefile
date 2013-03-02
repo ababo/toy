@@ -4,17 +4,18 @@ BINSTAMP=$(BIN)/.dirstamp
 IMAGE=$(BIN)/floppy.img
 KERNEL=$(BIN)/kernel.bin
 LD_SCRIPT=$(SRC)/kernel.lds
-OBJS=kstart kmain util vga desc_table interrupt page_map acpi apic cpu_info
+OBJS=kstart kmain util vga desc_table interrupt page_map acpi apic cpu_info \
+	schedule
 AS=as
 CC=gcc
 VM=qemu-system-x86_64
 AS_OPTIONS=--64
-OPT=3
-CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(OPT) -Wall \
-	-DDEBUG
+CC_OPT=3
+CC_OPTIONS=-m64 -c -fno-builtin -std=c99 -fno-stack-protector -O$(CC_OPT) \
+	-Wall -DDEBUG
 LD_OPTIONS=-melf_x86_64
 VM_ACC=-no-kvm
-VM_OPTIONS=$(VM_ACC) -smp sockets=2,cores=4,threads=2
+VM_OPTIONS=$(VM_ACC) -smp sockets=1,cores=2,threads=2
 
 _OBJS=$(patsubst %,$(BIN)/%.o,$(OBJS))
 

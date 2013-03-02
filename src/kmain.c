@@ -5,6 +5,7 @@
 #include "desc_table.h"
 #include "interrupt.h"
 #include "page_map.h"
+#include "schedule.h"
 #include "vga.h"
 
 void kmain(void) {
@@ -15,4 +16,5 @@ void kmain(void) {
   init_apic();
   init_acpi();
   init_cpu_info();
+  init_scheduler();
 }

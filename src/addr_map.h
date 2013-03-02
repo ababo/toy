@@ -5,6 +5,8 @@
 
 #define ADDR_MAP 0x500
 
+#define ADDR_AP_CPU_BOOT 0x1000
+
 #define ADDR_TSS 0x5000
 #define ADDR_GDT 0x5080
 #define ADDR_IDT 0x5100 // up to 0x6000
