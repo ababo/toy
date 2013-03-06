@@ -1,6 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#define STR(x) #x
+#define STR_EX(x) STR(x)
+
 #define USED __attribute__((used))
 
 typedef __builtin_va_list va_list;

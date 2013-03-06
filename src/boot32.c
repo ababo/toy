@@ -1,3 +1,4 @@
+#include "config.h"
 #include "multiboot.h"
 #include "util.h"
 
@@ -8,10 +9,17 @@ USED static const struct multiboot_header header = {
   .checksum = -(MULTIBOOT_HEADER_MAGIC + HEADER_FLAGS)
 };
 
-ASM(".global kstart32\n"
-    "kstart32: call kmain32\n"
-    "hlt");
+uint32_t multiboot_info = 0;
+uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
-void kmain32(void) {
-  *(char*)0xB8000 = 49;
+ASM(".global bstart32\n"
+    "bstart32: movl %ebx, multiboot_info\n"
+    "movl $(bsp_boot_stack + " STR_EX(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp\n"
+    "call boot32\n"
+    "halt: hlt\njmp halt");
+
+void boot32(void) {
+    *(char*)0xB8000 = 50;
+    *(char*)0xB8002 = 49;
+    *(char*)0xB8004 = 48;
 }

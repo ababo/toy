@@ -25,4 +25,37 @@ struct multiboot_header {
   uint32_t video_depth;
 };
 
+struct multiboot_info {
+  uint32_t flags;
+  uint32_t mem_lower;
+  uint32_t mem_higher;
+  uint8_t boot_drive;
+  uint8_t boot_part[3];
+  uint32_t cmdline;
+  uint32_t mods_count;
+  uint32_t mods_addr;
+  uint32_t syms_tab_size;
+  uint32_t syms_str_size;
+  uint32_t syms_addr;
+  uint32_t reserved;
+  uint32_t mmap_len;
+  uint32_t mmap_addr;
+  uint32_t drives_len;
+  uint32_t drives_addr;
+  uint32_t config_table_addr;
+  uint32_t bootloader_name;
+  uint32_t apm_table_addr;
+  uint32_t vbe_control_info_addr;
+  uint32_t vbe_mode_info_addr;
+  uint16_t vbe_mode;
+  uint16_t vbe_interface_seg;
+  uint16_t vbe_interface_off;
+  uint16_t vbe_interface_len;
+};
+
+static inline const struct multiboot_info *get_multiboot_info(void) {
+  extern uint32_t multiboot_info;
+  return (struct multiboot_info*)(size_t)multiboot_info;
+}
+
 #endif // MULTIBOOT_H
