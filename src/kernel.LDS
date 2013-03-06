@@ -1,8 +1,10 @@
+#include "config.h"
+
 OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(boot)
+ENTRY(kstart32)
 SECTIONS {
-  . = 0x10;
-  .text : { ../bin/boot.o(.text) }
+  . = CONFIG_KERNEL_ADDR;
+  .text : { ../bin/boot32.o(.text) }
   .text : { *(.text) }
   .data : { *(.data) }
   .bss : { *(.bss) }
