@@ -2,9 +2,10 @@
 #define UTIL_H
 
 #define STR(x) #x
-#define STR_EX(x) STR(x)
+#define STR_EXPAND(x) STR(x)
 
 #define USED __attribute__((used))
+#define PACKED __attribute__((packed))
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)

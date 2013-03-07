@@ -8,6 +8,6 @@ SECTIONS {
   .text : { *(.text) }
   .data : { *(.data) }
   .bss : { *(.bss) }
-  .rodata : { *(.rodata*) }
+  .rodata : { *(.rodata*) kernel_size = . + 4 - CONFIG_KERNEL_ADDR; }
   /DISCARD/ : { *(*) }
 }

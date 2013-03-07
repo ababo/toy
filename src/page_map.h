@@ -1,0 +1,13 @@
+#ifndef PAGE_MAP_H
+#define PAGE_MAP_H
+
+#include "config.h"
+#include "util.h"
+
+#define PAGE_SIZE 0x200000
+
+#define PAGE_MAP_PDS SIZE_ELEMENTS(CONFIG_ADDR_SPACE_SIZE, 512 * PAGE_SIZE)
+#define PAGE_MAP_PDPTS SIZE_ELEMENTS(PAGE_MAP_PDS, 512)
+#define PAGE_MAP_SIZE ((PAGE_MAP_PDS + PAGE_MAP_PDPTS + 1) * 4096)
+
+#endif // PAGE_MAP_H

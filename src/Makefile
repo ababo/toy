@@ -11,8 +11,8 @@ OBJS=kmain
 CC=gcc
 VM=qemu-system-x86_64
 CC_OPT=3
-CC_OPTIONS=-c -fno-builtin -std=c99 -fno-stack-protector -O$(CC_OPT) \
-           -Wall -DDEBUG
+CC_OPTIONS=-c -fno-builtin -std=c99 -fno-stack-protector -O$(CC_OPT) -Wall \
+           -DDEBUG
 LD_OPTIONS=-z max-page-size=0x1
 VM_ACC=-no-kvm
 VM_OPTIONS=$(VM_ACC) -smp sockets=1,cores=2,threads=2
@@ -43,8 +43,8 @@ $(BIN)/%.o: $(SRC)/%.c $(BIN_STAMP)
 	$(CC) -m64 -MM -MT '$(BIN)/$*.o' $(SRC)/$*.c > $(BIN)/$*.d
 
 $(KERNEL): $(LD_SCRIPT) $(_BOOT32_OBJ) $(_OBJS)
-	cpp -E -P $(LD_SCRIPT) | \
-          ld $(LD_OPTIONS) -T /dev/stdin $(_BOOT32_OBJ) $(_OBJS) -o $(KERNEL)
+	cpp -E -P $(LD_SCRIPT) | ld $(LD_OPTIONS) -T /dev/stdin \
+          $(_BOOT32_OBJ) $(_OBJS) -o $(KERNEL)
 
 $(IMAGE): $(GRUB_CONF) $(KERNEL)
 	mkdir -p $(ISO_GRUB)
