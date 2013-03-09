@@ -4,8 +4,9 @@
 #define STR(x) #x
 #define STR_EXPAND(x) STR(x)
 
-#define USED __attribute__((used))
+#define ALIGNED(n) __attribute__((aligned(n)))
 #define PACKED __attribute__((packed))
+#define SECTION(name) __attribute__((section(name)))
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)
@@ -22,8 +23,6 @@ static inline const char *bool_str(bool value) {
   return value ? "true" : "false";
 }
 
-typedef unsigned long size_t;
-
 typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
@@ -33,9 +32,11 @@ typedef unsigned int uint32_t;
 #ifdef __LP64__
 typedef long int64_t;
 typedef unsigned long uint64_t;
+typedef unsigned long size_t;
 #else
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
+typedef unsigned int size_t;
 #endif
 
 #define UINT8_MAX (uint8_t)0xff
@@ -73,7 +74,7 @@ static inline void outb(uint16_t port, uint8_t value) {
   ASMV("outb %%al, %%dx" : : "a"(value), "d"(port));
 }
 
-static inline volatile uint64_t rdmsr(uint32_t msr) {
+static inline uint64_t rdmsr(uint32_t msr) {
   uint32_t low, high;
   ASMV("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
   return ((uint64_t)high << 32) + low;
@@ -96,7 +97,7 @@ void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 char *ultoa(unsigned long value, char *buf, int radix);
 
 int putchar(int chr);
-int printf(char *format, ...);
+int printf(const char *format, ...);
 
 #define LOG_ERROR(format, ...)                          \
   { printf("%s: ", __func__);                           \

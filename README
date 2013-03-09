@@ -4,4 +4,4 @@ Started to work on version 0.2 from scratch in order to avoid a painful
 refactoring. This version will support multiboot specification and SMP from the
 ground up.
 
-The previous version can be found in branch/tag 'ver.0.1'.
+The previous version can be found in branch 'ver.0.1'.

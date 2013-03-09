@@ -2,17 +2,12 @@
 #include "util.h"
 
 #define SEGMENT_DATA (2 << 3)
-#define CR4_OSFXSR (1 << 9)
 
-ASM(".global kstart\n"
+ASM(".text\n.global kstart\n"
     "kstart: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax\n"
     "movw %ax, %ds\n"
     "movq $(bsp_boot_stack + "
-      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE)
-      "), %rsp\n"
-    "movq %cr4, %rdx\n" // enable SSE
-    "orq $" STR_EXPAND(CR4_OSFXSR) ", %rdx\n"
-    "movq %rdx, %cr4\n"
+      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %rsp\n"
     "call kmain\n"
     "halt: hlt\njmp halt");
 

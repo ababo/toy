@@ -3,12 +3,12 @@
 
 #include "util.h"
 
-#define SYS_SEGMENT_CODE 0b1010
-#define SYS_SEGMENT_DATA 0b0010
-#define SYS_SEGMENT_TSS 0b1001
-#define SYS_GATE_INT 0b1110
+#define SYS_SEGMENT_CODE 0xA
+#define SYS_SEGMENT_DATA 0x2
+#define SYS_SEGMENT_TSS 0x9
+#define SYS_GATE_INT 0xE
 
-PACKED struct sys_task_segment {
+struct sys_task_segment {
   uint32_t reserved0;
   uint64_t rsps[3];
   uint64_t reserved1;
@@ -16,7 +16,7 @@ PACKED struct sys_task_segment {
   uint64_t reserved2;
   uint16_t reserved3;
   uint16_t iomap;
-};
+} PACKED;
 
 struct sys_gdt_desc {
   uint16_t limit0;
@@ -32,6 +32,9 @@ struct sys_gdt_desc {
   uint8_t bits32 : 1;
   uint8_t gran : 1;
   uint8_t base2;
+};
+
+struct sys_gdt_desc_high {
   uint32_t base3;
   uint32_t reserved0 : 8;
   uint32_t zero : 5;
@@ -52,10 +55,10 @@ struct sys_idt_desc {
   uint32_t reserved1;
 };
 
-PACKED struct sys_table_info {
+struct sys_table_info {
   uint16_t limit;
   uint64_t base;
-};
+} PACKED;
 
 struct sys_page_desc {
   uint32_t present : 1;

@@ -11,8 +11,8 @@ OBJS=kmain
 CC=gcc
 VM=qemu-system-x86_64
 CC_OPT=3
-CC_OPTIONS=-c -fno-builtin -std=c99 -fno-stack-protector -O$(CC_OPT) -Wall \
-           -DDEBUG
+CC_WARN=-Wall -Wextra
+CC_OPTIONS=-c -std=c99 -fno-stack-protector -O$(CC_OPT) $(CC_WARN) -DDEBUG
 LD_OPTIONS=-z max-page-size=0x1
 VM_ACC=-no-kvm
 VM_OPTIONS=$(VM_ACC) -smp sockets=1,cores=2,threads=2
