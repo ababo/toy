@@ -15,8 +15,8 @@ static inline void set_page_desc(struct sys_page_desc *desc, bool present,
                                  bool page, uint64_t address) {
   if (present) {
     desc->present = desc->write = true, desc->ps_pat = !!page;
-    desc->address0 = (uint32_t)(address >> 12);
-    desc->address1 = (uint32_t)(address >> 32);
+    desc->address0 = (uint32_t)(address >> SYS_PAGE_DESC_ADDR0_BS);
+    desc->address1 = (uint32_t)(address >> SYS_PAGE_DESC_ADDR1_BS);
   }
   else
     *desc = (struct sys_page_desc) { .present = false };
@@ -24,22 +24,23 @@ static inline void set_page_desc(struct sys_page_desc *desc, bool present,
 
 static void create_page_map(void *map, uint64_t addr_space_size,
                             uint64_t mapped_addr, uint64_t mapped_size) {
-  struct sys_page_desc *pml4 = map, *pdpt, *pd, *next_table = pml4 + 512;
+  struct sys_page_desc *pml4 = map, *pdpt, *pd;
+  struct sys_page_desc *next_table = pml4 + SYS_PAGE_TABLE_DESCS;
   uint64_t total_pages = SIZE_ELEMENTS(addr_space_size, PAGE_SIZE);
-  uint64_t last_page = (mapped_addr + mapped_size - 1) >> 21;
-  uint64_t first_page = mapped_addr >> 21, page = 0;
+  uint64_t last_page = (mapped_addr + mapped_size - 1) / PAGE_SIZE;
+  uint64_t first_page = mapped_addr / PAGE_SIZE, page = 0;
 
   for (int pml4i = 0; ; pml4i++) {
     set_page_desc(&pml4[pml4i], true, false, (size_t)next_table);
-    pdpt = next_table, next_table += 512;
+    pdpt = next_table, next_table += SYS_PAGE_TABLE_DESCS;
 
-    for (int pdpti = 0; pdpti < 512; pdpti++) {
+    for (int pdpti = 0; pdpti < SYS_PAGE_TABLE_DESCS; pdpti++) {
       set_page_desc(&pdpt[pdpti], true, false, (size_t)next_table);
-      pd = next_table, next_table += 512;
+      pd = next_table, next_table += SYS_PAGE_TABLE_DESCS;
 
-      for (int pdi = 0; pdi < 512; pdi++) {
+      for (int pdi = 0; pdi < SYS_PAGE_TABLE_DESCS; pdi++) {
         bool present = page >= first_page && page <= last_page;
-        set_page_desc(&pd[pdi], present, true, page++ << 21);
+        set_page_desc(&pd[pdi], present, true, page++ * PAGE_SIZE);
       }
 
       if (page >= total_pages)
@@ -56,7 +57,7 @@ static void create_gdt(void *gdt, struct sys_table_info *gdti) {
   desc[2] = (struct sys_gdt_desc) {
     .type = SYS_SEGMENT_DATA, .nonsys = true, .present = true, .bits32 = true
   };
-  gdti->base = (size_t)gdt, gdti->limit = (8 * 3) - 1;
+  gdti->base = (size_t)gdt, gdti->limit = (SYS_GDT_DESC_SIZE * 3) - 1;
 }
 
 #define CR0_PG (1 << 31)
@@ -80,7 +81,7 @@ ASM(".text\n.global bstart32\n"
     "halt: hlt\njmp halt");
 
 ALIGNED(4096) uint8_t page_map[PAGE_MAP_SIZE] = { 0 };
-ALIGNED(4) uint8_t gdt[(3 + 2 * CONFIG_CPUS_MAX) * 8] = { 0 };
+ALIGNED(4) uint8_t gdt[(3 + 2 * CONFIG_CPUS_MAX) * SYS_GDT_DESC_SIZE] = { 0 };
 
 void boot32(void) {
   extern int lds_kernel_size;

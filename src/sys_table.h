@@ -3,6 +3,15 @@
 
 #include "util.h"
 
+#define SYS_GDT_DESC_SIZE 8
+#define SYS_IDT_DESC_SIZE 16
+#define SYS_PAGE_DESC_SIZE 8
+
+#define SYS_PAGE_DESC_ADDR0_BS 12
+#define SYS_PAGE_DESC_ADDR1_BS 32
+#define SYS_PAGE_TABLE_DESCS 512
+#define SYS_PAGE_TABLE_SIZE 4096
+
 #define SYS_SEGMENT_CODE 0xA
 #define SYS_SEGMENT_DATA 0x2
 #define SYS_SEGMENT_TSS 0x9
