@@ -70,8 +70,18 @@ static inline uint8_t inb(uint16_t port) {
   return value;
 }
 
+static inline uint16_t inw(uint16_t port) {
+  uint16_t value;
+  ASMV("inw %%dx, %%ax" : "=a"(value) : "d"(port));
+  return value;
+}
+
 static inline void outb(uint16_t port, uint8_t value) {
   ASMV("outb %%al, %%dx" : : "a"(value), "d"(port));
+}
+
+static inline void outw(uint16_t port, uint16_t value) {
+  ASMV("outw %%ax, %%dx" : : "a"(value), "d"(port));
 }
 
 static inline uint64_t rdmsr(uint32_t msr) {

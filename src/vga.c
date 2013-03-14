@@ -87,10 +87,16 @@ static void put_cursor(int row, int col) {
 
 void set_vga_cursor(bool visible) {
   cursor = visible;
-  if (visible)
+  if (visible) {
+    outw(0x3D4,0xE0A);
+    outw(0x3D4,0xF0B);
     put_cursor(frame_top + caret_row, frame_left + caret_col);
-  else
+  }
+  else {
+    outw(0x3D4,0x200A);
+    outw(0x3D4,0xB);
     put_cursor(VGA_ROWS_NUMBER, 0);
+  }
 }
 
 int get_vga_caret_row(void) {
