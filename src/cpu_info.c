@@ -4,8 +4,19 @@
 
 #define VENDOR_LEN 12
 
-static int vendor, num, bsp;
-static struct cpu_desc info[CONFIG_CPUS_MAX];
+static int vendor = 0, num = 0, bsp = 0;
+static struct cpu_desc descs[CONFIG_CPUS_MAX] = { { 0, 0, 0, 0, 0 } };
+static uint8_t indexes[256] = { 0 };
+
+int get_cpu_index(void) {
+  uint32_t ebx;
+  ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
+  return indexes[INT_BITS(ebx, 24, 31)];
+}
+
+int get_bsp_cpu_index(void) {
+  return bsp;
+}
 
 int get_cpu_vendor(void) {
   if (vendor)
@@ -29,12 +40,8 @@ int get_cpus(void) {
   return num;
 }
 
-int get_cpu_bsp(void) {
-  return bsp;
-}
-
-const struct cpu_desc *get_cpu_info(void) {
-  return info;
+const struct cpu_desc *get_cpu_desc(int index) {
+  return &descs[index];
 }
 
 static bool get_chip_multithreading(int *chip_threads_max) {
@@ -113,7 +120,7 @@ static void get_thread_core_bits(int *thread_bits, int *core_bits) {
     *thread_bits = *core_bits = 0;
 }
 
-void fill_cpu_info(int thread_bits, int core_bits) {
+void fill_cpu_descs(int thread_bits, int core_bits) {
   int i = 0;
   struct acpi_madt_lapic *mentry = NULL;
   while (get_next_acpi_entry(get_acpi_madt(), &mentry, ACPI_MADT_LAPIC_TYPE))
@@ -121,25 +128,27 @@ void fill_cpu_info(int thread_bits, int core_bits) {
       if (i >= CONFIG_CPUS_MAX) {
         LOG_ERROR("detected more than %s=%d cpus",
                   STR(CONFIG_CPUS_MAX), CONFIG_CPUS_MAX);
-        return;
+        break;
       }
 
-      info[i].apic_id = mentry->apic_id;
-      info[i].thread = mentry->apic_id & ((1 << thread_bits) - 1);
-      info[i].core = (mentry->apic_id >> thread_bits) & ((1 << core_bits) - 1);
-      info[i].chip = mentry->apic_id >> (thread_bits + core_bits);
+      indexes[mentry->apic_id] = i;
+      descs[i].apic_id = mentry->apic_id;
+      descs[i].thread = mentry->apic_id & ((1 << thread_bits) - 1);
+      descs[i].core = (mentry->apic_id >> thread_bits) &
+        ((1 << core_bits) - 1);
+      descs[i].chip = mentry->apic_id >> (thread_bits + core_bits);
 
       struct acpi_srat_lapic *sentry = NULL;
       while (get_next_acpi_entry(get_acpi_srat(), &sentry,
                                  ACPI_SRAT_LAPIC_TYPE))
         if (sentry->enabled && sentry->apic_id == mentry->apic_id)
-          info[i].domain = sentry->prox_domain0 +
+          descs[i].domain = sentry->prox_domain0 +
             ((uint32_t)sentry->prox_domain1 << 8) +
             ((uint32_t)sentry->prox_domain2 << 24);
 
       LOG_DEBUG("CPU: apic_id: %X, thread: %d, core: %d, chip: %d, domain: %X",
-                info[i].apic_id, info[i].thread, info[i].core, info[i].chip,
-                info[i].domain);
+                descs[i].apic_id, descs[i].thread, descs[i].core,
+                descs[i].chip, descs[i].domain);
       i++;
     }
 
@@ -149,6 +158,7 @@ void fill_cpu_info(int thread_bits, int core_bits) {
 void init_cpu_info(void) {
   int thread_bits, core_bits;
   get_thread_core_bits(&thread_bits, &core_bits);
-  fill_cpu_info(thread_bits, core_bits);
+  fill_cpu_descs(thread_bits, core_bits);
+  bsp = get_cpu_index();
   LOG_DEBUG("done");
 }

@@ -15,9 +15,13 @@ struct cpu_desc {
   uint32_t domain;
 };
 
+int get_cpu_index(void);
+
+int get_bsp_cpu_index(void);
 int get_cpu_vendor(void);
+
 int get_cpus(void);
-const struct cpu_desc *get_cpu_info(void);
+const struct cpu_desc *get_cpu_desc(int index);
 
 void init_cpu_info(void);
 

@@ -12,9 +12,9 @@
 #define ADDR_BIOS_ROM 0xE0000
 #define ADDR_AFTER_BIOS_ROM 0x100000
 
-static const struct acpi_rsdp *rsdp;
-static const struct acpi_madt *madt;
-static const struct acpi_srat *srat;
+static const struct acpi_rsdp *rsdp = NULL;
+static const struct acpi_madt *madt = NULL;
+static const struct acpi_srat *srat = NULL;
 
 const struct acpi_rsdp *get_acpi_rsdp(void) {
   return rsdp;

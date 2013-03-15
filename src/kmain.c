@@ -1,5 +1,6 @@
 #include "acpi.h"
 #include "config.h"
+#include "cpu_info.h"
 #include "util.h"
 #include "vga.h"
 
