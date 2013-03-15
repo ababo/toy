@@ -1,3 +1,4 @@
+#include "acpi.h"
 #include "config.h"
 #include "util.h"
 #include "vga.h"
@@ -14,5 +15,6 @@ ASM(".text\n.global kstart\n"
 
 void kmain(void) {
   init_vga();
-
+  init_acpi();
+  init_cpu_info();
 }

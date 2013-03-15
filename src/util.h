@@ -7,6 +7,7 @@
 #define ALIGNED(n) __attribute__((aligned(n)))
 #define PACKED __attribute__((packed))
 #define SECTION(name) __attribute__((section(name)))
+#define UNUSED __attribute__((unused))
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)
