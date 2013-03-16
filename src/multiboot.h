@@ -53,9 +53,4 @@ struct multiboot_info {
   uint16_t vbe_interface_len;
 };
 
-static inline const struct multiboot_info *get_multiboot_info(void) {
-  extern uint32_t multiboot_info;
-  return (struct multiboot_info*)(size_t)multiboot_info;
-}
-
 #endif // MULTIBOOT_H

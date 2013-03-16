@@ -68,7 +68,7 @@ static void create_gdt(void *gdt, struct sys_table_info *gdti) {
 #define SEGMENT_CODE (1 << 3)
 
 uint32_t multiboot_info = 0;
-ALIGNED(16) uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { 0 };
+ALIGNED(16) uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
 ASM(".text\n.global bstart32\n"
     "bstart32: movl $(bsp_boot_stack + "
@@ -80,8 +80,8 @@ ASM(".text\n.global bstart32\n"
     "call boot32\n"
     "halt: hlt\njmp halt");
 
-ALIGNED(4096) uint8_t page_map[PAGE_MAP_SIZE] = { 0 };
-ALIGNED(4) uint8_t gdt[(3 + 2 * CONFIG_CPUS_MAX) * SYS_GDT_DESC_SIZE] = { 0 };
+ALIGNED(4096) uint8_t page_map[PAGE_MAP_SIZE] = { };
+ALIGNED(4) uint8_t gdt[(3 + 2 * CONFIG_CPUS_MAX) * SYS_GDT_DESC_SIZE] = { };
 
 void boot32(void) {
   extern int lds_kernel_size;

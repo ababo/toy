@@ -5,8 +5,8 @@
 #define VENDOR_LEN 12
 
 static int vendor = 0, num = 0, bsp = 0;
-static struct cpu_desc descs[CONFIG_CPUS_MAX] = { { 0, 0, 0, 0, 0 } };
-static uint8_t indexes[256] = { 0 };
+static struct cpu_desc descs[CONFIG_CPUS_MAX];
+static uint8_t indexes[256];
 
 int get_cpu_index(void) {
   uint32_t ebx;

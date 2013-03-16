@@ -1,6 +1,7 @@
 #include "acpi.h"
 #include "config.h"
 #include "cpu_info.h"
+#include "mem_mgr.h"
 #include "util.h"
 #include "vga.h"
 
@@ -18,4 +19,5 @@ void kmain(void) {
   init_vga();
   init_acpi();
   init_cpu_info();
+  init_mem_mgr();
 }

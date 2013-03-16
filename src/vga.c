@@ -9,11 +9,11 @@ struct chr_cell {
   uint8_t bcolor : 4;
 };
 
-static int frame_top = 0, frame_left = 0;
-static int frame_height = VGA_ROWS_NUMBER, frame_width = VGA_COLS_NUMBER;
-static int frame_fcolor = VGA_COLOR_WHITE, frame_bcolor = VGA_COLOR_BLACK;
-static int caret_row = 0, caret_col = 0;
-static bool cursor = false;
+static int frame_top, frame_left;
+static int frame_height, frame_width;
+static int frame_fcolor, frame_bcolor;
+static int caret_row, caret_col;
+static bool cursor;
 
 static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
   return (struct chr_cell*)ADDR_VIDEO + row * VGA_COLS_NUMBER + col;
