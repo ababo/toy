@@ -108,6 +108,7 @@ void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 char *ultoa(unsigned long value, char *buf, int radix);
 
 int putchar(int chr);
+int puts(const char *str);
 int printf(const char *format, ...);
 
 #define LOG_ERROR(format, ...)                          \

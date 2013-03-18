@@ -163,6 +163,20 @@ int putchar(int chr) {
   return chr;
 }
 
+int puts(const char *str) {
+  int num = 0;
+  while (*str) {
+    put_char(*str++);
+    num++;
+  }
+  put_char('\n');
+
+  if (cursor)
+    put_cursor(frame_top + caret_row, frame_left + caret_col);
+
+  return num;
+}
+
 int printf(const char *format, ...) {
   va_list vargs;
   va_start(vargs, format);
