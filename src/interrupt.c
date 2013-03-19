@@ -12,13 +12,18 @@ static void add_gdt_tss(void) {
   int cpus = get_cpus();
   isr_stacks = kmalloc(cpus * CONFIG_ISR_STACK_SIZE);
   task_segments = kmalloc(cpus * sizeof(struct sys_task_segment));
+  if (!isr_stacks || !task_segments) {
+    LOG_ERROR("failed to allocate memory");
+    return;
+  }
+  memset(task_segments, 0, cpus * sizeof(struct sys_task_segment));
 
   extern uint8_t gdt[];
   struct sys_gdt_desc2 *gdt2 =
     (struct sys_gdt_desc2*)(gdt + 3 * SYS_GDT_DESC_SIZE);
 
   for (int i = 0; i < cpus; i++) {
-    task_segments[i].ists[0] = (uint64_t)&isr_stacks[i];
+    task_segments[i].ists[0] = (uint64_t)&isr_stacks[i + 1];
     uint64_t tss_addr = (uint64_t)&task_segments[i];
 
     gdt2[i] = (struct sys_gdt_desc2) { {
@@ -70,11 +75,13 @@ ISR_SIMPLE_GETTER(AC);
 ISR_SIMPLE_GETTER(MC);
 ISR_SIMPLE_GETTER(XM);
 
+#define CODE_SEGMENT 8
+
 static void create_idt(void) {
   for (int i = 0; i < INT_VECTORS; i++)
     if (!is_int_reserved(i))
       idt[i] = (struct sys_idt_desc) {
-        .cs = 8, .ist = 1, .type = SYS_GATE_INT, .present = false
+        .cs = CODE_SEGMENT, .ist = 1, .type = SYS_GATE_INT, .present = false
       };
 
   set_isr(INT_VECTOR_DE, DE_isr_getter());
@@ -104,8 +111,8 @@ static void load_idt_tr(void) {
   ASMV("lidt %0\nmovw %1, %%ax\nltr %%ax" : : "m"(idti), "m"(sel));
 }
 
-void init_interrupts(bool bsp_cpu) {
-  if (bsp_cpu) {
+void init_interrupts(void) {
+  if (get_cpu_index() == get_bsp_cpu_index()) {
     add_gdt_tss();
     create_idt();
   }

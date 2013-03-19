@@ -43,12 +43,12 @@ struct int_stack_frame {
 };
 
 #define ISR_IMPL(name)                                          \
-  static __attribute__ ((noinline))                             \
+  static NOINLINE                                               \
   void name##_isr_impl(struct int_stack_frame *stack_frame,     \
                        UNUSED uint64_t data)
 
 #define ISR_GETTER(name, impl_name, data)                            \
-  static __attribute__ ((noinline)) void *name##_isr_getter(void) {  \
+  static NOINLINE void *name##_isr_getter(void) {                    \
     ASMV("jmp 2f\n.align 16\n1:andq $(~0b1111), %rsp");              \
     ASMV("subq $512, %rsp\nfxsave (%rsp)");                          \
     ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
@@ -74,6 +74,6 @@ struct int_stack_frame {
 void *get_isr(int vector);
 void set_isr(int vector, void *isr);
 
-void init_interrupts(bool bsp_cpu);
+void init_interrupts(void);
 
 #endif // INTERRUPT_H

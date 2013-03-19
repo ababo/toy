@@ -5,6 +5,7 @@
 #define STR_EXPAND(x) STR(x)
 
 #define ALIGNED(n) __attribute__((aligned(n)))
+#define NOINLINE __attribute__((noinline))
 #define PACKED __attribute__((packed))
 #define SECTION(name) __attribute__((section(name)))
 #define UNUSED __attribute__((unused))

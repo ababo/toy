@@ -27,7 +27,7 @@ static void map_ram(void) {
 
 void init_mem_mgr(void) {
   extern int lds_kernel_size;
-  next_free = (uint8_t*)(CONFIG_KERNEL_ADDR + &lds_kernel_size);
+  next_free = (uint8_t*)(CONFIG_KERNEL_ADDR + (uint64_t)&lds_kernel_size);
   map_ram();
   LOG_DEBUG("done");
 }

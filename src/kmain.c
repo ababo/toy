@@ -11,6 +11,7 @@
 ASM(".text\n.global kstart\n"
     "kstart: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax\n"
     "movw %ax, %ds\n"
+    "movw %ax, %ss\n"
     "movq $(bsp_boot_stack + "
       STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %rsp\n"
     "call kmain\n"
@@ -26,9 +27,15 @@ void kmain(void) {
   init_acpi();
   init_cpu_info();
   init_mem_mgr();
-  init_interrupts(true);
+  init_interrupts();
   printf("Trying to initiate #DE.\n");
   set_isr(INT_VECTOR_DE, test_isr_getter());
   ASMV("div %P0" : : "a"(0));
   printf("Returned from #DE.\n");
+
+}
+
+void kmain_ap(void) {
+  init_interrupts();
+
 }

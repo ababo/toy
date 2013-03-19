@@ -4,7 +4,7 @@
 #include "util.h"
 
 #define SYS_GDT_DESC_SIZE 8
-#define SYS_GDT_DESC2_SIZE 8
+#define SYS_GDT_DESC2_SIZE 16
 #define SYS_IDT_DESC_SIZE 16
 #define SYS_PAGE_DESC_SIZE 8
 
