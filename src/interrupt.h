@@ -42,9 +42,9 @@ struct int_stack_frame {
   uint16_t ss;
 };
 
-#define ISR_IMPL(name)                                          \
-  static NOINLINE                                               \
-  void name##_isr_impl(struct int_stack_frame *stack_frame,     \
+#define ISR_IMPL(name)                                                  \
+  static NOINLINE                                                       \
+  void name##_isr_impl(UNUSED struct int_stack_frame *stack_frame,      \
                        UNUSED uint64_t data)
 
 #define ISR_GETTER(name, impl_name, data)                            \

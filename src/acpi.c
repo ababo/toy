@@ -7,10 +7,10 @@
 #define MADT_SIGNATURE "APIC"
 #define SRAT_SIGNATURE "SRAT"
 
-#define ADDR_EBDA 0x9FC00
-#define ADDR_AFTER_EBDA 0xA0000
-#define ADDR_BIOS_ROM 0xE0000
-#define ADDR_AFTER_BIOS_ROM 0x100000
+#define EBDA_ADDR 0x9FC00
+#define AFTER_EBDA_ADDR 0xA0000
+#define BIOS_ROM_ADDR 0xE0000
+#define AFTER_BIOS_ROM_ADDR 0x100000
 
 static const struct acpi_rsdp *rsdp = NULL;
 static const struct acpi_madt *madt = NULL;
@@ -30,10 +30,10 @@ const struct acpi_srat *get_acpi_srat(void) {
 
 static void init_root_tables(void) {
   rsdp = (struct acpi_rsdp*)
-    memmem((void*)ADDR_EBDA, ADDR_AFTER_EBDA - ADDR_EBDA, RSDP_SIGNATURE, 8);
+    memmem((void*)EBDA_ADDR, AFTER_EBDA_ADDR - EBDA_ADDR, RSDP_SIGNATURE, 8);
   if (!rsdp)
     rsdp = (struct acpi_rsdp*)
-      memmem((void*)ADDR_BIOS_ROM, ADDR_AFTER_BIOS_ROM - ADDR_BIOS_ROM,
+      memmem((void*)BIOS_ROM_ADDR, AFTER_BIOS_ROM_ADDR - BIOS_ROM_ADDR,
              RSDP_SIGNATURE, 8);
 
   if (rsdp) { // make sure RSDT and XSDT are mapped

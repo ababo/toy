@@ -1,7 +1,7 @@
 #include "page_map.h"
 #include "vga.h"
 
-#define ADDR_VIDEO 0xB8000
+#define VIDEO_ADDR 0xB8000
 
 struct chr_cell {
   int8_t chr;
@@ -16,7 +16,7 @@ static int caret_row, caret_col;
 static bool cursor;
 
 static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
-  return (struct chr_cell*)ADDR_VIDEO + row * VGA_COLS_NUMBER + col;
+  return (struct chr_cell*)VIDEO_ADDR + row * VGA_COLS_NUMBER + col;
 }
 
 void get_vga_cell(int row, int col, char *chr, int *fore_color,
@@ -114,7 +114,7 @@ void set_vga_caret(int row, int col) {
 }
 
 void init_vga(void) {
-  map_page(ADDR_VIDEO, ADDR_VIDEO, PAGE_MAPPING_WRITE, 0);
+  map_page(VIDEO_ADDR, VIDEO_ADDR, PAGE_MAPPING_WRITE, 0);
   set_vga_frame(0, 0, VGA_ROWS_NUMBER, VGA_COLS_NUMBER, VGA_COLOR_WHITE,
                 VGA_COLOR_LOW_BLUE);
   clear_vga_frame();
