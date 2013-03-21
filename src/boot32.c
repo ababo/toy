@@ -1,3 +1,4 @@
+#include "boot.h"
 #include "config.h"
 #include "multiboot.h"
 #include "page_map.h"
@@ -60,13 +61,6 @@ static void create_gdt(void *gdt, struct sys_table_info *gdti) {
   gdti->base = (size_t)gdt, gdti->limit = (SYS_GDT_DESC_SIZE * 3) - 1;
 }
 
-#define CR0_PG (1 << 31)
-#define CR4_OSFXSR (1 << 9)
-#define CR4_PAE (1 << 5)
-#define MSR_EFER 0xC0000080
-#define MSR_EFER_LME (1 << 8)
-#define SEGMENT_CODE (1 << 3)
-
 uint32_t multiboot_info = 0;
 ALIGNED(16) uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
@@ -74,6 +68,7 @@ ASM(".text\n.global bstart32\n"
     "bstart32: movl $(bsp_boot_stack + "
       STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp\n"
     "movl %ebx, multiboot_info\n"
+    "movb $0xFF, %al\noutb %al, $0xA1\noutb %al, $0x21\n" // disable IRQs
     "movl %cr4, %edx\n" // enable SSE
     "orl $" STR_EXPAND(CR4_OSFXSR) ", %edx\n"
     "movl %edx, %cr4\n"

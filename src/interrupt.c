@@ -117,6 +117,7 @@ void init_interrupts(void) {
     create_idt();
   }
   load_idt_tr();
+  ASMV("sti");
   LOG_DEBUG("done");
 }
 
