@@ -4,6 +4,7 @@
 #include "util.h"
 
 void *kmalloc(size_t size);
+void kfree(void *ptr);
 
 void init_mem_mgr(void);
 

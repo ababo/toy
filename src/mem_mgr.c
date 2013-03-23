@@ -13,6 +13,9 @@ void *kmalloc(size_t size) {
   return ptr;
 }
 
+void kfree(UNUSED void *ptr) {
+}
+
 static void map_ram(void) {
   extern uint32_t multiboot_info;
   uint64_t high_mem_hole =

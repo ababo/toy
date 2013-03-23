@@ -33,6 +33,7 @@ ASM(".text\n.code16\n.global bstart16\n"
     "gdti: .word 3 * 8 - 1\n.long gdt\n"
     ".global bstart16_end\nbstart16_end:\n.code64");
 
+uint8_t *ap_boot_stack = NULL;
 int started_cpus = 1;
 
 static void start_ap_cpus(void) {
@@ -43,10 +44,18 @@ static void start_ap_cpus(void) {
   memcpy((void*)BSTART16_ADDR, &bstart16, &bstart16_end - &bstart16);
   ASMV("sti");
 
+  ap_boot_stack = kmalloc(CONFIG_AP_BOOT_STACK_SIZE);
+  if (!ap_boot_stack) {
+    LOG_ERROR("failed to allocate memory");
+    return;
+  }
+
   for (int i = 0; i < get_cpus(); i++)
     if (i != get_bsp_cpu_index() &&
         !start_ap_cpu(get_cpu_desc(i)->apic_id, BSTART16_ADDR, &started_cpus))
       LOG_DEBUG("AP CPU (cpu: %d) failed to start", i);
+
+  kfree(ap_boot_stack);
 }
 
 void kmain(void) {
@@ -60,13 +69,11 @@ void kmain(void) {
 
 }
 
-ALIGNED(16) uint8_t ap_boot_stack[CONFIG_AP_BOOT_STACK_SIZE] = { };
-
 ASM(".text\n.global kstart_ap\n"
     "kstart_ap: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax\n"
     "movw %ax, %ds\nmovw %ax, %ss\n"
-    "movq $(ap_boot_stack + "
-      STR_EXPAND(CONFIG_AP_BOOT_STACK_SIZE) "), %rsp\n"
+    "movq (ap_boot_stack), %rsp\n"
+    "addq $" STR_EXPAND(CONFIG_AP_BOOT_STACK_SIZE) ", %rsp\n"
     "movq %cr4, %rax\n" // enable SSE
     "orl $" STR_EXPAND(CR4_OSFXSR) ", %eax\n"
     "movq %rax, %cr4\n"
