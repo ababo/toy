@@ -122,14 +122,11 @@ bool start_ap_cpu(int apic_id, int startup_addr, volatile int *started_cpus) {
       start_apic_timer(AP_CPU_RETRY_TIMEOUT, false);
       ASMV("hlt");
 
-      if (cpus < *started_cpus) {
-        LOG_DEBUG("AP CPU (apic_id: %X) started", apic_id);
+      if (cpus < *started_cpus)
         return true;
-      }
     }
   }
 
-  LOG_ERROR("failed to start AP CPU (apic_id: %X)", apic_id);
   return false;
 }
 
@@ -154,7 +151,7 @@ static void adjust_lapic_timer(void) {
   write_lapic(LAPIC_TIMER_INITIAL_REG, 0);
 
   outb(0x61, inb(0x61) & 0x0C); // disable PIT
-  LOG_DEBUG("timer_10ms_ticks: %d", timer_10ms_ticks);
+  LOG_DEBUG("10ms ticks: %d", timer_10ms_ticks);
 }
 
 static void enable_lapic(void) {
@@ -168,8 +165,9 @@ static void enable_lapic(void) {
 
 void init_apic(void) {
   enable_lapic();
-  if (get_cpu_index() == get_bsp_cpu_index()) {
+  int cpui = get_cpu_index();
+  if (cpui == get_bsp_cpu_index()) {
     adjust_lapic_timer();
   }
-  LOG_DEBUG("done");
+  LOG_DEBUG("done (cpu: %d)", cpui);
 }

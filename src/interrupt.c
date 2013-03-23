@@ -8,7 +8,7 @@ static uint8_t (*isr_stacks)[CONFIG_ISR_STACK_SIZE];
 static struct sys_task_segment *task_segments;
 static struct sys_idt_desc idt[INT_VECTORS];
 
-static void add_gdt_tss(void) {
+static void create_gdt(void) {
   int cpus = get_cpus();
   isr_stacks = kmalloc(cpus * CONFIG_ISR_STACK_SIZE);
   task_segments = kmalloc(cpus * sizeof(struct sys_task_segment));
@@ -35,11 +35,6 @@ static void add_gdt_tss(void) {
       .base3 = (uint32_t)(tss_addr >> 32)
     };
   }
-
-  struct sys_table_info gdti = {
-    (3 * SYS_GDT_DESC_SIZE) + (cpus * SYS_GDT_DESC2_SIZE) - 1, (uint64_t)gdt
-  };
-  ASMV("lgdt %0" : : "m"(gdti));
 }
 
 ISR_IMPL(default) {
@@ -103,22 +98,28 @@ static void create_idt(void) {
   set_isr(INT_VECTOR_XM, XM_isr_getter());
 }
 
-static void load_idt_tr(void) {
+static void load_gdt_idt_tr(void) {
+  extern uint8_t gdt[];
+  struct sys_table_info gdti = {
+    (3 * SYS_GDT_DESC_SIZE) + (get_cpus() * SYS_GDT_DESC2_SIZE) - 1,
+    (uint64_t)gdt
+  };
   struct sys_table_info idti = {
     SYS_IDT_DESC_SIZE * INT_VECTORS - 1, (uint64_t)idt
   };
   uint16_t sel = SYS_GDT_DESC_SIZE * 3 + SYS_GDT_DESC2_SIZE * get_cpu_index();
-  ASMV("lidt %0\nmovw %1, %%ax\nltr %%ax" : : "m"(idti), "m"(sel));
+  ASMV("lgdt %0\nlidt %1\nmovw %2, %%ax\nltr %%ax"
+       : : "m"(gdti), "m"(idti), "m"(sel) : "ax");
 }
 
 void init_interrupts(void) {
-  if (get_cpu_index() == get_bsp_cpu_index()) {
-    add_gdt_tss();
+  int cpui = get_cpu_index();
+  if (cpui == get_bsp_cpu_index()) {
+    create_gdt();
     create_idt();
   }
-  load_idt_tr();
-  ASMV("sti");
-  LOG_DEBUG("done");
+  load_gdt_idt_tr();
+  LOG_DEBUG("done (cpu: %d)", cpui);
 }
 
 void *get_isr(int vector) {

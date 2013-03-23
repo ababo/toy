@@ -31,7 +31,7 @@ ASM(".text\n.code16\n.global bstart16\n"
     "lgdt (" STR_EXPAND(BSTART16_ADDR) " + gdti - bstart16)\n"
     "ljmpl $" STR_EXPAND(SEGMENT_CODE) ", $kstart_ap\n"
     "gdti: .word 3 * 8 - 1\n.long gdt\n"
-    ".global bstart16_end\nbstart16_end: \n.code64");
+    ".global bstart16_end\nbstart16_end:\n.code64");
 
 int started_cpus = 1;
 
@@ -41,9 +41,12 @@ static void start_ap_cpus(void) {
 
   extern uint8_t bstart16, bstart16_end;
   memcpy((void*)BSTART16_ADDR, &bstart16, &bstart16_end - &bstart16);
+  ASMV("sti");
+
   for (int i = 0; i < get_cpus(); i++)
-    if (i != get_bsp_cpu_index())
-      start_ap_cpu(get_cpu_desc(i)->apic_id, BSTART16_ADDR, &started_cpus);
+    if (i != get_bsp_cpu_index() &&
+        !start_ap_cpu(get_cpu_desc(i)->apic_id, BSTART16_ADDR, &started_cpus))
+      LOG_DEBUG("AP CPU (cpu: %d) failed to start", i);
 }
 
 void kmain(void) {
@@ -71,8 +74,7 @@ ASM(".text\n.global kstart_ap\n"
     "halt_ap: hlt\njmp halt_ap");
 
 void kmain_ap(void) {
+  init_interrupts();
+  init_apic();
   started_cpus++;
-  //init_interrupts();
-  //init_apic();
-
 }

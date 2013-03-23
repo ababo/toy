@@ -119,7 +119,6 @@ void init_vga(void) {
                 VGA_COLOR_LOW_BLUE);
   clear_vga_frame();
   set_vga_cursor(true);
-  LOG_DEBUG("done");
 }
 
 static void scroll_frame(void) {
