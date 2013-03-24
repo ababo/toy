@@ -169,5 +169,5 @@ void init_apic(void) {
   if (cpui == get_bsp_cpu_index()) {
     adjust_lapic_timer();
   }
-  LOG_DEBUG("done (cpu: %d)", cpui);
+  LOG_DEBUG("done (CPU: %d)", cpui);
 }

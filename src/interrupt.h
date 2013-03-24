@@ -49,7 +49,7 @@ struct int_stack_frame {
 
 #define ISR_GETTER(name, impl_name, data)                            \
   static NOINLINE void *name##_isr_getter(void) {                    \
-    ASMV("jmp 2f\n.align 16\n1:andq $(~0xF), %rsp");                 \
+    ASMV("jmp 2f\n.align 16\n1: andq $(~0xF), %rsp");                \
     ASMV("subq $512, %rsp\nfxsave (%rsp)");                          \
     ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
     ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
@@ -62,7 +62,7 @@ struct int_stack_frame {
     ASMV("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
     ASMV("fxrstor (%rsp)\naddq $(512 + 8), %rsp");                   \
     void *isr;                                                       \
-    ASMV("iretq\n2:\nmovq $1b, %0" : "=m"(isr));                     \
+    ASMV("iretq\n2: movq $1b, %0" : "=m"(isr));                      \
     return isr;                                                      \
   }
 

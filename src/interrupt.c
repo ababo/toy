@@ -119,7 +119,7 @@ void init_interrupts(void) {
     create_idt();
   }
   load_gdt_idt_tr();
-  LOG_DEBUG("done (cpu: %d)", cpui);
+  LOG_DEBUG("done (CPU: %d)", cpui);
 }
 
 void *get_isr(int vector) {

@@ -6,6 +6,7 @@
 #include "interrupt.h"
 #include "mem_mgr.h"
 #include "util.h"
+#include "schedule.h"
 #include "vga.h"
 
 ASM(".text\n.global kstart\n"
@@ -66,7 +67,7 @@ void kmain(void) {
   init_interrupts();
   init_apic();
   start_ap_cpus();
-
+  init_scheduler();
 }
 
 ASM(".text\n.global kstart_ap\n"
@@ -83,5 +84,6 @@ ASM(".text\n.global kstart_ap\n"
 void kmain_ap(void) {
   init_interrupts();
   init_apic();
+  init_scheduler();
   started_cpus++;
 }
