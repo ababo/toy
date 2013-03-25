@@ -171,7 +171,7 @@ static void put_char(char chr) {
   }
 }
 
-int putchar(int chr) {
+int kputchar(int chr) {
   acquire_spinlock(&lock);
   put_char(chr);
   if (cursor)
@@ -180,24 +180,7 @@ int putchar(int chr) {
   return chr;
 }
 
-int puts(const char *str) {
-  acquire_spinlock(&lock);
-
-  int num = 0;
-  while (*str) {
-    put_char(*str++);
-    num++;
-  }
-  put_char('\n');
-
-  if (cursor)
-    put_cursor(frame_top + caret_row, frame_left + caret_col);
-
-  release_spinlock(&lock);
-  return num;
-}
-
-int printf(const char *format, ...) {
+int kprintf(const char *format, ...) {
   acquire_spinlock(&lock);
 
   va_list vargs;

@@ -38,13 +38,13 @@ static void create_gdt(void) {
 }
 
 ISR_IMPL(default) {
-  printf("#%s: ss: %X, rsp: %X, rflags: %X, cs: %X, rip: %X",
-         (char*)(data << 8 >> 8), stack_frame->ss, (uint32_t)stack_frame->rsp,
-         (uint32_t)stack_frame->rflags, stack_frame->cs,
-         (uint32_t)stack_frame->rip);
+  kprintf("#%s: ss: %X, rsp: %X, rflags: %X, cs: %X, rip: %X",
+          (char*)(data << 8 >> 8), stack_frame->ss, (uint32_t)stack_frame->rsp,
+          (uint32_t)stack_frame->rflags, stack_frame->cs,
+          (uint32_t)stack_frame->rip);
   if (is_int_error(data >> 56))
-    printf(", error_code: %X", stack_frame->error_code);
-  printf("\n");
+    kprintf(", error_code: %X", stack_frame->error_code);
+  kprintf("\n");
   ASMV("hlt");
 }
 

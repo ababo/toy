@@ -108,18 +108,20 @@ void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);
 
-int putchar(int chr);
-int puts(const char *str);
-int printf(const char *format, ...);
+int kputchar(int chr);
+int kprintf(const char *format, ...);
 
-#define LOG_ERROR(format, ...)                          \
-  { printf("%s: ", __func__);                           \
-    printf(format, ##__VA_ARGS__); printf("\n"); }
+#define LOG_ERROR(format, ...)                           \
+  { kprintf("%s: ", __func__);                           \
+    kprintf(format, ##__VA_ARGS__); kprintf("\n"); }
 #define LOG_INFO(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
 #ifdef DEBUG
 #define LOG_DEBUG(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
 #else
 #define LOG_DEBUG(format, ...)
 #endif
+
+typedef int error;
+#define ERR_NONE (error)0
 
 #endif // UTIL_H
