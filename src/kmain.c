@@ -43,7 +43,6 @@ static void start_ap_cpus(void) {
 
   extern uint8_t bstart16, bstart16_end;
   memcpy((void*)BSTART16_ADDR, &bstart16, &bstart16_end - &bstart16);
-  ASMV("sti");
 
   ap_boot_stack = kmalloc(CONFIG_AP_BOOT_STACK_SIZE);
   if (!ap_boot_stack) {
@@ -66,6 +65,7 @@ void kmain(void) {
   init_mem_mgr();
   init_interrupts();
   init_apic();
+  ASMV("sti");
   start_ap_cpus();
   init_scheduler();
 }
@@ -84,6 +84,7 @@ ASM(".text\n.global kstart_ap\n"
 void kmain_ap(void) {
   init_interrupts();
   init_apic();
+  ASMV("sti");
   init_scheduler();
   started_cpus++;
 }

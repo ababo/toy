@@ -135,10 +135,6 @@ ISR_DEFINE(empty, 0) {
 }
 
 static void adjust_lapic_timer(void) {
-  set_isr(INT_VECTOR_APIC_TIMER, empty_isr_getter());
-  write_lapic(LAPIC_TIMER_REG, INT_VECTOR_APIC_TIMER);
-  write_lapic(LAPIC_TIMER_DIVIDE_REG, LAPIC_TIMER_DIVIDE_BY_1);
-
   outb(0x61, (inb(0x61) & 0x0C) | 1); // enable PIT
   outb(0x43, 0xB0);
 
@@ -154,20 +150,24 @@ static void adjust_lapic_timer(void) {
   LOG_DEBUG("10ms ticks: %d", timer_10ms_ticks);
 }
 
-static void enable_lapic(void) {
+void init_apic(void) {
+  int cpui = get_cpu_index();
+  if (cpui == get_bsp_cpu_index()) {
+    map_page(LAPIC_ADDR, LAPIC_ADDR,
+             PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
+    set_isr(INT_VECTOR_APIC_SPURIOUS, empty_isr_getter());
+    set_isr(INT_VECTOR_APIC_TIMER, empty_isr_getter());
+  }
+
   wrmsr(LAPIC_BASE_MSR, LAPIC_ADDR | LAPIC_ENABLE);
-  map_page(LAPIC_ADDR, LAPIC_ADDR,
-           PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
-  set_isr(INT_VECTOR_APIC_SPURIOUS, empty_isr_getter());
   write_lapic(LAPIC_SPURIOUS_REG, LAPIC_LOCAL_ENABLE |
               INT_VECTOR_APIC_SPURIOUS);
-}
+  write_lapic(LAPIC_TIMER_REG, INT_VECTOR_APIC_TIMER);
+  write_lapic(LAPIC_TIMER_DIVIDE_REG, LAPIC_TIMER_DIVIDE_BY_1);
 
-void init_apic(void) {
-  enable_lapic();
-  int cpui = get_cpu_index();
   if (cpui == get_bsp_cpu_index()) {
     adjust_lapic_timer();
   }
+
   LOG_DEBUG("done (CPU: %d)", cpui);
 }

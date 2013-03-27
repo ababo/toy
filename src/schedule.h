@@ -21,6 +21,7 @@ struct thread_desc {
   size_t stack_size;
   cpu_affinity affinity;
   uint8_t priority;
+  uint8_t idle : 1;
 };
 
 typedef uint64_t thread_id;

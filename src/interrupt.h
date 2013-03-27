@@ -25,6 +25,7 @@
 
 #define INT_VECTOR_APIC_SPURIOUS 32
 #define INT_VECTOR_APIC_TIMER 33
+#define INT_VECTOR_SCHEDULER_TASK 34
 
 static inline bool is_int_reserved(int vector) {
   return vector == 15 || (vector >= 20 && vector <= 31);
