@@ -107,14 +107,14 @@ static void load_gdt_idt_tr(void) {
   struct sys_table_info idti = {
     SYS_IDT_DESC_SIZE * INT_VECTORS - 1, (uint64_t)idt
   };
-  uint16_t sel = SYS_GDT_DESC_SIZE * 3 + SYS_GDT_DESC2_SIZE * get_cpu_index();
+  uint16_t sel = SYS_GDT_DESC_SIZE * 3 + SYS_GDT_DESC2_SIZE * get_cpu();
   ASMV("lgdt %0\nlidt %1\nmovw %2, %%ax\nltr %%ax"
        : : "m"(gdti), "m"(idti), "m"(sel) : "ax");
 }
 
 void init_interrupts(void) {
-  int cpui = get_cpu_index();
-  if (cpui == get_bsp_cpu_index()) {
+  int cpui = get_cpu();
+  if (cpui == get_bsp_cpu()) {
     create_gdt();
     create_idt();
   }

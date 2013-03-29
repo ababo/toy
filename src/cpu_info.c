@@ -8,13 +8,13 @@ static int vendor = 0, num = 0, bsp = 0;
 static struct cpu_desc descs[CONFIG_CPUS_MAX];
 static uint8_t indexes[256];
 
-int get_cpu_index(void) {
+int get_cpu(void) {
   uint32_t ebx;
   ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
   return indexes[INT_BITS(ebx, 24, 31)];
 }
 
-int get_bsp_cpu_index(void) {
+int get_bsp_cpu(void) {
   return bsp;
 }
 
@@ -40,8 +40,8 @@ int get_cpus(void) {
   return num;
 }
 
-const struct cpu_desc *get_cpu_desc(int index) {
-  return &descs[index];
+const struct cpu_desc *get_cpu_desc(int cpu) {
+  return &descs[cpu];
 }
 
 static bool get_chip_multithreading(int *chip_threads_max) {
@@ -159,6 +159,6 @@ void init_cpu_info(void) {
   int thread_bits, core_bits;
   get_thread_core_bits(&thread_bits, &core_bits);
   fill_cpu_descs(thread_bits, core_bits);
-  bsp = get_cpu_index();
+  bsp = get_cpu();
   LOG_DEBUG("done");
 }

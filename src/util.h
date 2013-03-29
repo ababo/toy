@@ -9,6 +9,7 @@
 #define PACKED __attribute__((packed))
 #define SECTION(name) __attribute__((section(name)))
 #define UNUSED __attribute__((unused))
+#define USED __attribute__((used))
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)
@@ -56,6 +57,11 @@ typedef unsigned int size_t;
 // minimal number of elements with total size >= given size
 #define SIZE_ELEMENTS(size, element_size) \
   (((size) + (element_size) - 1) / (element_size))
+
+#define BIT_ARRAY_SET(array, bit) \
+  array[(bit) / sizeof((array)[0])] |= 1 << ((bit) % sizeof((array)[0]));
+#define BIT_ARRAY_RESET(array, bit) \
+  array[(bit) / sizeof((array)[0])] &= ~(1 << ((bit) % sizeof((array)[0])));
 
 #define ASM __asm__
 #define ASMV __asm__ __volatile__
