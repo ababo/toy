@@ -6,11 +6,10 @@
 
 typedef uint64_t cpu_affinity[SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)];
 
-struct thread_context {
-  uint64_t rax, rbx, rcx, rdx, rbp, rsi, rdi, rsp;
-  uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-  uint64_t rip, rflags;
+struct thread_context { // field order corresponds to interrupt stack layout
+  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rdx, rcx, rbx, rax;
   uint8_t fxdata[512];
+  struct int_stack_frame frame;
 };
 
 struct thread_desc {
@@ -23,7 +22,10 @@ struct thread_desc {
   uint8_t priority;
   uint8_t real_priority;
   uint16_t quantum;
+  uint8_t skip_store_context : 1;
   uint8_t fixed_priority : 1;
+  uint8_t fixed_affinity : 1;
+  uint8_t protected : 1;
 };
 
 typedef uint64_t thread_id;

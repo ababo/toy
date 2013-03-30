@@ -1,4 +1,5 @@
 #include "apic.h"
+#include "boot.h"
 #include "cpu_info.h"
 #include "mem_mgr.h"
 #include "interrupt.h"
@@ -16,19 +17,79 @@ struct task {
   } u;
 };
 
-static struct {
+static struct cpu_data {
   struct spinlock lock;
-  struct priority {
+  int current_priority;
+  struct priority_data {
     struct thread_desc *expired_head, *expired_tail, *active_tail;
-    uint32_t total;
+    int total;
   } priorities[CONFIG_SCHEDULER_PRIORITIES];
-  // fast lookup bitmask: 1 if an appropriate priority has threads 
+  // fast lookup bitmask: 1 if corresponding priority has threads
   uint64_t priority_mask[SIZE_ELEMENTS(CONFIG_SCHEDULER_PRIORITIES, 64)];
   struct task *task;
 } cpus[CONFIG_CPUS_MAX];
 
-ISR_DEFINE(timer, 0) {
+static inline int get_highest_priority(const uint64_t *priority_mask) {
+  for (int i = 0; ; i++)
+    if (priority_mask[i])
+      return i * 64 + bsf(priority_mask[i]);
+}
 
+static inline void update_priority_quantum(struct thread_desc *desc) {
+  /// TODO: make priority and quantum change dynamically
+  desc->real_priority = desc->priority;
+  desc->quantum = 100;
+}
+
+static inline void load_context(const struct thread_context *context,
+                                struct int_stack_frame *frame) {
+  /// TODO: optimize for speed
+  memcpy((uint8_t*)frame + sizeof(*frame) - sizeof(*context),
+         context, sizeof(*context));
+}
+
+static inline void store_context(const struct int_stack_frame *frame,
+                                 struct thread_context *context) {
+  /// TODO: optimize for speed
+  memcpy(context, (uint8_t*)frame + sizeof(*frame) - sizeof(*context),
+         sizeof(*context));
+}
+
+ISR_DEFINE(timer, 0) {
+  struct cpu_data *cpud = &cpus[get_cpu()];
+  struct priority_data *priod = &cpud->priorities[cpud->current_priority];
+  struct thread_desc *thrd = priod->active_tail;
+
+  int highest_prio = get_highest_priority(cpud->priority_mask);
+  if (highest_prio < cpud->current_priority || !thrd->quantum) {
+    update_priority_quantum(thrd);
+    if (thrd->skip_store_context)
+      thrd->skip_store_context = false;
+    else
+      store_context(stack_frame, &thrd->context);
+
+    struct priority_data *priod2 = &cpud->priorities[thrd->real_priority];
+    BIT_ARRAY_SET(cpud->priority_mask, thrd->real_priority);
+    priod2->total++;
+    if (priod2->expired_tail)
+      priod2->expired_head->next = thrd, priod2->expired_head = thrd;
+    else
+      priod2->expired_head = priod2->expired_tail = thrd;
+
+    priod->active_tail = thrd->next;
+    if (!priod->active_tail) {
+      priod->active_tail = priod->expired_tail;
+      priod->expired_tail = priod->expired_head = NULL;
+    }
+    if (!--priod->total)
+      BIT_ARRAY_RESET(cpud->priority_mask, cpud->current_priority);
+
+    cpud->current_priority = get_highest_priority(cpud->priority_mask);
+    thrd = cpud->priorities[cpud->current_priority].active_tail;
+    load_context(&thrd->context, stack_frame);
+  }
+  else
+    thrd->quantum--;
 
   set_apic_eoi();
 }
@@ -45,18 +106,20 @@ static struct thread_desc *new_thread(thread_proc proc, uint64_t data,
                                       size_t stack_size) {
   struct thread_desc *t = kmalloc(sizeof(*t) + 8 + stack_size);
   if (t) {
-    *t = (struct thread_desc) { .magic = THREAD_DESC_MAGIC };
+    *t = (struct thread_desc) {
+      .magic = THREAD_DESC_MAGIC,
+      .context = { .frame = { .cs = SEGMENT_CODE, .ss = SEGMENT_DATA } }
+    };
 
     t->stack_size = stack_size;
     t->stack = (uint8_t*)(t + 1);
     *(uint64_t*)t->stack = STACK_OVERRUN_MAGIC;
 
     extern int exit_thread;
-    uint64_t *top = (uint64_t*)(t->stack + t->stack_size);
-    t->context.rsp = t->context.rbp = (uint64_t)top;
-    *--top = (uint64_t)&exit_thread;
+    uint64_t *top = (uint64_t*)(t->stack + t->stack_size - 8);
+    *top = (uint64_t)&exit_thread, t->context.frame.rsp = (uint64_t)top;
 
-    t->context.rip = (uint64_t)proc;
+    t->context.frame.rip = (uint64_t)proc;
     t->context.rdi = data;
   }
   return t;
@@ -77,13 +140,18 @@ static void create_idle_thread(void) {
   }
 
   int cpu = get_cpu();
-  BIT_ARRAY_SET(idle->affinity, cpu);
-  idle->fixed_priority = true;
-
   int prio = CONFIG_SCHEDULER_PRIORITIES - 1;
-  struct priority *p = &cpus[cpu].priorities[prio];
-  p->active_tail = idle, p->total = 1;
-  BIT_ARRAY_SET(cpus[cpu].priority_mask, prio);
+
+  BIT_ARRAY_SET(idle->affinity, cpu);
+  idle->priority = idle->real_priority = prio;
+  idle->skip_store_context = idle->fixed_priority =
+    idle->fixed_affinity = idle->protected = true;
+
+  struct cpu_data *cpud = &cpus[cpu];
+  struct priority_data *priod = &cpud->priorities[prio];
+  priod->active_tail = idle, priod->total = 1;
+  BIT_ARRAY_SET(cpud->priority_mask, prio);
+  cpud->current_priority = prio;
 }
 
 void init_scheduler(void) {

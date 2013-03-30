@@ -72,6 +72,12 @@ static inline int bsr(uint64_t value) {
   return (int)index;
 }
 
+static inline int bsf(uint64_t value) {
+  uint64_t index;
+  ASMV("bsfq %1, %0" : "=r"(index) : "mr"(value));
+  return (int)index;
+}
+
 static inline uint8_t inb(uint16_t port) {
   uint8_t value;
   ASMV("inb %%dx, %%al" : "=a"(value) : "d"(port));
