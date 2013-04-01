@@ -1,15 +1,19 @@
 #include "config.h"
-#include "mem_mgr.h"
+#include "memory.h"
 #include "multiboot.h"
 #include "page_map.h"
+#include "sync.h"
 
 /// TODO: Replace this dummy code with a real implementaion
 
+static struct spinlock lock;
 static uint8_t *next_free;
 
 void *kmalloc(size_t size) {
+  acquire_spinlock(&lock);
   void *ptr = next_free;
   next_free += size;
+  release_spinlock(&lock);
   return ptr;
 }
 
@@ -30,6 +34,7 @@ static void map_ram(void) {
 
 void init_mem_mgr(void) {
   extern int lds_kernel_size;
+  create_spinlock(&lock);
   next_free = (uint8_t*)(CONFIG_KERNEL_ADDR + (uint64_t)&lds_kernel_size);
   map_ram();
   LOG_DEBUG("done");

@@ -2,9 +2,8 @@
 #define SCHEDULE_H
 
 #include "config.h"
+#include "interrupt.h"
 #include "util.h"
-
-typedef uint64_t cpu_affinity[SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)];
 
 struct thread_context { // field order corresponds to interrupt stack layout
   uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rdx, rcx, rbx, rax;
@@ -12,37 +11,54 @@ struct thread_context { // field order corresponds to interrupt stack layout
   struct int_stack_frame frame;
 };
 
-struct thread_desc {
+#define THREAD_STACK_SIZE_MIN 16
+
+#define THREAD_AFFINITY_SIZE SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)
+
+#define THREAD_STATE_UNKNOWN 0
+#define THREAD_STATE_RUNNING 1
+#define THREAD_STATE_PAUSED 2
+#define THREAD_STATE_STOPPED 3
+
+#define IN // fields with this mark should be set before calling attach_thread
+
+struct thread_data {
   uint64_t magic;
-  struct thread_context context;
-  struct thread_desc *next;
-  uint8_t *stack;
-  size_t stack_size;
-  cpu_affinity affinity;
-  uint8_t priority;
+  struct thread_data *prev, *next, *all_prev, *all_next;
+  IN struct thread_context context;
+  IN uint8_t *stack;
+  IN size_t stack_size; // size available to thread: stack_size - 8
+  IN uint64_t affinity[THREAD_AFFINITY_SIZE];
+  uint64_t output;
+  uint64_t run_time;
+  IN uint8_t priority;
   uint8_t real_priority;
   uint16_t quantum;
-  uint8_t skip_store_context : 1;
-  uint8_t fixed_priority : 1;
-  uint8_t fixed_affinity : 1;
-  uint8_t protected : 1;
+  uint8_t cpu;
+  uint8_t state: 2;
+  IN uint8_t fixed_priority : 1;
 };
 
+#undef IN
+
 typedef uint64_t thread_id;
-typedef void (*thread_proc)(uint64_t data);
+typedef uint64_t (*thread_proc)(uint64_t input);
 
-error create_thread(thread_proc proc, uint64_t data, size_t stack_size,
-                    thread_id *id);
-error destroy_thread(thread_id id);
+// set stack and stack_size fields before calling this function
+err_code set_thread_context(struct thread_data *thread, thread_proc proc,
+                            uint64_t input);
 
-error resume_thread(thread_id id);
-error pause_thread(thread_id id);
-error set_thread_priority(thread_id id, int priority);
-error set_thread_affinity(thread_id id, const cpu_affinity *affinity);
+// attached thread becomes paused; thread should not reside in stack!
+err_code attach_thread(struct thread_data *thread, thread_id *id);
+err_code detach_thread(thread_id id, struct thread_data **thread);
+
+err_code resume_thread(thread_id id);
+err_code pause_thread(thread_id id);
+err_code stop_thread(thread_id id, uint64_t output);
 
 thread_id get_thread(void);
-error get_next_thread(int cpu, thread_id *id);
-error get_thread_desc(thread_id id, struct thread_desc *desc);
+err_code get_next_thread(thread_id *id);
+err_code copy_thread_data(thread_id id, struct thread_data *thread);
 
 void init_scheduler(void);
 

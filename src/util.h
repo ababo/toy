@@ -9,7 +9,6 @@
 #define PACKED __attribute__((packed))
 #define SECTION(name) __attribute__((section(name)))
 #define UNUSED __attribute__((unused))
-#define USED __attribute__((used))
 
 typedef __builtin_va_list va_list;
 #define va_start(vargs, last_param) __builtin_va_start(vargs, last_param)
@@ -42,10 +41,18 @@ typedef unsigned long long uint64_t;
 typedef unsigned int size_t;
 #endif
 
-#define UINT8_MAX (uint8_t)0xff
-#define UINT16_MAX (uint16_t)0xffff
-#define UINT32_MAX (uint32_t)0xffffffff
-#define UINT64_MAX (uint64_t)0xffffffffffffffffL
+#define INT8_MAX 0x7F
+#define INT8_MIN (-INT8_MAX - 1)
+#define INT16_MAX 0x7FFF
+#define INT16_MIN (-INT16_MAX - 1)
+#define INT32_MAX 0x7FFFFFFF
+#define INT32_MIN (-INT32_MAX - 1)
+#define INT64_MAX 0x7FFFFFFFFFFFFFFFL
+#define INT64_MIN (-INT64_MAX - 1L)
+#define UINT8_MAX (uint8_t)0xFF
+#define UINT16_MAX (uint16_t)0xFFFF
+#define UINT32_MAX (uint32_t)0xFFFFFFFF
+#define UINT64_MAX (uint64_t)0xFFFFFFFFFFFFFFFFL
 
 #define INT_BITS(value, low, high)              \
   (value << (sizeof(value) * 8 - 1 - high) >>   \
@@ -58,10 +65,12 @@ typedef unsigned int size_t;
 #define SIZE_ELEMENTS(size, element_size) \
   (((size) + (element_size) - 1) / (element_size))
 
-#define BIT_ARRAY_SET(array, bit) \
-  array[(bit) / sizeof((array)[0])] |= 1 << ((bit) % sizeof((array)[0]));
-#define BIT_ARRAY_RESET(array, bit) \
-  array[(bit) / sizeof((array)[0])] &= ~(1 << ((bit) % sizeof((array)[0])));
+#define BIT_ARRAY_SET(array, bit)                       \
+  ((uint8_t*)array)[(bit) / 8] |= 1 << ((bit) % 8);
+#define BIT_ARRAY_RESET(array, bit)                     \
+  ((uint8_t*)array)[(bit) / 8] &= ~(1 << ((bit) % 8));
+#define BIT_ARRAY_GET(array, bit)                       \
+  !!(((uint8_t*)array)[(bit) / 8] & (1 << ((bit) % 8)))
 
 #define ASM __asm__
 #define ASMV __asm__ __volatile__
@@ -133,7 +142,9 @@ int kprintf(const char *format, ...);
 #define LOG_DEBUG(format, ...)
 #endif
 
-typedef int error;
-#define ERR_NONE (error)0
+typedef int err_code;
+#define ERR_NONE 0
+#define ERR_BUSY 1
+#define ERR_BAD_INPUT 2
 
 #endif // UTIL_H

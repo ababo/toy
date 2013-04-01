@@ -1,7 +1,7 @@
 #include "config.h"
 #include "cpu_info.h"
 #include "interrupt.h"
-#include "mem_mgr.h"
+#include "memory.h"
 #include "sys_table.h"
 
 static uint8_t (*isr_stacks)[CONFIG_ISR_STACK_SIZE];
@@ -14,7 +14,7 @@ static void create_gdt(void) {
   task_segments = kmalloc(cpus * sizeof(struct sys_task_segment));
   if (!isr_stacks || !task_segments) {
     LOG_ERROR("failed to allocate memory");
-    return;
+    ASMV("hlt");
   }
   memset(task_segments, 0, cpus * sizeof(struct sys_task_segment));
 

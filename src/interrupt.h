@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-#define INT_VECTORS 34
+#define INT_VECTORS 35
 
 #define INT_VECTOR_DE 0 // divide error
 #define INT_VECTOR_NMI 2 // non-maskable interrupt

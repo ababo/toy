@@ -88,7 +88,7 @@ void start_apic_timer(int interval, bool periodic) {
   default:
     if (extra_bits > 7) {
       LOG_ERROR("timer overflow");
-      return;
+      ASMV("hlt");
     }
     divide = LAPIC_TIMER_DIVIDE_BY_1;
     if (!initial)
@@ -103,6 +103,12 @@ void start_apic_timer(int interval, bool periodic) {
 
 void stop_apic_timer(void) {
   write_lapic(LAPIC_TIMER_INITIAL_REG, 0);
+}
+
+void issue_cpu_interrupt(int apic_id, int vector) {
+  write_lapic(LAPIC_ICR_HIGH_REG, apic_id << 24);
+  write_lapic(LAPIC_ICR_LOW_REG, (uint8_t)vector |
+              LAPIC_ICR_DELIVERY_FIXED | LAPIC_ICR_LEVEL_ASSERT);
 }
 
 bool start_ap_cpu(int apic_id, int startup_addr, volatile int *started_cpus) {
