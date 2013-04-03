@@ -93,8 +93,8 @@ void kmain(void) {
   init_interrupts();
   init_apic();
   ASMV("sti");
-  init_scheduler();
   start_ap_cpus();
+  init_scheduler();
   start_kinit_thread();
 }
 
@@ -118,6 +118,7 @@ void kmain_ap(void) {
 }
 
 static uint64_t kinit_thread(UNUSED uint64_t input) {
-  LOG_DEBUG("kinit_thread called with input %X", (uint32_t)input);
+  for(int i = 0; i < 10000; i++)
+    LOG_DEBUG("%d ", i);
   return 0;
 }

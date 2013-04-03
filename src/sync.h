@@ -12,8 +12,8 @@ static inline void create_spinlock(struct spinlock *lock) {
 }
 
 static inline void acquire_spinlock(struct spinlock *lock) {
-  ASMV("1: movl $1, %%eax\nxchgl %%eax, %0\ntest %%eax, %%eax\njnz 1b"
-       : "+m"(lock->busy) : : "eax");
+  ASMV("1: movl $1, %%eax\nxchgl %%eax, %0\ntest %%eax, %%eax\n"
+       "jz 2f\npause\njmp 1b\n2:" : "+m"(lock->busy) : : "eax");
 }
 
 static inline void release_spinlock(struct spinlock *lock) {

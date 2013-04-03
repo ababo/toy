@@ -30,6 +30,7 @@ static struct cpu_data {
   struct cpu_priority priorities[CONFIG_SCHEDULER_PRIORITIES];
   uint64_t priority_mask[PRIORITY_MASK_SIZE];
   int total_threads;
+  bool load_context;
   struct cpu_task task;
 } cpus[CONFIG_CPUS_MAX];
 
@@ -53,6 +54,9 @@ err_code set_thread_context(struct thread_data *thread, thread_proc proc,
   *(uint64_t*)thread->stack = STACK_OVERRUN_MAGIC;
   uint64_t *top = (uint64_t*)(thread->stack + thread->stack_size - 8);
   *top = (uint64_t)&exit_thread;
+
+  thread->context.frame.cs = SEGMENT_CODE;
+  thread->context.frame.ss = SEGMENT_DATA;
   thread->context.frame.rsp = (uint64_t)top;
   thread->context.frame.rip = (uint64_t)proc;
   thread->context.rdi = input;
@@ -152,6 +156,8 @@ err_code resume_thread(thread_id id) {
       thrd->prev->next = thrd->next;
     paused.total_threads--;
   }
+  else
+    err = ERR_BAD_STATE;
   release_spinlock(&paused.lock);
 
   if (!err) {
@@ -180,23 +186,97 @@ err_code stop_thread(thread_id id, uint64_t output) {
   for(;;);
 }
 
-ISR_DEFINE(timer, 0) {
+static inline void add_expired(struct cpu_data *cpud,
+                               struct thread_data *thread) {
+  struct cpu_priority *prio = &cpud->priorities[thread->real_priority];
+  thread->prev = thread->next = NULL;
 
+  if (prio->total_threads) {
+    if (prio->expired_head) {
+      prio->expired_head->next = thread;
+      thread->prev = prio->expired_head;
+    }
+    else
+      prio->expired_tail = thread;
+
+    prio->expired_head = thread;
+  }
+  else // this odd case can occure only when resuming thread
+    prio->active_tail = thread;
+
+  BIT_ARRAY_SET(cpud->priority_mask, thread->real_priority);
+  prio->total_threads++;
+}
+
+static inline void load_context(const struct thread_context *context,
+                                struct int_stack_frame *frame) {
+  /// TODO: optimize for speed
+  memcpy((uint8_t*)frame + sizeof(*frame) - sizeof(*context),
+         context, sizeof(*context));
+}
+
+static inline void store_context(const struct int_stack_frame *frame,
+                                 struct thread_context *context) {
+  /// TODO: optimize for speed
+  memcpy(context, (uint8_t*)frame + sizeof(*frame) - sizeof(*context),
+         sizeof(*context));
+}
+
+ISR_DEFINE(timer, 0) {
+  struct cpu_data *cpud = &cpus[get_cpu()];
+  struct cpu_priority *priod = &cpud->priorities[cpud->current_priority];
+  struct thread_data *thrd = priod->active_tail;
+
+  if (!cpud->total_threads)
+    goto exit;
+
+  if (cpud->load_context) {
+    load_context(&thrd->context, stack_frame);
+    cpud->load_context = false;
+    goto exit;
+  }
+
+  thrd->run_time++;
+
+  int highest_prio = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
+  if (highest_prio >= cpud->current_priority && thrd->quantum) {
+    thrd->quantum--;
+    goto exit;
+  }
+
+  priod->active_tail = thrd->next;
+  if (!--priod->total_threads)
+    BIT_ARRAY_RESET(cpud->priority_mask, cpud->current_priority);
+
+  store_context(stack_frame, &thrd->context);
+  update_priority_quantum(thrd);
+  add_expired(cpud, thrd);
+
+  if (!priod->active_tail) {
+    priod->active_tail = priod->expired_tail;
+    priod->expired_tail = priod->expired_head = NULL;
+  }
+
+  priod = &cpud->priorities[cpud->current_priority = highest_prio];
+  struct thread_data *thrd2 = priod->active_tail;
+  if (thrd2 != thrd)
+    load_context(&thrd2->context, stack_frame);
+
+exit:
   set_apic_eoi();
 }
 
 static inline void do_resume_task(struct cpu_data *cpud,
                                   struct cpu_task *task) {
-  struct cpu_priority *prio = &cpud->priorities[task->thread->real_priority];
-  task->thread->prev = task->thread->next = NULL;
-  task->thread->state = THREAD_STATE_RUNNING;
-  if (prio->expired_head) {
-    prio->expired_head->next = task->thread;
-    task->thread->prev = prio->expired_head;
+  struct thread_data *thread = task->thread;
+  thread->state = THREAD_STATE_RUNNING;
+  add_expired(cpud, thread);
+
+  if (!cpud->total_threads++) {
+    cpud->current_priority = thread->real_priority;
+    cpud->load_context = true;
   }
-  prio->expired_head = task->thread;
-  BIT_ARRAY_SET(cpud->priority_mask, task->thread->real_priority);
-  prio->total_threads++;
+
   task->error = ERR_NONE;
 }
 
@@ -207,6 +287,8 @@ ISR_DEFINE(task, 0) {
   switch (task->type) {
   case CPU_TASK_RESUME: do_resume_task(cpud, task); break;
   }
+
+  set_apic_eoi();
 }
 
 void init_scheduler(void) {
