@@ -147,5 +147,6 @@ typedef int err_code;
 #define ERR_BUSY 1
 #define ERR_BAD_INPUT 2
 #define ERR_BAD_STATE 3
+#define ERR_NOT_FOUND 4
 
 #endif // UTIL_H

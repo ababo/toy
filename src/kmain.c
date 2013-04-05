@@ -15,7 +15,7 @@ ASM(".text\n.global kstart\n"
     "movq $(bsp_boot_stack + "
       STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %rsp\n"
     "call kmain\n"
-    "halt: hlt\njmp halt");
+    "jmp halt");
 
 #define BSTART16_ADDR 0x1000
 
@@ -107,7 +107,7 @@ ASM(".text\n.global kstart_ap\n"
     "orl $" STR_EXPAND(CR4_OSFXSR) ", %eax\n"
     "movq %rax, %cr4\n"
     "call kmain_ap\n"
-    "halt_ap: hlt\njmp halt_ap");
+    "jmp halt");
 
 void kmain_ap(void) {
   init_interrupts();

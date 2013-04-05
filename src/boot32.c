@@ -64,7 +64,7 @@ static void create_gdt(void *gdt, struct sys_table_info *gdti) {
 uint32_t multiboot_info = 0;
 ALIGNED(16) uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
-ASM(".text\n.global bstart32\n"
+ASM(".text\n.global bstart32\n.global halt\n"
     "bstart32: movl $(bsp_boot_stack + "
       STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp\n"
     "movl %ebx, multiboot_info\n"
