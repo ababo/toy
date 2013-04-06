@@ -88,7 +88,7 @@ void start_apic_timer(int interval, bool periodic) {
   default:
     if (extra_bits > 7) {
       LOG_ERROR("timer overflow");
-      ASMV("hlt");
+      ASMV("jmp halt");
     }
     divide = LAPIC_TIMER_DIVIDE_BY_1;
     if (!initial)

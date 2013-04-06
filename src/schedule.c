@@ -54,6 +54,7 @@ err_code set_thread_context(struct thread_data *thread, thread_proc proc,
   uint64_t *top = (uint64_t*)(thread->stack + thread->stack_size - 8);
   *top = (uint64_t)&exit_thread;
 
+  thread->context.rflags = RFLAGS_IF;
   thread->context.cs = SEGMENT_CODE;
   thread->context.ss = SEGMENT_DATA;
   thread->context.rsp = (uint64_t)top;
@@ -271,11 +272,11 @@ static inline void add_expired(struct cpu_data *cpud,
 
 static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
                                        int cpu, struct thread_data *thread) {
-  if (*(uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
-    kprintf("Stack overrun (CPU: %d, thread %X):\n", cpu, (uint64_t)thread);
+  if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
+    kprintf("\nstack overrun (CPU: %d, thread %X):\n", cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
     kprintf("\n\n\n\n");
-    ASMV("hlt");
+    ASMV("jmp halt");
   }
 }
 

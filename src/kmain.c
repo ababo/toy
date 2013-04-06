@@ -47,7 +47,7 @@ static void start_ap_cpus(void) {
   ap_boot_stack = kmalloc(CONFIG_AP_BOOT_STACK_SIZE);
   if (!ap_boot_stack) {
     LOG_ERROR("failed to allocate memory");
-    ASMV("hlt");
+    ASMV("jmp halt");
   }
 
   for (int i = 0; i < get_cpus(); i++)
@@ -66,7 +66,7 @@ static void start_kinit_thread(void) {
   struct thread_data *thrd = kmalloc(sizeof(*thrd));
   if (!thrd) {
     LOG_ERROR("failed to allocate memory");
-    ASMV("hlt");
+    ASMV("jmp halt");
   }
 
   extern uint8_t bsp_boot_stack;
@@ -82,7 +82,7 @@ static void start_kinit_thread(void) {
       attach_thread(thrd, &id) || resume_thread(id))
     LOG_ERROR("failed to start kinit_thread");
 
-  ASMV("hlt");
+  ASMV("jmp halt");
 }
 
 void kmain(void) {
@@ -118,7 +118,11 @@ void kmain_ap(void) {
 }
 
 static uint64_t kinit_thread(UNUSED uint64_t input) {
-  for(int i = 0; i < 10000; i++)
-    LOG_DEBUG("%d ", i);
+  LOG_DEBUG("started");
+  for (int i = 0; i < 80; i++) {
+    for (volatile int j = 0; j < 100000000; j++);
+    kprintf(".");
+  }
+  LOG_DEBUG("stopped");
   return 0;
 }

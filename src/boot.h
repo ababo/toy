@@ -11,6 +11,8 @@
 #define SEGMENT_CODE (1 << 3)
 #define SEGMENT_DATA (2 << 3)
 
+#define RFLAGS_IF (1 << 9)
+
 static inline int get_started_cpus() {
   extern int started_cpus;
   return started_cpus;

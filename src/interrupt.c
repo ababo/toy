@@ -14,7 +14,7 @@ static void create_gdt(void) {
   task_segments = kmalloc(cpus * sizeof(struct sys_task_segment));
   if (!isr_stacks || !task_segments) {
     LOG_ERROR("failed to allocate memory");
-    ASMV("hlt");
+    ASMV("jmp halt");
   }
   memset(task_segments, 0, cpus * sizeof(struct sys_task_segment));
 
@@ -60,13 +60,13 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
 }
 
 ISR_IMPL(default) {
-  kprintf("fault: #%s", (char*)(data << 8 >> 8));
+  kprintf("\nfault: #%s", (char*)(data << 8 >> 8));
   if (is_int_error(data >> 56))
     kprintf(" (error_code: %X)", stack_frame->error_code);
   kprintf("\n");
   dump_int_stack_frame(stack_frame);
   kprintf("\n\n\n\n");
-  ASMV("hlt");
+  ASMV("jmp halt");
 }
 
 #define ISR_SIMPLE_GETTER(mnemonic)                                     \
