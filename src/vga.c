@@ -186,15 +186,29 @@ int kprintf(const char *format, ...) {
   va_list vargs;
   va_start(vargs, format);
 
-  int num = 0, int_arg;
+  int num = 0;
   char chr, *str, buf[20];
+  long lint;
+
+  struct attributes {
+    uint32_t size_long : 1;
+  } attrs;
+
   while ((chr = *format++))
-    if (chr == '%')
+    if (chr == '%') {
+      memset(&attrs, 0, sizeof(attrs));
+
+    next_attr_type:
       switch ((chr = *format++)) {
+      case 'l':
+        attrs.size_long = true;
+        goto next_attr_type;
+
       case '%':
         put_char('%');
         num++;
         break;
+
       case 's':
         str = va_arg(vargs, char*);
       puts:
@@ -203,27 +217,34 @@ int kprintf(const char *format, ...) {
           num++;
         }
         break;
+
       case 'd':
-        int_arg = va_arg(vargs, int);
-        if (int_arg < 0) {
+        lint = va_arg(vargs, long);
+        if (!attrs.size_long)
+          lint = (int)lint;
+        if (lint < 0) {
           put_char('-');
-          int_arg = -int_arg;
+          lint = -lint;
           num++;
         }
-        str = ultoa(int_arg, buf, 10);
+        str = ultoa(lint, buf, 10);
         goto puts;
+
       case 'x':
       case 'X':
-        int_arg = va_arg(vargs, int);
-        str = ultoa((unsigned int)int_arg, buf, chr == 'x' ? 16 : -16);
+        lint = va_arg(vargs, long);
+        if (!attrs.size_long)
+          lint = (unsigned int)lint;
+        str = ultoa(lint, buf, chr == 'x' ? 16 : -16);
         goto puts;
+
       case 'c':
         buf[0] = (char)va_arg(vargs, int), buf[1] = 0, str = buf;
         goto puts;
-        // TODO: implement other specifiers
-      default:
-        return -1;
+
+      // TODO: implement other types and attributes
       }
+    }
     else {
       put_char(chr);
       num++;

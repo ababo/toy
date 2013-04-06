@@ -56,8 +56,7 @@ struct int_stack_frame {
     ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
     ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
     ASMV("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
-    ASMV("leaq (%rsp), %rdi");                                       \
-    ASMV("movabsq $%P0, %%rsi" : : "i"(data));                       \
+    ASMV("movq %%rsp, %%rdi\nmovabsq $%P0, %%rsi" : : "i"(data));    \
     ASMV("callq %P0" : : "i"(impl_name##_isr_impl));                 \
     ASMV("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
     ASMV("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \

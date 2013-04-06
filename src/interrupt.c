@@ -38,25 +38,25 @@ static void create_gdt(void) {
 }
 
 void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
-  kprintf("rax: %X\n", stack_frame->rax);
-  kprintf("rbx: %X\n", stack_frame->rbx);
-  kprintf("rcx: %X\n", stack_frame->rcx);
-  kprintf("rdx: %X\n", stack_frame->rdx);
-  kprintf("rsi: %X\n", stack_frame->rsi);
-  kprintf("rdi: %X\n", stack_frame->rdi);
-  kprintf("r8: %X\n", stack_frame->r8);
-  kprintf("r9: %X\n", stack_frame->r9);
-  kprintf("r10: %X\n", stack_frame->r10);
-  kprintf("r11: %X\n", stack_frame->r11);
-  kprintf("r12: %X\n", stack_frame->r12);
-  kprintf("r13: %X\n", stack_frame->r13);
-  kprintf("r14: %X\n", stack_frame->r14);
-  kprintf("r15: %X\n", stack_frame->r15);
-  kprintf("rip: %X\n", stack_frame->rip);
-  kprintf("rsp: %X\n", stack_frame->rsp);
+  kprintf("rax: %lX\n", stack_frame->rax);
+  kprintf("rbx: %lX\n", stack_frame->rbx);
+  kprintf("rcx: %lX\n", stack_frame->rcx);
+  kprintf("rdx: %lX\n", stack_frame->rdx);
+  kprintf("rsi: %lX\n", stack_frame->rsi);
+  kprintf("rdi: %lX\n", stack_frame->rdi);
+  kprintf("r8: %lX\n", stack_frame->r8);
+  kprintf("r9: %lX\n", stack_frame->r9);
+  kprintf("r10: %lX\n", stack_frame->r10);
+  kprintf("r11: %lX\n", stack_frame->r11);
+  kprintf("r12: %lX\n", stack_frame->r12);
+  kprintf("r13: %lX\n", stack_frame->r13);
+  kprintf("r14: %lX\n", stack_frame->r14);
+  kprintf("r15: %lX\n", stack_frame->r15);
+  kprintf("rip: %lX\n", stack_frame->rip);
+  kprintf("rsp: %lX\n", stack_frame->rsp);
   kprintf("cs: %X\n", stack_frame->cs);
   kprintf("ss: %X\n", stack_frame->ss);
-  kprintf("rflags: %X\n", stack_frame->rflags);
+  kprintf("rflags: %lX\n", stack_frame->rflags);
 }
 
 ISR_IMPL(default) {

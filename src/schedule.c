@@ -273,7 +273,7 @@ static inline void add_expired(struct cpu_data *cpud,
 static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
                                        int cpu, struct thread_data *thread) {
   if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
-    kprintf("\nstack overrun (CPU: %d, thread %X):\n", cpu, (uint64_t)thread);
+    kprintf("\nstack overrun (CPU: %d, thread %lX):\n", cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
     kprintf("\n\n\n\n");
     ASMV("jmp halt");
