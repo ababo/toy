@@ -37,14 +37,35 @@ static void create_gdt(void) {
   }
 }
 
+void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
+  kprintf("rax: %X\n", stack_frame->rax);
+  kprintf("rbx: %X\n", stack_frame->rbx);
+  kprintf("rcx: %X\n", stack_frame->rcx);
+  kprintf("rdx: %X\n", stack_frame->rdx);
+  kprintf("rsi: %X\n", stack_frame->rsi);
+  kprintf("rdi: %X\n", stack_frame->rdi);
+  kprintf("r8: %X\n", stack_frame->r8);
+  kprintf("r9: %X\n", stack_frame->r9);
+  kprintf("r10: %X\n", stack_frame->r10);
+  kprintf("r11: %X\n", stack_frame->r11);
+  kprintf("r12: %X\n", stack_frame->r12);
+  kprintf("r13: %X\n", stack_frame->r13);
+  kprintf("r14: %X\n", stack_frame->r14);
+  kprintf("r15: %X\n", stack_frame->r15);
+  kprintf("rip: %X\n", stack_frame->rip);
+  kprintf("rsp: %X\n", stack_frame->rsp);
+  kprintf("cs: %X\n", stack_frame->cs);
+  kprintf("ss: %X\n", stack_frame->ss);
+  kprintf("rflags: %X\n", stack_frame->rflags);
+}
+
 ISR_IMPL(default) {
-  kprintf("#%s: ss: %X, rsp: %X, rflags: %X, cs: %X, rip: %X",
-          (char*)(data << 8 >> 8), stack_frame->ss, (uint32_t)stack_frame->rsp,
-          (uint32_t)stack_frame->rflags, stack_frame->cs,
-          (uint32_t)stack_frame->rip);
+  kprintf("fault: #%s", (char*)(data << 8 >> 8));
   if (is_int_error(data >> 56))
-    kprintf(", error_code: %X", stack_frame->error_code);
+    kprintf(" (error_code: %X)", stack_frame->error_code);
   kprintf("\n");
+  dump_int_stack_frame(stack_frame);
+  kprintf("\n\n\n\n");
   ASMV("hlt");
 }
 
@@ -113,13 +134,13 @@ static void load_gdt_idt_tr(void) {
 }
 
 void init_interrupts(void) {
-  int cpui = get_cpu();
-  if (cpui == get_bsp_cpu()) {
+  int cpu = get_cpu();
+  if (cpu == get_bsp_cpu()) {
     create_gdt();
     create_idt();
   }
   load_gdt_idt_tr();
-  LOG_DEBUG("done (CPU: %d)", cpui);
+  LOG_DEBUG("done (CPU: %d)", cpu);
 }
 
 void *get_isr(int vector) {

@@ -157,8 +157,8 @@ static void adjust_lapic_timer(void) {
 }
 
 void init_apic(void) {
-  int cpui = get_cpu();
-  if (cpui == get_bsp_cpu()) {
+  int cpu = get_cpu();
+  if (cpu == get_bsp_cpu()) {
     map_page(LAPIC_ADDR, LAPIC_ADDR,
              PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
     set_isr(INT_VECTOR_APIC_SPURIOUS, empty_isr_getter());
@@ -171,9 +171,9 @@ void init_apic(void) {
   write_lapic(LAPIC_TIMER_REG, INT_VECTOR_APIC_TIMER);
   write_lapic(LAPIC_TIMER_DIVIDE_REG, LAPIC_TIMER_DIVIDE_BY_1);
 
-  if (cpui == get_bsp_cpu()) {
+  if (cpu == get_bsp_cpu()) {
     adjust_lapic_timer();
   }
 
-  LOG_DEBUG("done (CPU: %d)", cpui);
+  LOG_DEBUG("done (CPU: %d)", cpu);
 }

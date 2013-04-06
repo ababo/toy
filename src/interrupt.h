@@ -35,11 +35,12 @@ static inline bool is_int_error(int vector) {
 }
 
 struct int_stack_frame {
+  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rdx, rcx, rbx, rax;
+  uint8_t fxdata[512];
   uint32_t error_code;
   uint64_t rip;
   uint16_t cs;
-  uint64_t rflags;
-  uint64_t rsp;
+  uint64_t rflags, rsp;
   uint16_t ss;
 };
 
@@ -55,7 +56,7 @@ struct int_stack_frame {
     ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
     ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
     ASMV("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
-    ASMV("leaq (512 + 14 * 8)(%rsp), %rdi");                         \
+    ASMV("leaq (%rsp), %rdi");                                       \
     ASMV("movabsq $%P0, %%rsi" : : "i"(data));                       \
     ASMV("callq %P0" : : "i"(impl_name##_isr_impl));                 \
     ASMV("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
@@ -71,6 +72,8 @@ struct int_stack_frame {
   ISR_IMPL(name);                               \
   ISR_GETTER(name, name, data)                  \
   ISR_IMPL(name)
+
+void dump_int_stack_frame(const struct int_stack_frame *stack_frame);
 
 void *get_isr(int vector);
 void set_isr(int vector, void *isr);

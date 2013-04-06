@@ -1,8 +1,6 @@
 #include "apic.h"
 #include "boot.h"
-#include "config.h"
 #include "cpu_info.h"
-#include "interrupt.h"
 #include "schedule.h"
 #include "sync.h"
 
@@ -56,10 +54,10 @@ err_code set_thread_context(struct thread_data *thread, thread_proc proc,
   uint64_t *top = (uint64_t*)(thread->stack + thread->stack_size - 8);
   *top = (uint64_t)&exit_thread;
 
-  thread->context.frame.cs = SEGMENT_CODE;
-  thread->context.frame.ss = SEGMENT_DATA;
-  thread->context.frame.rsp = (uint64_t)top;
-  thread->context.frame.rip = (uint64_t)proc;
+  thread->context.cs = SEGMENT_CODE;
+  thread->context.ss = SEGMENT_DATA;
+  thread->context.rsp = (uint64_t)top;
+  thread->context.rip = (uint64_t)proc;
   thread->context.rdi = input;
   return ERR_NONE;
 }
@@ -271,65 +269,63 @@ static inline void add_expired(struct cpu_data *cpud,
   prio->total_threads++;
 }
 
-static inline void load_context(const struct thread_context *context,
-                                struct int_stack_frame *frame) {
-  /// TODO: optimize for speed
-  memcpy((uint8_t*)frame + sizeof(*frame) - sizeof(*context),
-         context, sizeof(*context));
-}
-
-static inline void store_context(const struct int_stack_frame *frame,
-                                 struct thread_context *context) {
-  /// TODO: optimize for speed
-  memcpy(context, (uint8_t*)frame + sizeof(*frame) - sizeof(*context),
-         sizeof(*context));
+static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
+                                       int cpu, struct thread_data *thread) {
+  if (*(uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
+    kprintf("Stack overrun (CPU: %d, thread %X):\n", cpu, (uint64_t)thread);
+    dump_int_stack_frame(stack_frame);
+    kprintf("\n\n\n\n");
+    ASMV("hlt");
+  }
 }
 
 ISR_DEFINE(timer, 0) {
-  struct cpu_data *cpud = &cpus[get_cpu()];
-  struct cpu_priority *priod = &cpud->priorities[cpud->current_priority];
-  struct thread_data *thrd = priod->active_tail;
+  int cpu = get_cpu();
+  struct cpu_data *cpud = &cpus[cpu];
+  struct cpu_priority *prio = &cpud->priorities[cpud->current_priority];
+  struct thread_data *thrd = prio->active_tail;
 
   if (!cpud->total_threads)
     goto exit;
 
   if (cpud->load_context) {
-    load_context(&thrd->context, stack_frame);
+    *stack_frame = thrd->context;
     cpud->load_context = false;
     goto exit;
   }
 
+  check_stack_overrun(stack_frame, cpu, thrd);
   thrd->run_time++;
 
-  int highest_prio = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
-  if (highest_prio >= cpud->current_priority && thrd->quantum) {
+  int highest = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
+  if (highest >= cpud->current_priority && thrd->quantum) {
     thrd->quantum--;
     goto exit;
   }
 
-  priod->active_tail = thrd->next;
-  if (!--priod->total_threads)
+  prio->active_tail = thrd->next;
+  if (!--prio->total_threads)
     BIT_ARRAY_RESET(cpud->priority_mask, cpud->current_priority);
 
-  store_context(stack_frame, &thrd->context);
+  thrd->context = *stack_frame;
   update_priority_quantum(thrd);
   add_expired(cpud, thrd);
 
-  if (!priod->active_tail) {
-    priod->active_tail = priod->expired_tail;
-    priod->expired_tail = priod->expired_head = NULL;
+  if (!prio->active_tail) {
+    prio->active_tail = prio->expired_tail;
+    prio->expired_tail = prio->expired_head = NULL;
   }
 
-  priod = &cpud->priorities[cpud->current_priority = highest_prio];
-  struct thread_data *thrd2 = priod->active_tail;
+  prio = &cpud->priorities[cpud->current_priority = highest];
+  struct thread_data *thrd2 = prio->active_tail;
   if (thrd2 != thrd)
-    load_context(&thrd2->context, stack_frame);
+    *stack_frame = thrd2->context;
 
 exit:
   set_apic_eoi();
 }
 
-static inline void do_resume_task(UNUSED struct int_stack_frame *frame,
+static inline void do_resume_task(UNUSED struct int_stack_frame *stack_frame,
                                   int cpu, struct cpu_data *cpud,
                                   struct cpu_task *task) {
   struct thread_data *thread = task->thread;
@@ -345,7 +341,7 @@ static inline void do_resume_task(UNUSED struct int_stack_frame *frame,
   task->error = ERR_NONE;
 }
 
-static inline void do_pause_task(struct int_stack_frame *frame,
+static inline void do_pause_task(struct int_stack_frame *stack_frame,
                                  int cpu, struct cpu_data *cpud,
                                  struct cpu_task *task) {
   struct thread_data *thrd = task->thread;
@@ -355,34 +351,34 @@ static inline void do_pause_task(struct int_stack_frame *frame,
   }
 
   bool current = cpud->priorities[cpud->current_priority].active_tail == thrd;
-  struct cpu_priority *priod = &cpud->priorities[thrd->real_priority];
+  struct cpu_priority *prio = &cpud->priorities[thrd->real_priority];
 
   if (thrd->next)
     thrd->next = thrd->prev;
   if (thrd->prev)
     thrd->prev = thrd->next;
-  if (priod->expired_head == thrd)
-    priod->expired_head = thrd->prev;
-  else if (priod->expired_tail == thrd)
-    priod->expired_tail = thrd->next;
-  else if (priod->active_tail == thrd)
-    priod->active_tail = thrd->next;
+  if (prio->expired_head == thrd)
+    prio->expired_head = thrd->prev;
+  else if (prio->expired_tail == thrd)
+    prio->expired_tail = thrd->next;
+  else if (prio->active_tail == thrd)
+    prio->active_tail = thrd->next;
   thrd->state = THREAD_STATE_UNKNOWN;
-  if (!--priod->total_threads)
+  if (!--prio->total_threads)
     BIT_ARRAY_RESET(cpud->priority_mask, thrd->real_priority);
   cpud->total_threads--;
 
   if (current) {
-    store_context(frame, &thrd->context);
+    thrd->context = *stack_frame;
 
-    int highest_prio = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
-    if (highest_prio != -1) {
-      priod = &cpud->priorities[cpud->current_priority = highest_prio];
-      load_context(&priod->active_tail->context, frame);
+    if (cpud->total_threads) {
+      int highest = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
+      prio = &cpud->priorities[cpud->current_priority = highest];
+      *stack_frame = prio->active_tail->context;
     }
-    else { // no threads remain
+    else {
       extern int halt;
-      frame->rip = (uint64_t)&halt;
+      stack_frame->rip = (uint64_t)&halt;
     }
   }
 
@@ -404,15 +400,15 @@ ISR_DEFINE(task, 0) {
 }
 
 void init_scheduler(void) {
-  int cpui = get_cpu();
-  if (cpui == get_bsp_cpu()) {
+  int cpu = get_cpu();
+  if (cpu == get_bsp_cpu()) {
     set_isr(INT_VECTOR_APIC_TIMER, timer_isr_getter());
     set_isr(INT_VECTOR_SCHEDULER_TASK, task_isr_getter());
     create_spinlock(&all.lock);
     create_spinlock(&inactive.lock);
   }
 
-  create_spinlock(&cpus[cpui].lock);
+  create_spinlock(&cpus[cpu].lock);
   start_apic_timer(CONFIG_SCHEDULER_TIMER_INTERVAL, true);
-  LOG_DEBUG("done (CPU: %d)", cpui);
+  LOG_DEBUG("done (CPU: %d)", cpu);
 }

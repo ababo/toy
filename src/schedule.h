@@ -5,12 +5,6 @@
 #include "interrupt.h"
 #include "util.h"
 
-struct thread_context { // field order corresponds to interrupt stack layout
-  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rdx, rcx, rbx, rax;
-  uint8_t fxdata[512];
-  struct int_stack_frame frame;
-};
-
 #define THREAD_STACK_SIZE_MIN 16
 
 #define THREAD_AFFINITY_SIZE SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)
@@ -25,7 +19,7 @@ struct thread_context { // field order corresponds to interrupt stack layout
 struct thread_data {
   uint64_t magic;
   struct thread_data *prev, *next, *all_prev, *all_next;
-  IN struct thread_context context;
+  IN struct int_stack_frame context;
   IN uint8_t *stack;
   IN size_t stack_size; // size available to thread: stack_size - 8
   IN uint64_t affinity[THREAD_AFFINITY_SIZE];
