@@ -136,7 +136,7 @@ bool start_ap_cpu(int apic_id, int startup_addr, volatile int *started_cpus) {
   return false;
 }
 
-ISR_DEFINE(empty, 0) {
+DEFINE_ISR(empty, 0) {
   set_apic_eoi();
 }
 
@@ -161,8 +161,8 @@ void init_apic(void) {
   if (cpu == get_bsp_cpu()) {
     map_page(LAPIC_ADDR, LAPIC_ADDR,
              PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
-    set_isr(INT_VECTOR_APIC_SPURIOUS, empty_isr_getter());
-    set_isr(INT_VECTOR_APIC_TIMER, empty_isr_getter());
+    set_isr(INT_VECTOR_APIC_SPURIOUS, get_empty_isr());
+    set_isr(INT_VECTOR_APIC_TIMER, get_empty_isr());
   }
 
   wrmsr(LAPIC_BASE_MSR, LAPIC_ADDR | LAPIC_ENABLE);

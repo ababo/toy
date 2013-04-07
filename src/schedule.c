@@ -280,7 +280,7 @@ static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
   }
 }
 
-ISR_DEFINE(timer, 0) {
+DEFINE_ISR(timer, 0) {
   int cpu = get_cpu();
   struct cpu_data *cpud = &cpus[cpu];
   struct cpu_priority *prio = &cpud->priorities[cpud->current_priority];
@@ -386,7 +386,7 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
   task->error = ERR_NONE;
 }
 
-ISR_DEFINE(task, 0) {
+DEFINE_ISR(task, 0) {
   int cpu = get_cpu();
   struct cpu_data *cpud = &cpus[cpu];
   struct cpu_task *task = &cpud->task;
@@ -403,8 +403,8 @@ ISR_DEFINE(task, 0) {
 void init_scheduler(void) {
   int cpu = get_cpu();
   if (cpu == get_bsp_cpu()) {
-    set_isr(INT_VECTOR_APIC_TIMER, timer_isr_getter());
-    set_isr(INT_VECTOR_SCHEDULER_TASK, task_isr_getter());
+    set_isr(INT_VECTOR_APIC_TIMER, get_timer_isr());
+    set_isr(INT_VECTOR_SCHEDULER_TASK, get_task_isr());
     create_spinlock(&all.lock);
     create_spinlock(&inactive.lock);
   }

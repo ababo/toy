@@ -59,7 +59,7 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
   kprintf("rflags: %lX\n", stack_frame->rflags);
 }
 
-ISR_IMPL(default) {
+DEFINE_INT_HANDLER(default) {
   kprintf("\nfault: #%s", (char*)(data << 8 >> 8));
   if (is_int_error(data >> 56))
     kprintf(" (error_code: %X)", stack_frame->error_code);
@@ -69,27 +69,27 @@ ISR_IMPL(default) {
   ASMV("jmp halt");
 }
 
-#define ISR_SIMPLE_GETTER(mnemonic)                                     \
-  ISR_GETTER(mnemonic, default,                                         \
-             ((uint64_t)INT_VECTOR_##mnemonic << 56) + #mnemonic)
+#define DEFINE_DEFAULT_ISR_WRAPPER(mnemonic)                            \
+  DEFINE_ISR_WRAPPER(mnemonic, default,                                 \
+                     ((uint64_t)INT_VECTOR_##mnemonic << 56) + #mnemonic)
 
-ISR_SIMPLE_GETTER(DE);
-ISR_SIMPLE_GETTER(NMI);
-ISR_SIMPLE_GETTER(BP);
-ISR_SIMPLE_GETTER(OF);
-ISR_SIMPLE_GETTER(BR);
-ISR_SIMPLE_GETTER(UD);
-ISR_SIMPLE_GETTER(NM);
-ISR_SIMPLE_GETTER(DF)
-ISR_SIMPLE_GETTER(TS);
-ISR_SIMPLE_GETTER(NP);
-ISR_SIMPLE_GETTER(SS);
-ISR_SIMPLE_GETTER(GP);
-ISR_SIMPLE_GETTER(PF);
-ISR_SIMPLE_GETTER(MF);
-ISR_SIMPLE_GETTER(AC);
-ISR_SIMPLE_GETTER(MC);
-ISR_SIMPLE_GETTER(XM);
+DEFINE_DEFAULT_ISR_WRAPPER(DE);
+DEFINE_DEFAULT_ISR_WRAPPER(NMI);
+DEFINE_DEFAULT_ISR_WRAPPER(BP);
+DEFINE_DEFAULT_ISR_WRAPPER(OF);
+DEFINE_DEFAULT_ISR_WRAPPER(BR);
+DEFINE_DEFAULT_ISR_WRAPPER(UD);
+DEFINE_DEFAULT_ISR_WRAPPER(NM);
+DEFINE_DEFAULT_ISR_WRAPPER(DF)
+DEFINE_DEFAULT_ISR_WRAPPER(TS);
+DEFINE_DEFAULT_ISR_WRAPPER(NP);
+DEFINE_DEFAULT_ISR_WRAPPER(SS);
+DEFINE_DEFAULT_ISR_WRAPPER(GP);
+DEFINE_DEFAULT_ISR_WRAPPER(PF);
+DEFINE_DEFAULT_ISR_WRAPPER(MF);
+DEFINE_DEFAULT_ISR_WRAPPER(AC);
+DEFINE_DEFAULT_ISR_WRAPPER(MC);
+DEFINE_DEFAULT_ISR_WRAPPER(XM);
 
 #define CODE_SEGMENT 8
 
@@ -100,23 +100,23 @@ static void create_idt(void) {
         .cs = CODE_SEGMENT, .ist = 1, .type = SYS_GATE_INT, .present = false
       };
 
-  set_isr(INT_VECTOR_DE, DE_isr_getter());
-  set_isr(INT_VECTOR_NMI, NMI_isr_getter());
-  set_isr(INT_VECTOR_BP, BP_isr_getter());
-  set_isr(INT_VECTOR_OF, OF_isr_getter());
-  set_isr(INT_VECTOR_BR, BR_isr_getter());
-  set_isr(INT_VECTOR_UD, UD_isr_getter());
-  set_isr(INT_VECTOR_NM, NM_isr_getter());
-  set_isr(INT_VECTOR_DF, DF_isr_getter());
-  set_isr(INT_VECTOR_TS, TS_isr_getter());
-  set_isr(INT_VECTOR_NP, NP_isr_getter());
-  set_isr(INT_VECTOR_SS, SS_isr_getter());
-  set_isr(INT_VECTOR_GP, GP_isr_getter());
-  set_isr(INT_VECTOR_PF, PF_isr_getter());
-  set_isr(INT_VECTOR_MF, MF_isr_getter());
-  set_isr(INT_VECTOR_AC, AC_isr_getter());
-  set_isr(INT_VECTOR_MC, MC_isr_getter());
-  set_isr(INT_VECTOR_XM, XM_isr_getter());
+  set_isr(INT_VECTOR_DE, get_DE_isr());
+  set_isr(INT_VECTOR_NMI, get_NMI_isr());
+  set_isr(INT_VECTOR_BP, get_BP_isr());
+  set_isr(INT_VECTOR_OF, get_OF_isr());
+  set_isr(INT_VECTOR_BR, get_BR_isr());
+  set_isr(INT_VECTOR_UD, get_UD_isr());
+  set_isr(INT_VECTOR_NM, get_NM_isr());
+  set_isr(INT_VECTOR_DF, get_DF_isr());
+  set_isr(INT_VECTOR_TS, get_TS_isr());
+  set_isr(INT_VECTOR_NP, get_NP_isr());
+  set_isr(INT_VECTOR_SS, get_SS_isr());
+  set_isr(INT_VECTOR_GP, get_GP_isr());
+  set_isr(INT_VECTOR_PF, get_PF_isr());
+  set_isr(INT_VECTOR_MF, get_MF_isr());
+  set_isr(INT_VECTOR_AC, get_AC_isr());
+  set_isr(INT_VECTOR_MC, get_MC_isr());
+  set_isr(INT_VECTOR_XM, get_XM_isr());
 }
 
 static void load_gdt_idt_tr(void) {

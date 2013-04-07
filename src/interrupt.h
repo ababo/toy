@@ -44,20 +44,20 @@ struct int_stack_frame {
   uint16_t ss;
 };
 
-#define ISR_IMPL(name)                                                  \
+#define DEFINE_INT_HANDLER(name)                                        \
   static NOINLINE                                                       \
-  void name##_isr_impl(UNUSED struct int_stack_frame *stack_frame,      \
-                       UNUSED uint64_t data)
+  void handle_##name##_int(UNUSED struct int_stack_frame *stack_frame,  \
+                           UNUSED uint64_t data)
 
-#define ISR_GETTER(name, impl_name, data)                            \
-  static NOINLINE void *name##_isr_getter(void) {                    \
+#define DEFINE_ISR_WRAPPER(name, handler_name, data)                 \
+  static NOINLINE void *get_##name##_isr(void) {                     \
     ASMV("jmp 2f\n.align 16\n1: andq $(~0xF), %rsp");                \
     ASMV("subq $512, %rsp\nfxsave (%rsp)");                          \
     ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
     ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
     ASMV("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
     ASMV("movq %%rsp, %%rdi\nmovabsq $%P0, %%rsi" : : "i"(data));    \
-    ASMV("callq %P0" : : "i"(impl_name##_isr_impl));                 \
+    ASMV("callq %P0" : : "i"(handle_##handler_name##_int));          \
     ASMV("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
     ASMV("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
     ASMV("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
@@ -67,10 +67,10 @@ struct int_stack_frame {
     return isr;                                                      \
   }
 
-#define ISR_DEFINE(name, data)                  \
-  ISR_IMPL(name);                               \
-  ISR_GETTER(name, name, data)                  \
-  ISR_IMPL(name)
+#define DEFINE_ISR(name, data)             \
+  DEFINE_INT_HANDLER(name);                \
+  DEFINE_ISR_WRAPPER(name, name, data)     \
+  DEFINE_INT_HANDLER(name)
 
 void dump_int_stack_frame(const struct int_stack_frame *stack_frame);
 
