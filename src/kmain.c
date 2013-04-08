@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "util.h"
 #include "schedule.h"
+#include "test/test.h"
 #include "vga.h"
 
 ASM(".text\n.global kstart\n"
@@ -118,11 +119,5 @@ void kmain_ap(void) {
 }
 
 static uint64_t kinit_thread(UNUSED uint64_t input) {
-  LOG_DEBUG("started");
-  for (int i = 0; i < 80; i++) {
-    for (volatile int j = 0; j < 100000000; j++);
-    kprintf(".");
-  }
-  LOG_DEBUG("stopped");
-  return 0;
+  return test_all(false);
 }

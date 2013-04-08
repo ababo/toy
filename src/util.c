@@ -1,5 +1,17 @@
 #include "util.h"
 
+char *strcat (char *dst, const char *src) {
+  strcpy(dst + strlen(dst), src);
+  return dst;
+}
+
+char *strcpy (char *dst, const char *src) {
+  char *tmp;
+  for (tmp = dst; *src; *tmp++ = *src++);
+  *tmp = 0;
+  return dst;
+}
+
 size_t strlen(const char *str) {
   const char *chr = str;
   while (*chr)

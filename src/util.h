@@ -118,6 +118,8 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
   ASMV("wrmsr" : : "a"(low), "d"(high), "c"(msr));
 }
 
+char *strcat (char *dst, const char *src);
+char *strcpy (char *dst, const char *src);
 size_t strlen(const char *str);
 char *strrev(char *str);
 
@@ -132,15 +134,22 @@ char *ultoa(unsigned long value, char *buf, int radix);
 int kputchar(int chr);
 int kprintf(const char *format, ...);
 
-#define LOG_ERROR(format, ...)                           \
-  { kprintf("%s: ", __func__);                           \
-    kprintf(format, ##__VA_ARGS__); kprintf("\n"); }
-#define LOG_INFO(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
+#define LOG(severity, format, ...) {     \
+    char __buf[256];                     \
+    strcpy(__buf, __func__);             \
+    strcat(__buf, ": " #severity ": ");  \
+    strcat(__buf, format);               \
+    strcat(__buf, "\n");                 \
+    kprintf(__buf, ##__VA_ARGS__);       \
+  }
+
 #ifdef DEBUG
-#define LOG_DEBUG(format, ...) LOG_ERROR(format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) LOG(debug, format, ##__VA_ARGS__)
 #else
 #define LOG_DEBUG(format, ...)
 #endif
+#define LOG_INFO(format, ...) LOG(info, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) LOG(error, format, ##__VA_ARGS__)
 
 typedef int err_code;
 #define ERR_NONE 0
