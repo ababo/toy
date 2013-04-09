@@ -83,13 +83,13 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   if (bsf == -1 || bsf >= get_started_cpus())
     return ERR_BAD_INPUT;
 
-  thread->magic = THREAD_MAGIC;
   thread->prev = NULL;
   thread->all_prev = NULL;
   thread->run_time = 0;
   thread->state = THREAD_STATE_UNKNOWN;
 
   acquire_spinlock(&all.lock);
+  thread->magic = THREAD_MAGIC;
   thread->all_next = all.tail;
   if (all.tail)
     all.tail->prev = thread;
@@ -107,6 +107,50 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   release_spinlock(&inactive.lock);
 
   *id = (thread_id)thread;
+  return ERR_NONE;
+}
+
+#define CAST_TO_THREAD(thrd, id)                        \
+  struct thread_data *thrd = (struct thread_data*)id;   \
+  if (thrd->magic != THREAD_MAGIC)                      \
+    return ERR_NOT_FOUND;
+
+err_code detach_thread(thread_id id, struct thread_data **thread) {
+  err_code err = ERR_NONE;
+  CAST_TO_THREAD(thrd, id);
+  int state;
+
+  acquire_spinlock(&inactive.lock);
+  if (thrd->state == THREAD_STATE_PAUSED ||
+      thrd->state == THREAD_STATE_STOPPED) {
+    state = thrd->state, thrd->state = THREAD_STATE_UNKNOWN;
+    if (thrd->next)
+      thrd->next = thrd->prev;
+    if (thrd->prev)
+      thrd->prev = thrd->next;
+    if (inactive.tail == thrd)
+      inactive.tail = thrd->next;
+    inactive.total_threads--;
+  }
+  else
+    err = ERR_BAD_STATE;
+  release_spinlock(&inactive.lock);
+
+  if (err)
+    return err;
+
+  acquire_spinlock(&all.lock);
+  if (thrd->all_next)
+    thrd->all_next = thrd->all_prev;
+  if (thrd->all_prev)
+    thrd->all_prev = thrd->all_next;
+  if (all.tail == thrd)
+    all.tail = thrd->next;
+  all.total_threads--;
+  thrd->magic = 0;
+  release_spinlock(&all.lock);
+
+  thrd->state = state, *thread = thrd;
   return ERR_NONE;
 }
 
@@ -138,11 +182,6 @@ static void run_cpu_task(int cpu, struct cpu_task *task) {
   *task = cpud->task;
   release_spinlock(&cpud->lock);
 }
-
-#define CAST_TO_THREAD(thrd, id)                        \
-  struct thread_data *thrd = (struct thread_data*)id;   \
-  if (thrd->magic != THREAD_MAGIC)                      \
-    return ERR_NOT_FOUND;
 
 err_code resume_thread(thread_id id) {
   err_code err = ERR_NONE;
