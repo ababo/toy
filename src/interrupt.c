@@ -38,6 +38,11 @@ static void create_gdt(void) {
 }
 
 void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
+  kprintf("rip: %lX\n", stack_frame->rip);
+  kprintf("rsp: %lX\n", stack_frame->rsp);
+  kprintf("cs: %X\n", stack_frame->cs);
+  kprintf("ss: %X\n", stack_frame->ss);
+  kprintf("rflags: %lX\n", stack_frame->rflags);
   kprintf("rax: %lX\n", stack_frame->rax);
   kprintf("rbx: %lX\n", stack_frame->rbx);
   kprintf("rcx: %lX\n", stack_frame->rcx);
@@ -52,11 +57,6 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
   kprintf("r13: %lX\n", stack_frame->r13);
   kprintf("r14: %lX\n", stack_frame->r14);
   kprintf("r15: %lX\n", stack_frame->r15);
-  kprintf("rip: %lX\n", stack_frame->rip);
-  kprintf("rsp: %lX\n", stack_frame->rsp);
-  kprintf("cs: %X\n", stack_frame->cs);
-  kprintf("ss: %X\n", stack_frame->ss);
-  kprintf("rflags: %lX\n", stack_frame->rflags);
 }
 
 DEFINE_INT_HANDLER(default) {

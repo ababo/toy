@@ -24,7 +24,7 @@ static inline volatile struct chr_cell *get_chr_cell(int row, int col) {
 
 void get_vga_cell(int row, int col, char *chr, int *fore_color,
                   int *back_color) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   volatile struct chr_cell *cell = get_chr_cell(row, col);
   if (chr)
     *chr = cell->chr;
@@ -36,7 +36,7 @@ void get_vga_cell(int row, int col, char *chr, int *fore_color,
 }
 
 void set_vga_cell(int row, int col, char chr, int fore_color, int back_color) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   *get_chr_cell(row, col) = (struct chr_cell) {
     chr, (uint8_t)fore_color, (uint8_t)back_color
   };
@@ -69,14 +69,14 @@ int get_vga_frame_bcolor(void) {
 
 void set_vga_frame(int top, int left, int height, int width, int fcolor,
                    int bcolor) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   frame_top = top, frame_left = left, frame_height = height,
     frame_width = width, frame_fcolor = fcolor, frame_bcolor = bcolor;
   release_spinlock(&lock);
 }
 
 void clear_vga_frame(void) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   for (int row = 0; row < frame_height; row++)
     for (int col = 0; col < frame_width; col++)
       *get_chr_cell(frame_top + row, frame_left + col) =
@@ -97,7 +97,7 @@ static void put_cursor(int row, int col) {
 }
 
 void set_vga_cursor(bool visible) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   cursor = visible;
   if (visible) {
     outw(0x3D4,0xE0A);
@@ -121,7 +121,7 @@ int get_vga_caret_col(void) {
 }
 
 void set_vga_caret(int row, int col) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   caret_row = row, caret_col = col;
   if (cursor)
     put_cursor(frame_top + row, frame_left + col);
@@ -172,7 +172,7 @@ static void put_char(char chr) {
 }
 
 int kputchar(int chr) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   put_char(chr);
   if (cursor)
     put_cursor(frame_top + caret_row, frame_left + caret_col);
@@ -181,7 +181,7 @@ int kputchar(int chr) {
 }
 
 int kprintf(const char *format, ...) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
 
   va_list vargs;
   va_start(vargs, format);

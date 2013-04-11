@@ -26,6 +26,6 @@
   }
 
 DEFINE_TEST(all);
-DEFINE_TEST(schedule);
+DEFINE_TEST(scheduler);
 
 #endif // TEST_H

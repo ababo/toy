@@ -4,7 +4,7 @@
 
 #define STACK_SIZE 0x1000
 #define DEFAULT_PRIORITY 3;
-#define WAIT_ITERATIONS 1000000
+#define WAIT_ITERATIONS 10000000
 
 static struct thread_data *create_thread(thread_proc proc, uint64_t input) {
   struct thread_data *thrd = kmalloc(sizeof(*thrd) + STACK_SIZE);
@@ -82,7 +82,8 @@ DEFINE_SUBTEST(resume_thread, thread_id id, volatile uint64_t *counter) {
   ADD_TEST_CASE("resuming right", !resume_thread(id));
 
   uint64_t prev_counter = *counter;
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0;
+       i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it runs", prev_counter != *counter);
 
   ADD_TEST_CASE("resuming of already resumed",
@@ -99,7 +100,8 @@ DEFINE_SUBTEST(pause_thread, thread_id id, volatile uint64_t *counter) {
   ADD_TEST_CASE("pausing right", !pause_thread(id));
 
   uint64_t prev_counter = *counter;
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0;
+       prev_counter == *counter && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it paused", prev_counter == *counter);
 
   ADD_TEST_CASE("pausing paused", pause_thread(id) == ERR_BAD_STATE);
@@ -107,7 +109,8 @@ DEFINE_SUBTEST(pause_thread, thread_id id, volatile uint64_t *counter) {
   ADD_TEST_CASE("resuming paused", !resume_thread(id));
 
   prev_counter = *counter;
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0;
+       prev_counter == *counter && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it runs", prev_counter != *counter);
 
   END_TEST();
@@ -131,7 +134,8 @@ DEFINE_SUBTEST(detach_thread, thread_id id, volatile uint64_t *counter) {
                 !attach_thread(thrd, &id) && !resume_thread(id));
 
   uint64_t prev_counter = *counter;
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0;
+       prev_counter == *counter && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it runs", prev_counter != *counter);
 
   END_TEST();
@@ -145,7 +149,8 @@ DEFINE_SUBTEST(stop_thread, thread_id id, volatile uint64_t *counter) {
   ADD_TEST_CASE("stopping right", !stop_thread(id, 321));
 
   uint64_t prev_counter = *counter;
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0;
+       prev_counter == *counter && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it stopped", prev_counter == *counter);
 
   ADD_TEST_CASE("stopping stopped", stop_thread(id, 321) == ERR_BAD_STATE);
@@ -160,7 +165,21 @@ DEFINE_SUBTEST(stop_thread, thread_id id, volatile uint64_t *counter) {
   END_TEST();
 }
 
-DEFINE_TEST(schedule) {
+DEFINE_SUBTEST(scheduler_sanity,
+               struct thread_data *thread, volatile uint64_t *counter) {
+  BEGIN_TEST();
+
+  thread_id id;
+  ADD_TEST(attach_thread, thread, &id);
+  ADD_TEST(resume_thread, id, counter);
+  ADD_TEST(pause_thread, id, counter);
+  ADD_TEST(detach_thread, id, counter);
+  ADD_TEST(stop_thread, id, counter);
+
+  END_TEST();
+}
+
+DEFINE_TEST(scheduler) {
   BEGIN_TEST();
 
   volatile uint64_t counter = UINT64_MAX;
@@ -168,12 +187,12 @@ DEFINE_TEST(schedule) {
   if (!thrd)
     return false;
 
-  thread_id id;
-  ADD_TEST(attach_thread, thrd, &id);
-  ADD_TEST(resume_thread, id, &counter);
-  ADD_TEST(pause_thread, id, &counter);
-  ADD_TEST(detach_thread, id, &counter);
-  ADD_TEST(stop_thread, id, &counter);
+  ADD_TEST(scheduler_sanity, thrd, &counter);
+
+  LOG_ERROR("running sanity test on BSP CPU only...")
+  for (int i = 0; i < THREAD_AFFINITY_SIZE; i++)
+    thrd->affinity[i] = (i ? 0 : 1);
+  ADD_TEST(scheduler_sanity, thrd, &counter);
 
   destroy_thread(thrd);
 

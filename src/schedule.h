@@ -14,8 +14,7 @@
 #define THREAD_STATE_PAUSED 2
 #define THREAD_STATE_STOPPED 3
 
-#define IN // fields with this mark should be set before calling attach_thread
-
+// IN fields should be set before calling attach_thread
 struct thread_data {
   uint64_t magic;
   struct thread_data *prev, *next, *all_prev, *all_next;
@@ -32,8 +31,6 @@ struct thread_data {
   uint8_t state: 2;
   IN uint8_t fixed_priority : 1;
 };
-
-#undef IN
 
 typedef uint64_t thread_id;
 typedef uint64_t (*thread_proc)(uint64_t input);

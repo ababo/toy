@@ -10,7 +10,7 @@ static struct spinlock lock;
 static uint8_t *next_free;
 
 void *kmalloc(size_t size) {
-  acquire_spinlock(&lock);
+  acquire_spinlock(&lock, 0);
   void *ptr = next_free;
   next_free += size;
   release_spinlock(&lock);

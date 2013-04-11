@@ -1,6 +1,10 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#define IN
+#define OUT
+#define IN_OUT
+
 #define STR(x) #x
 #define STR_EXPAND(x) STR(x)
 

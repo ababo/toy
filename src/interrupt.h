@@ -35,7 +35,8 @@ static inline bool is_int_error(int vector) {
 }
 
 struct int_stack_frame {
-  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rdx, rcx, rbx, rax;
+  uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+  uint64_t rdi, rsi, rbp, rdx, rcx, rbx, rax;
   uint8_t fxdata[512];
   uint32_t error_code;
   uint64_t rip;
@@ -53,14 +54,14 @@ struct int_stack_frame {
   static NOINLINE void *get_##name##_isr(void) {                     \
     ASMV("jmp 2f\n.align 16\n1: andq $(~0xF), %rsp");                \
     ASMV("subq $512, %rsp\nfxsave (%rsp)");                          \
-    ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx");              \
+    ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx\npush %rbp\n"); \
     ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
     ASMV("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
     ASMV("movq %%rsp, %%rdi\nmovabsq $%P0, %%rsi" : : "i"(data));    \
     ASMV("callq %P0" : : "i"(handle_##handler_name##_int));          \
     ASMV("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
     ASMV("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
-    ASMV("pop %rdx\npop %rcx\npop %rbx\npop %rax");                  \
+    ASMV("pop %rbp\npop %rdx\npop %rcx\npop %rbx\npop %rax");        \
     ASMV("fxrstor (%rsp)\naddq $(512 + 8), %rsp");                   \
     void *isr;                                                       \
     ASMV("iretq\n2: movq $1b, %0" : "=m"(isr));                      \

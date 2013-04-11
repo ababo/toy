@@ -16,9 +16,10 @@ struct cpu_priority {
 #define CPU_TASK_PAUSE 2
 
 struct cpu_task {
-  int type;
-  volatile err_code error;
-  struct thread_data *thread;
+  IN uint8_t type : 8;
+  OUT uint8_t halt : 1;
+  OUT volatile err_code error;
+  IN_OUT struct thread_data *thread;
 };
 
 #define PRIORITY_MASK_SIZE SIZE_ELEMENTS(CONFIG_SCHEDULER_PRIORITIES, 64)
@@ -38,6 +39,10 @@ static struct thread_list {
   int total_threads;
   struct thread_data *tail;
 } all, inactive;
+
+thread_id get_thread(void) {
+  return rdmsr(MSR_FS_BASE);
+}
 
 ASM(".global exit_thread\nexit_thread:\n"
     "pushq %rax\ncallq get_thread\n"
@@ -83,12 +88,11 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   if (bsf == -1 || bsf >= get_started_cpus())
     return ERR_BAD_INPUT;
 
-  thread->prev = NULL;
-  thread->all_prev = NULL;
-  thread->run_time = 0;
+  thread->prev = thread->all_prev = NULL;
   thread->state = THREAD_STATE_UNKNOWN;
+  thread->run_time = 0;
 
-  acquire_spinlock(&all.lock);
+  acquire_spinlock(&all.lock, 0);
   thread->magic = THREAD_MAGIC;
   thread->all_next = all.tail;
   if (all.tail)
@@ -97,7 +101,7 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   all.total_threads++;
   release_spinlock(&all.lock);
 
-  acquire_spinlock(&inactive.lock);
+  acquire_spinlock(&inactive.lock, 0);
   thread->state = THREAD_STATE_PAUSED;
   thread->next = inactive.tail;
   if (inactive.tail)
@@ -120,7 +124,7 @@ err_code detach_thread(thread_id id, struct thread_data **thread) {
   CAST_TO_THREAD(thrd, id);
   int state;
 
-  acquire_spinlock(&inactive.lock);
+  acquire_spinlock(&inactive.lock, 0);
   if (thrd->state == THREAD_STATE_PAUSED ||
       thrd->state == THREAD_STATE_STOPPED) {
     state = thrd->state, thrd->state = THREAD_STATE_UNKNOWN;
@@ -136,28 +140,31 @@ err_code detach_thread(thread_id id, struct thread_data **thread) {
     err = ERR_BAD_STATE;
   release_spinlock(&inactive.lock);
 
-  if (err)
-    return err;
+  if (!err) {
+    acquire_spinlock(&all.lock, 0);
+    if (thrd->all_next)
+      thrd->all_next = thrd->all_prev;
+    if (thrd->all_prev)
+      thrd->all_prev = thrd->all_next;
+    if (all.tail == thrd)
+      all.tail = thrd->next;
+    all.total_threads--;
+    thrd->magic = 0;
+    release_spinlock(&all.lock);
 
-  acquire_spinlock(&all.lock);
-  if (thrd->all_next)
-    thrd->all_next = thrd->all_prev;
-  if (thrd->all_prev)
-    thrd->all_prev = thrd->all_next;
-  if (all.tail == thrd)
-    all.tail = thrd->next;
-  all.total_threads--;
-  thrd->magic = 0;
-  release_spinlock(&all.lock);
+    thrd->state = state;
+    thrd->prev = thrd->next = NULL;
+    thrd->all_prev = thrd->all_next = NULL;
+    *thread = thrd;
+  }
 
-  thrd->state = state, *thread = thrd;
-  return ERR_NONE;
+  return err;
 }
 
 static inline void update_priority_quantum(struct thread_data *thread) {
   /// TODO: make priority and quantum change dynamically
   thread->real_priority = thread->priority;
-  thread->quantum = 100;
+  thread->quantum = 10;
 }
 
 static int find_least_loaded_cpu(uint64_t *affinity) {
@@ -172,13 +179,19 @@ static int find_least_loaded_cpu(uint64_t *affinity) {
   return cpu;
 }
 
+DEFINE_INT_HANDLER(task);
+
 static void run_cpu_task(int cpu, struct cpu_task *task) {
   struct cpu_data *cpud = &cpus[cpu];
-  acquire_spinlock(&cpud->lock);
+  acquire_spinlock(&cpud->lock, 0);
   cpud->task = *task;
-  cpud->task.error = ERR_BUSY;
-  issue_cpu_interrupt(get_cpu_desc(cpu)->apic_id, INT_VECTOR_SCHEDULER_TASK);
-  while (cpud->task.error == ERR_BUSY);
+  if (get_cpu() == cpu)
+    handle_task_int(NULL, 0);
+  else {
+    cpud->task.error = ERR_BUSY;
+    issue_cpu_interrupt(get_cpu_desc(cpu)->apic_id, INT_VECTOR_SCHEDULER_TASK);
+    while (cpud->task.error == ERR_BUSY);
+  }
   *task = cpud->task;
   release_spinlock(&cpud->lock);
 }
@@ -187,15 +200,15 @@ err_code resume_thread(thread_id id) {
   err_code err = ERR_NONE;
   CAST_TO_THREAD(thrd, id);
 
-  acquire_spinlock(&inactive.lock);
+  acquire_spinlock(&inactive.lock, 0);
   if (thrd->state == THREAD_STATE_PAUSED) {
     thrd->state = THREAD_STATE_UNKNOWN;
-    if (inactive.tail == thrd)
-      inactive.tail = thrd->next;
     if (thrd->next)
       thrd->next->prev = thrd->prev;
     if (thrd->prev)
       thrd->prev->next = thrd->next;
+    if (inactive.tail == thrd)
+      inactive.tail = thrd->next;
     inactive.total_threads--;
   }
   else
@@ -232,7 +245,7 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
       if (task.error != ERR_NOT_FOUND) {
         if (!task.error) {
           thrd->prev = NULL;
-          acquire_spinlock(&inactive.lock);
+          acquire_spinlock(&inactive.lock, 0);
           thrd->state = stop ? THREAD_STATE_STOPPED : THREAD_STATE_PAUSED;
           thrd->next = inactive.tail;
           if (inactive.tail)
@@ -240,6 +253,8 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
           inactive.tail = thrd;
           inactive.total_threads++;
           release_spinlock(&inactive.lock);
+          if (task.halt)
+            ASMV("jmp halt");
         }
         return task.error;
       }
@@ -248,7 +263,7 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
     case THREAD_STATE_PAUSED:
       if (stop) {
         err_code err = ERR_NONE;
-        acquire_spinlock(&inactive.lock);
+        acquire_spinlock(&inactive.lock, 0);
         if (thrd->state == THREAD_STATE_PAUSED) {
           thrd->state = THREAD_STATE_STOPPED;
           thrd->output = output;
@@ -271,20 +286,13 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
 }
 
 err_code pause_thread(thread_id id) {
-  return deactivate_thread(false, id, 0);
+  err_code err = deactivate_thread(false, id, 0);
+  return err;
 }
 
 err_code stop_thread(thread_id id, uint64_t output) {
-  return deactivate_thread(true, id, output);
-}
-
-thread_id get_thread(void) {
-  struct thread_data *thrd;
-  ASMV("cli");
-  struct cpu_data *cpud = &cpus[get_cpu()];
-  thrd = cpud->priorities[cpud->current_priority].active_tail;
-  ASMV("sti");
-  return (thread_id)thrd;
+  err_code err = deactivate_thread(true, id, output);
+  return err;
 }
 
 static inline void add_expired(struct cpu_data *cpud,
@@ -302,7 +310,7 @@ static inline void add_expired(struct cpu_data *cpud,
 
     prio->expired_head = thread;
   }
-  else // this odd case can occure only when resuming thread
+  else
     prio->active_tail = thread;
 
   BIT_ARRAY_SET(cpud->priority_mask, thread->real_priority);
@@ -322,14 +330,16 @@ static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
 DEFINE_ISR(timer, 0) {
   int cpu = get_cpu();
   struct cpu_data *cpud = &cpus[cpu];
-  struct cpu_priority *prio = &cpud->priorities[cpud->current_priority];
-  struct thread_data *thrd = prio->active_tail;
 
   if (!cpud->total_threads)
     goto exit;
 
+  struct cpu_priority *prio = &cpud->priorities[cpud->current_priority];
+  struct thread_data *thrd = prio->active_tail;
+
   if (cpud->load_context) {
     *stack_frame = thrd->context;
+    wrmsr(MSR_FS_BASE, (uint64_t)thrd);
     cpud->load_context = false;
     goto exit;
   }
@@ -358,8 +368,10 @@ DEFINE_ISR(timer, 0) {
 
   prio = &cpud->priorities[cpud->current_priority = highest];
   struct thread_data *thrd2 = prio->active_tail;
-  if (thrd2 != thrd)
+  if (thrd2 != thrd) {
     *stack_frame = thrd2->context;
+    wrmsr(MSR_FS_BASE, (uint64_t)thrd2);
+  }
 
 exit:
   set_apic_eoi();
@@ -397,29 +409,38 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
     thrd->next = thrd->prev;
   if (thrd->prev)
     thrd->prev = thrd->next;
+
   if (prio->expired_head == thrd)
     prio->expired_head = thrd->prev;
   else if (prio->expired_tail == thrd)
     prio->expired_tail = thrd->next;
-  else if (prio->active_tail == thrd)
+  else if (prio->active_tail == thrd) {
     prio->active_tail = thrd->next;
+    if (!prio->active_tail) {
+      prio->active_tail = prio->expired_tail;
+      prio->expired_tail = prio->expired_head = NULL;
+    }
+  }
+
   thrd->state = THREAD_STATE_UNKNOWN;
   if (!--prio->total_threads)
     BIT_ARRAY_RESET(cpud->priority_mask, thrd->real_priority);
   cpud->total_threads--;
 
   if (current) {
-    thrd->context = *stack_frame;
-
+    wrmsr(MSR_FS_BASE, 0);
     if (cpud->total_threads) {
       int highest = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
-      prio = &cpud->priorities[cpud->current_priority = highest];
-      *stack_frame = prio->active_tail->context;
+      cpud->current_priority = highest;
+      cpud->load_context = true;
     }
-    else {
+
+    if (stack_frame) {
       extern int halt;
       stack_frame->rip = (uint64_t)&halt;
     }
+    else
+      task->halt = true;
   }
 
   task->error = ERR_NONE;
