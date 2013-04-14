@@ -32,6 +32,7 @@ struct thread_data {
   IN uint8_t fixed_priority : 1;
 };
 
+struct spinlock;
 typedef uint64_t thread_id;
 typedef uint64_t (*thread_proc)(uint64_t input);
 
@@ -46,6 +47,9 @@ err_code detach_thread(thread_id id, struct thread_data **thread);
 err_code resume_thread(thread_id id);
 err_code pause_thread(thread_id id);
 err_code stop_thread(thread_id id, uint64_t output);
+
+// a given spinlock is released atomically (within an interrupt)
+err_code pause_this_thread(struct spinlock *lock_to_release);
 
 thread_id get_thread(void);
 err_code get_next_thread(thread_id *id);

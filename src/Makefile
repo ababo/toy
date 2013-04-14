@@ -13,7 +13,7 @@ KERNEL=$(BIN)/toy.bin
 ISO_GRUB=$(BIN)/iso/boot/grub
 
 BOOT32_OBJ=boot32
-OBJS=kmain util page_map vga acpi cpu_info memory interrupt apic schedule
+OBJS=kmain util page_map vga acpi cpu_info memory interrupt apic schedule sync
 TEST_OBJS=test schedule.test
 
 CC=gcc

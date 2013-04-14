@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "util.h"
 #include "schedule.h"
+#include "sync.h"
 #include "test/test.h"
 #include "vga.h"
 
@@ -96,6 +97,7 @@ void kmain(void) {
   ASMV("sti");
   start_ap_cpus();
   init_scheduler();
+  init_sync();
   start_kinit_thread();
 }
 

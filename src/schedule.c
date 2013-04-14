@@ -20,6 +20,7 @@ struct cpu_task {
   IN uint8_t type;
   OUT volatile err_code error;
   IN struct thread_data *thread;
+  IN struct spinlock *lock_to_release;
 };
 
 #define PRIORITY_MASK_SIZE SIZE_ELEMENTS(CONFIG_SCHEDULER_PRIORITIES, 64)
@@ -229,7 +230,8 @@ err_code resume_thread(thread_id id) {
 
 #define TASK_RETRY_COUNT 3
 
-static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
+static err_code deactivate_thread(bool stop, thread_id id, uint64_t output,
+                                  struct spinlock *lock_to_release) {
   struct cpu_task task;
   CAST_TO_THREAD(thrd, id);
 
@@ -253,9 +255,10 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
           inactive.tail->prev = thrd;
         inactive.tail = thrd;
         inactive.total_threads++;
-        if (task.type == CPU_TASK_SELF_HALT)
-          // the self-halt handler will release the spinlock
+        if (task.type == CPU_TASK_SELF_HALT) {
+          cpus[cpu].task.lock_to_release = lock_to_release;
           ASMV("int %0" : : "i"(INT_VECTOR_SCHEDULER_TASK));
+        }
         else
           release_spinlock(&inactive.lock);
       }
@@ -287,13 +290,15 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
 }
 
 err_code pause_thread(thread_id id) {
-  err_code err = deactivate_thread(false, id, 0);
-  return err;
+  return deactivate_thread(false, id, 0, NULL);
+}
+
+err_code pause_this_thread(struct spinlock *lock_to_release) {
+  return deactivate_thread(false, get_thread(), 0, lock_to_release);
 }
 
 err_code stop_thread(thread_id id, uint64_t output) {
-  err_code err = deactivate_thread(true, id, output);
-  return err;
+  return deactivate_thread(true, id, output, NULL);
 }
 
 static inline void add_expired(struct cpu_data *cpud,
@@ -452,6 +457,8 @@ static inline void do_self_halt_task(struct int_stack_frame *stack_frame,
   task->thread->context = *stack_frame;
   stack_frame->rip = (uint64_t)&halt;
   release_spinlock(&inactive.lock);
+  if (task->lock_to_release)
+    release_spinlock(task->lock_to_release);
 }
 
 DEFINE_ISR(task, 0) {

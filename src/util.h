@@ -4,6 +4,7 @@
 #define IN
 #define OUT
 #define IN_OUT
+#define INTERNAL
 
 #define STR(x) #x
 #define STR_EXPAND(x) STR(x)
@@ -161,5 +162,6 @@ typedef int err_code;
 #define ERR_BAD_INPUT 2
 #define ERR_BAD_STATE 3
 #define ERR_NOT_FOUND 4
+#define ERR_OUT_OF_MEMORY 5
 
 #endif // UTIL_H
