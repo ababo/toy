@@ -20,6 +20,21 @@ void *kmalloc(size_t size) {
 void kfree(UNUSED void *ptr) {
 }
 
+err_code create_mem_pool(size_t block_size, struct mem_pool *pool) {
+  pool->block_size = block_size;
+  return ERR_NONE;
+}
+
+void destroy_mem_pool(UNUSED struct mem_pool *pool) {
+}
+
+void *alloc_block(struct mem_pool *pool) {
+  return kmalloc(pool->block_size);
+}
+
+void free_block(UNUSED struct mem_pool *pool, UNUSED void *block) {
+}
+
 static void map_ram(void) {
   extern uint32_t multiboot_info;
   uint64_t high_mem_hole =

@@ -47,6 +47,7 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
   kprintf("rbx: %lX\n", stack_frame->rbx);
   kprintf("rcx: %lX\n", stack_frame->rcx);
   kprintf("rdx: %lX\n", stack_frame->rdx);
+  kprintf("rbp: %lX\n", stack_frame->rbp);
   kprintf("rsi: %lX\n", stack_frame->rsi);
   kprintf("rdi: %lX\n", stack_frame->rdi);
   kprintf("r8: %lX\n", stack_frame->r8);
@@ -65,7 +66,6 @@ DEFINE_INT_HANDLER(default) {
     kprintf(" (error_code: %X)", stack_frame->error_code);
   kprintf("\n");
   dump_int_stack_frame(stack_frame);
-  kprintf("\n\n\n\n");
   ASMV("jmp halt");
 }
 

@@ -14,12 +14,12 @@ struct cpu_priority {
 
 #define CPU_TASK_RESUME 1
 #define CPU_TASK_PAUSE 2
+#define CPU_TASK_SELF_HALT 3
 
 struct cpu_task {
-  IN uint8_t type : 8;
-  OUT uint8_t halt : 1;
+  IN uint8_t type;
   OUT volatile err_code error;
-  IN_OUT struct thread_data *thread;
+  IN struct thread_data *thread;
 };
 
 #define PRIORITY_MASK_SIZE SIZE_ELEMENTS(CONFIG_SCHEDULER_PRIORITIES, 64)
@@ -242,23 +242,24 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output) {
     case THREAD_STATE_RUNNING:
       task = (struct cpu_task) { .type = CPU_TASK_PAUSE, .thread = thrd };
       run_cpu_task(cpu, &task);
-      if (task.error != ERR_NOT_FOUND) {
-        if (!task.error) {
-          thrd->prev = NULL;
-          acquire_spinlock(&inactive.lock, 0);
-          thrd->state = stop ? THREAD_STATE_STOPPED : THREAD_STATE_PAUSED;
-          thrd->next = inactive.tail;
-          if (inactive.tail)
-            inactive.tail->prev = thrd;
-          inactive.tail = thrd;
-          inactive.total_threads++;
+      if (task.error == ERR_NOT_FOUND)
+        break;
+      if (!task.error) {
+        thrd->prev = NULL;
+        acquire_spinlock(&inactive.lock, 0);
+        thrd->state = stop ? THREAD_STATE_STOPPED : THREAD_STATE_PAUSED;
+        thrd->next = inactive.tail;
+        if (inactive.tail)
+          inactive.tail->prev = thrd;
+        inactive.tail = thrd;
+        inactive.total_threads++;
+        if (task.type == CPU_TASK_SELF_HALT)
+          // the self-halt handler will release the spinlock
+          ASMV("int %0" : : "i"(INT_VECTOR_SCHEDULER_TASK));
+        else
           release_spinlock(&inactive.lock);
-          if (task.halt)
-            ASMV("jmp halt");
-        }
-        return task.error;
       }
-      break;
+      return task.error;
 
     case THREAD_STATE_PAUSED:
       if (stop) {
@@ -322,7 +323,6 @@ static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
   if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
     kprintf("\nstack overrun (CPU: %d, thread %lX):\n", cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
-    kprintf("\n\n\n\n");
     ASMV("jmp halt");
   }
 }
@@ -377,8 +377,7 @@ exit:
   set_apic_eoi();
 }
 
-static inline void do_resume_task(UNUSED struct int_stack_frame *stack_frame,
-                                  int cpu, struct cpu_data *cpud,
+static inline void do_resume_task(int cpu, struct cpu_data *cpud,
                                   struct cpu_task *task) {
   struct thread_data *thread = task->thread;
   thread->state = THREAD_STATE_RUNNING;
@@ -428,22 +427,31 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
   cpud->total_threads--;
 
   if (current) {
-    wrmsr(MSR_FS_BASE, 0);
     if (cpud->total_threads) {
       int highest = find_mask_bsf(cpud->priority_mask, PRIORITY_MASK_SIZE);
       cpud->current_priority = highest;
       cpud->load_context = true;
     }
 
+    wrmsr(MSR_FS_BASE, 0); // halt CPU till next timer interrupt
     if (stack_frame) {
       extern int halt;
+      thrd->context = *stack_frame;
       stack_frame->rip = (uint64_t)&halt;
     }
-    else
-      task->halt = true;
+    else // postpone saving context
+      task->type = CPU_TASK_SELF_HALT;
   }
 
   task->error = ERR_NONE;
+}
+
+static inline void do_self_halt_task(struct int_stack_frame *stack_frame,
+                                     struct cpu_task *task) {
+  extern int halt;
+  task->thread->context = *stack_frame;
+  stack_frame->rip = (uint64_t)&halt;
+  release_spinlock(&inactive.lock);
 }
 
 DEFINE_ISR(task, 0) {
@@ -452,8 +460,9 @@ DEFINE_ISR(task, 0) {
   struct cpu_task *task = &cpud->task;
 
   switch (task->type) {
-  case CPU_TASK_RESUME: do_resume_task(stack_frame, cpu, cpud, task); break;
+  case CPU_TASK_RESUME: do_resume_task(cpu, cpud, task); break;
   case CPU_TASK_PAUSE: do_pause_task(stack_frame, cpu, cpud, task); break;
+  case CPU_TASK_SELF_HALT: do_self_halt_task(stack_frame, task); break;
   default: task->error = ERR_BAD_INPUT;
   }
 
