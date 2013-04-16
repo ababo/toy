@@ -1,6 +1,8 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include "../memory.h"
+#include "../schedule.h"
 #include "../util.h"
 
 #define DEFINE_TEST(name, ...)                          \
@@ -26,6 +28,12 @@
   }
 
 DEFINE_TEST(all);
-DEFINE_TEST(scheduler);
+DEFINE_TEST(scheduler, struct mem_pool *thread_pool);
+DEFINE_TEST(sync, struct mem_pool *thread_pool);
+
+void set_test_thread_affinity(struct thread_data *thread, bool bsp_only);
+struct thread_data *create_test_thread(struct mem_pool *pool,
+                                       thread_proc proc, uint64_t input);
+void destroy_test_thread(struct mem_pool *pool, struct thread_data *thread);
 
 #endif // TEST_H

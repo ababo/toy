@@ -12,27 +12,27 @@ struct cpu_priority {
   int total_threads;
 };
 
-#define CPU_TASK_RESUME 1
-#define CPU_TASK_PAUSE 2
-#define CPU_TASK_SELF_HALT 3
+#define CPU_TASK_RESUME 0
+#define CPU_TASK_PAUSE 1
+#define CPU_TASK_SELF_HALT 2
 
 struct cpu_task {
   IN uint8_t type;
   OUT volatile err_code error;
   IN struct thread_data *thread;
-  IN struct spinlock *lock_to_release;
+  IN struct spinlock *lock;
 };
 
 #define PRIORITY_MASK_SIZE SIZE_ELEMENTS(CONFIG_SCHEDULER_PRIORITIES, 64)
 
 static struct cpu_data {
-  struct spinlock lock;
+  int total_threads;
   int current_priority;
   struct cpu_priority priorities[CONFIG_SCHEDULER_PRIORITIES];
   uint64_t priority_mask[PRIORITY_MASK_SIZE];
-  int total_threads;
-  bool load_context;
   struct cpu_task task;
+  struct spinlock lock;
+  bool load_context;
 } cpus[CONFIG_CPUS_MAX];
 
 static struct thread_list {
@@ -90,26 +90,27 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
     return ERR_BAD_INPUT;
 
   thread->prev = thread->all_prev = NULL;
-  thread->state = THREAD_STATE_UNKNOWN;
+  thread->state = THREAD_STATE_PAUSED;
   thread->run_time = 0;
 
   acquire_spinlock(&all.lock, 0);
+  acquire_spinlock(&inactive.lock, 0);
+
   thread->magic = THREAD_MAGIC;
   thread->all_next = all.tail;
   if (all.tail)
     all.tail->prev = thread;
   all.tail = thread;
   all.total_threads++;
-  release_spinlock(&all.lock);
 
-  acquire_spinlock(&inactive.lock, 0);
-  thread->state = THREAD_STATE_PAUSED;
   thread->next = inactive.tail;
   if (inactive.tail)
     inactive.tail->prev = thread;
   inactive.tail = thread;
   inactive.total_threads++;
+
   release_spinlock(&inactive.lock);
+  release_spinlock(&all.lock);
 
   *id = (thread_id)thread;
   return ERR_NONE;
@@ -123,12 +124,12 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
 err_code detach_thread(thread_id id, struct thread_data **thread) {
   err_code err = ERR_NONE;
   CAST_TO_THREAD(thrd, id);
-  int state;
 
+  acquire_spinlock(&all.lock, 0);
   acquire_spinlock(&inactive.lock, 0);
+
   if (thrd->state == THREAD_STATE_PAUSED ||
       thrd->state == THREAD_STATE_STOPPED) {
-    state = thrd->state, thrd->state = THREAD_STATE_UNKNOWN;
     if (thrd->next)
       thrd->next = thrd->prev;
     if (thrd->prev)
@@ -136,28 +137,25 @@ err_code detach_thread(thread_id id, struct thread_data **thread) {
     if (inactive.tail == thrd)
       inactive.tail = thrd->next;
     inactive.total_threads--;
-  }
-  else
-    err = ERR_BAD_STATE;
-  release_spinlock(&inactive.lock);
 
-  if (!err) {
-    acquire_spinlock(&all.lock, 0);
-    if (thrd->all_next)
+   if (thrd->all_next)
       thrd->all_next = thrd->all_prev;
     if (thrd->all_prev)
       thrd->all_prev = thrd->all_next;
     if (all.tail == thrd)
       all.tail = thrd->next;
     all.total_threads--;
-    thrd->magic = 0;
-    release_spinlock(&all.lock);
 
-    thrd->state = state;
+    thrd->magic = 0;
     thrd->prev = thrd->next = NULL;
     thrd->all_prev = thrd->all_next = NULL;
     *thread = thrd;
   }
+  else
+    err = ERR_BAD_STATE;
+
+  release_spinlock(&inactive.lock);
+  release_spinlock(&all.lock);
 
   return err;
 }
@@ -173,7 +171,7 @@ static int find_least_loaded_cpu(uint64_t *affinity) {
   int cpu = -1, total = INT32_MAX;
   for (int i = 0; i < get_started_cpus(); i++)
     if (BIT_ARRAY_GET(affinity, i)) {
-      int temp = cpus[cpu].total_threads;
+      int temp = cpus[i].total_threads;
       if (temp < total)
         cpu = i, total = temp;
     }
@@ -194,7 +192,8 @@ static void run_cpu_task(int cpu, struct cpu_task *task) {
     while (cpud->task.error == ERR_BUSY);
   }
   *task = cpud->task;
-  release_spinlock(&cpud->lock);
+  if (task->type != CPU_TASK_SELF_HALT)
+    release_spinlock(&cpud->lock);
 }
 
 err_code resume_thread(thread_id id) {
@@ -203,7 +202,6 @@ err_code resume_thread(thread_id id) {
 
   acquire_spinlock(&inactive.lock, 0);
   if (thrd->state == THREAD_STATE_PAUSED) {
-    thrd->state = THREAD_STATE_UNKNOWN;
     if (thrd->next)
       thrd->next->prev = thrd->prev;
     if (thrd->prev)
@@ -211,12 +209,7 @@ err_code resume_thread(thread_id id) {
     if (inactive.tail == thrd)
       inactive.tail = thrd->next;
     inactive.total_threads--;
-  }
-  else
-    err = ERR_BAD_STATE;
-  release_spinlock(&inactive.lock);
 
-  if (!err) {
     thrd->real_priority = thrd->priority;
     thrd->quantum = 0;
     update_priority_quantum(thrd);
@@ -224,69 +217,78 @@ err_code resume_thread(thread_id id) {
     struct cpu_task task = { .type = CPU_TASK_RESUME, .thread = thrd };
     run_cpu_task(find_least_loaded_cpu(thrd->affinity), &task);
   }
+  else
+    err = ERR_BAD_STATE;
+  release_spinlock(&inactive.lock);
 
   return err;
+}
+
+static err_code deactivate_running(bool stop, struct thread_data *thread,
+                                   struct spinlock *lock_to_release,
+                                   bool *self_halt) {
+  struct cpu_task task = {
+    .type = CPU_TASK_PAUSE, .thread = thread, .lock = lock_to_release
+  };
+  run_cpu_task(thread->cpu, &task);
+  if (task.error)
+    return task.error;
+
+  thread->prev = NULL;
+  thread->state = stop ? THREAD_STATE_STOPPED : THREAD_STATE_PAUSED;
+  thread->next = inactive.tail;
+  if (inactive.tail)
+    inactive.tail->prev = thread;
+  inactive.tail = thread;
+  inactive.total_threads++;
+
+  if (task.type == CPU_TASK_SELF_HALT) {
+    ASMV("int %0" : : "i"(INT_VECTOR_SCHEDULER_TASK));
+    *self_halt = true;
+  }
+
+  return ERR_NONE;
 }
 
 #define TASK_RETRY_COUNT 3
 
 static err_code deactivate_thread(bool stop, thread_id id, uint64_t output,
                                   struct spinlock *lock_to_release) {
-  struct cpu_task task;
+  err_code err;
+  bool self_halt = false;
   CAST_TO_THREAD(thrd, id);
 
-  for (int i = 0; i < TASK_RETRY_COUNT; i++) {
-    int state = thrd->state, cpu = thrd->cpu;
-    switch (state) {
-    case THREAD_STATE_UNKNOWN:
-      break;
+  acquire_spinlock(&inactive.lock, 0);
 
+  for (int i = 0; i < TASK_RETRY_COUNT; i++) {
+    switch (thrd->state) {
     case THREAD_STATE_RUNNING:
-      task = (struct cpu_task) { .type = CPU_TASK_PAUSE, .thread = thrd };
-      run_cpu_task(cpu, &task);
-      if (task.error == ERR_NOT_FOUND)
-        break;
-      if (!task.error) {
-        thrd->prev = NULL;
-        acquire_spinlock(&inactive.lock, 0);
-        thrd->state = stop ? THREAD_STATE_STOPPED : THREAD_STATE_PAUSED;
-        thrd->next = inactive.tail;
-        if (inactive.tail)
-          inactive.tail->prev = thrd;
-        inactive.tail = thrd;
-        inactive.total_threads++;
-        if (task.type == CPU_TASK_SELF_HALT) {
-          cpus[cpu].task.lock_to_release = lock_to_release;
-          ASMV("int %0" : : "i"(INT_VECTOR_SCHEDULER_TASK));
-        }
-        else
-          release_spinlock(&inactive.lock);
-      }
-      return task.error;
+      err = deactivate_running(stop, thrd, lock_to_release, &self_halt);
+      break;
 
     case THREAD_STATE_PAUSED:
       if (stop) {
-        err_code err = ERR_NONE;
-        acquire_spinlock(&inactive.lock, 0);
-        if (thrd->state == THREAD_STATE_PAUSED) {
-          thrd->state = THREAD_STATE_STOPPED;
-          thrd->output = output;
-        }
-        else
-          err = ERR_NOT_FOUND;
-        release_spinlock(&inactive.lock);
-        if (!err)
-          return ERR_NONE;
-        break;
+        thrd->state = THREAD_STATE_STOPPED;
+        thrd->output = output;
+        err = ERR_NONE;
       }
-      return ERR_BAD_STATE;
+      else
+        err = ERR_BAD_STATE;
+      break;
 
     case THREAD_STATE_STOPPED:
-      return ERR_BAD_STATE;
+      err = ERR_BAD_STATE;
+      break;
     }
+
+    if (err != ERR_NOT_FOUND)
+      break;
   }
 
-  return ERR_BUSY;
+  if (!self_halt)
+    release_spinlock(&inactive.lock);
+
+  return (err == ERR_NOT_FOUND) ? ERR_BUSY : err;
 }
 
 err_code pause_thread(thread_id id) {
@@ -426,7 +428,6 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
     }
   }
 
-  thrd->state = THREAD_STATE_UNKNOWN;
   if (!--prio->total_threads)
     BIT_ARRAY_RESET(cpud->priority_mask, thrd->real_priority);
   cpud->total_threads--;
@@ -452,13 +453,15 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
 }
 
 static inline void do_self_halt_task(struct int_stack_frame *stack_frame,
+                                     struct cpu_data *cpud,
                                      struct cpu_task *task) {
   extern int halt;
   task->thread->context = *stack_frame;
   stack_frame->rip = (uint64_t)&halt;
+  release_spinlock(&cpud->lock);
   release_spinlock(&inactive.lock);
-  if (task->lock_to_release)
-    release_spinlock(task->lock_to_release);
+  if (task->lock)
+    release_spinlock(task->lock);
 }
 
 DEFINE_ISR(task, 0) {
@@ -469,7 +472,7 @@ DEFINE_ISR(task, 0) {
   switch (task->type) {
   case CPU_TASK_RESUME: do_resume_task(cpu, cpud, task); break;
   case CPU_TASK_PAUSE: do_pause_task(stack_frame, cpu, cpud, task); break;
-  case CPU_TASK_SELF_HALT: do_self_halt_task(stack_frame, task); break;
+  case CPU_TASK_SELF_HALT: do_self_halt_task(stack_frame, cpud, task); break;
   default: task->error = ERR_BAD_INPUT;
   }
 

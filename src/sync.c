@@ -2,8 +2,6 @@
 #include "schedule.h"
 #include "sync.h"
 
-INTERNAL struct spinlock *__if_owner = NULL;
-
 static struct mem_pool mutex_node_pool;
 
 struct __mutex_node {

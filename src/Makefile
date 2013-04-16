@@ -14,7 +14,7 @@ ISO_GRUB=$(BIN)/iso/boot/grub
 
 BOOT32_OBJ=boot32
 OBJS=kmain util page_map vga acpi cpu_info memory interrupt apic schedule sync
-TEST_OBJS=test schedule.test
+TEST_OBJS=test schedule.test sync.test
 
 CC=gcc
 VM=qemu-system-x86_64

@@ -9,26 +9,26 @@
 
 #define THREAD_AFFINITY_SIZE SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)
 
-#define THREAD_STATE_UNKNOWN 0
+#define THREAD_STATE_DETACHED 0
 #define THREAD_STATE_RUNNING 1
 #define THREAD_STATE_PAUSED 2
 #define THREAD_STATE_STOPPED 3
 
 // IN fields should be set before calling attach_thread
 struct thread_data {
-  uint64_t magic;
-  struct thread_data *prev, *next, *all_prev, *all_next;
+  INTERNAL uint64_t magic;
+  INTERNAL struct thread_data *prev, *next, *all_prev, *all_next;
   IN struct int_stack_frame context;
   IN uint8_t *stack;
   IN size_t stack_size; // size available to thread: stack_size - 8
   IN uint64_t affinity[THREAD_AFFINITY_SIZE];
-  uint64_t output;
-  uint64_t run_time;
+  OUT uint64_t output;
+  OUT uint64_t run_time;
   IN uint8_t priority;
-  uint8_t real_priority;
-  uint16_t quantum;
-  uint8_t cpu;
-  uint8_t state: 2;
+  INTERNAL uint8_t real_priority;
+  INTERNAL uint16_t quantum;
+  INTERNAL uint8_t cpu;
+  INTERNAL uint8_t state: 2;
   IN uint8_t fixed_priority : 1;
 };
 
@@ -52,8 +52,6 @@ err_code stop_thread(thread_id id, uint64_t output);
 err_code pause_this_thread(struct spinlock *lock_to_release);
 
 thread_id get_thread(void);
-err_code get_next_thread(thread_id *id);
-err_code copy_thread_data(thread_id id, struct thread_data *thread);
 
 void init_scheduler(void);
 

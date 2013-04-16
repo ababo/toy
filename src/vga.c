@@ -130,9 +130,10 @@ void set_vga_caret(int row, int col) {
 
 void init_vga(void) {
   map_page(VIDEO_ADDR, VIDEO_ADDR, PAGE_MAPPING_WRITE, 0);
+
+  create_spinlock(&lock);
   set_vga_frame(0, 0, VGA_ROWS_NUMBER, VGA_COLS_NUMBER, VGA_COLOR_WHITE,
                 VGA_COLOR_LOW_BLUE);
-  create_spinlock(&lock);
   clear_vga_frame();
   set_vga_cursor(true);
 }

@@ -1,10 +1,12 @@
 #ifndef SYNC_H
 #define SYNC_H
 
+#include "boot.h"
 #include "util.h"
 
 struct spinlock {
   volatile uint8_t busy;
+  uint8_t sti;
 };
 
 static inline void create_spinlock(struct spinlock *lock) {
@@ -13,32 +15,30 @@ static inline void create_spinlock(struct spinlock *lock) {
 
 // zero tries means (practically) forever
 static inline bool acquire_spinlock(struct spinlock *lock, uint64_t tries) {
-  extern struct spinlock *__if_owner;
-  if (!__if_owner) {
-    __if_owner = lock;
+  uint64_t rflags;
+  ASMV("pushfq\npopq %0" : "=m"(rflags));
+  bool sti = !(rflags & RFLAGS_IF);
+  if (sti)
     ASMV("cli");
-  }
 
   uint8_t al;
-  do ASMV("mov $1, %%al\nxchgb %%al, %0" : "+m"(lock->busy), "=m"(al));
-  while (al && !--tries);
+  do ASMV("mov $1, %%al\nxchgb %%al, %0" : "+m"(lock->busy), "=&a"(al));
+  while (al && --tries);
 
-  if (al && __if_owner == lock) {
-    __if_owner = NULL;
+  if (al && sti)
     ASMV("sti");
-  }
+
+  if (!al)
+    lock->sti = sti;
 
   return !al;
 }
 
 static inline void release_spinlock(struct spinlock *lock) {
+  bool sti = lock->sti;
   ASMV("xorb %%al, %%al\nxchgb %%al, %0" : "+m"(lock->busy) : : "al");
-
-  extern struct spinlock *__if_owner;
-  if (__if_owner == lock) {
-    __if_owner = NULL;
+  if (sti)
     ASMV("sti");
-  }
 }
 
 struct mutex {

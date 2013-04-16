@@ -2,37 +2,7 @@
 #include "../memory.h"
 #include "test.h"
 
-#define STACK_SIZE 0x1000
-#define DEFAULT_PRIORITY 3;
 #define WAIT_ITERATIONS 10000000
-
-static void set_affinity(struct thread_data *thread, bool bsp_only) {
-  for (int i = 0; i < THREAD_AFFINITY_SIZE; i++)
-    thread->affinity[i] = bsp_only ? (i ? 0 : 1) : UINT64_MAX;
-}
-
-static struct thread_data *create_thread(struct mem_pool *pool,
-                                         thread_proc proc, uint64_t input) {
-  struct thread_data *thrd = alloc_block(pool);
-  if (!thrd) {
-    LOG_ERROR("Failed to allocate memory");
-    return NULL;
-  }
-
-  memset(thrd, 0, sizeof(*thrd));
-  thrd->stack = (uint8_t*)(thrd + 1);
-  thrd->stack_size = STACK_SIZE;
-  set_affinity(thrd, false);
-  thrd->priority = DEFAULT_PRIORITY;
-  thrd->fixed_priority = true;
-  set_thread_context(thrd, proc, input);
-
-  return thrd;
-}
-
-static void destroy_thread(struct mem_pool *pool, struct thread_data *thread) {
-  free_block(pool, thread);
-}
 
 static uint64_t counter_proc(uint64_t input) {
   volatile uint64_t *counter = (volatile uint64_t*)input;
@@ -170,12 +140,12 @@ DEFINE_SUBTEST(stop_thread, thread_id id, volatile uint64_t *counter) {
   END_TEST();
 }
 
-DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *pool) {
+DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *thread_pool) {
   BEGIN_TEST();
 
   volatile uint64_t counter = UINT64_MAX;
-  struct thread_data *thrd = create_thread(pool, counter_proc,
-                                           (uint64_t)&counter);
+  struct thread_data *thrd = create_test_thread(thread_pool, counter_proc,
+                                                (uint64_t)&counter);
   if (!thrd)
     return false;
 
@@ -186,8 +156,10 @@ DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *pool) {
   ADD_TEST(detach_thread, id, &counter);
   ADD_TEST(stop_thread, id, &counter);
 
-  LOG_ERROR("running on BSP CPU only...");
-  set_affinity(thrd, true);
+  if (passed) {
+    LOG_INFO("running on BSP CPU only...");
+    set_test_thread_affinity(thrd, true);
+  }
 
   ADD_TEST(attach_thread, thrd, &id);
   ADD_TEST(resume_thread, id, &counter);
@@ -195,20 +167,12 @@ DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *pool) {
   ADD_TEST(detach_thread, id, &counter);
   ADD_TEST(stop_thread, id, &counter);
 
-  destroy_thread(pool, thrd);
+  destroy_test_thread(thread_pool, thrd);
   END_TEST();
 }
 
-DEFINE_TEST(scheduler) {
+DEFINE_TEST(scheduler, struct mem_pool *thread_pool) {
   BEGIN_TEST();
-  struct mem_pool pool;
-  if (create_mem_pool(sizeof(struct thread_data) + STACK_SIZE, &pool)) {
-    LOG_ERROR("Failed to create a memory pool");
-    return false;
-  }
-
-  ADD_TEST(scheduler_sanity, &pool);
-
-  destroy_mem_pool(&pool);
+  ADD_TEST(scheduler_sanity, thread_pool);
   END_TEST();
 }
