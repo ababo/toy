@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-#define CPU_VENDOR_UNKNOWN -1
+#define CPU_VENDOR_UNKNOWN 0
 #define CPU_VENDOR_INTEL 1
 #define CPU_VENDOR_AMD 2
 
@@ -15,7 +15,12 @@ struct cpu_desc {
   uint32_t domain;
 };
 
-int get_cpu(void);
+static inline int get_cpu(void) {
+  uint32_t ebx;
+  extern uint8_t __cpu_indexes[];
+  ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
+  return __cpu_indexes[INT_BITS(ebx, 24, 31)];
+}
 
 int get_bsp_cpu(void);
 int get_cpu_vendor(void);

@@ -1,11 +1,11 @@
 #include "util.h"
 
-char *strcat (char *dst, const char *src) {
+char *strcat(char *dst, const char *src) {
   strcpy(dst + strlen(dst), src);
   return dst;
 }
 
-char *strcpy (char *dst, const char *src) {
+char *strcpy(char *dst, const char *src) {
   char *tmp;
   for (tmp = dst; *src; *tmp++ = *src++);
   *tmp = 0;

@@ -2,6 +2,7 @@
 #include "cpu_info.h"
 #include "interrupt.h"
 #include "memory.h"
+#include "schedule.h"
 #include "sys_table.h"
 
 static uint8_t (*isr_stacks)[CONFIG_ISR_STACK_SIZE];
@@ -61,10 +62,12 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
 }
 
 DEFINE_INT_HANDLER(default) {
-  kprintf("\nfault: #%s", (char*)(data << 8 >> 8));
+  ASMV("cli");
+  kprintf("\nfault: #%s (CPU: %d, thread: %lX",
+          (char*)(data << 8 >> 8), get_cpu(), get_thread());
   if (is_int_error(data >> 56))
-    kprintf(" (error_code: %X)", stack_frame->error_code);
-  kprintf("\n");
+    kprintf(", error_code: %X", stack_frame->error_code);
+  kprintf("):\n");
   dump_int_stack_frame(stack_frame);
   ASMV("jmp halt");
 }

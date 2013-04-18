@@ -72,7 +72,7 @@ err_code set_thread_context(struct thread_data *thread, thread_proc proc,
 static inline int find_mask_bsf(const uint64_t *mask, int size) {
   for (int i = 0; i < size; i++)
     if (mask[i])
-      return i * 64 + bsf(mask[i]);
+      return i * 64 + bsfq(mask[i]);
   return -1;
 }
 
@@ -328,7 +328,9 @@ static inline void add_expired(struct cpu_data *cpud,
 static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
                                        int cpu, struct thread_data *thread) {
   if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
-    kprintf("\nstack overrun (CPU: %d, thread %lX):\n", cpu, (uint64_t)thread);
+    ASMV("cli");
+    kprintf("\nstack overrun (CPU: %d, thread: %lX):\n",
+            cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
     ASMV("jmp halt");
   }

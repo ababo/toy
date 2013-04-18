@@ -6,13 +6,7 @@
 
 static int vendor = 0, num = 0, bsp = 0;
 static struct cpu_desc descs[CONFIG_CPUS_MAX];
-static uint8_t indexes[256];
-
-int get_cpu(void) {
-  uint32_t ebx;
-  ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
-  return indexes[INT_BITS(ebx, 24, 31)];
-}
+INTERNAL uint8_t __cpu_indexes[256] = { };
 
 int get_bsp_cpu(void) {
   return bsp;
@@ -71,12 +65,12 @@ static void get_thread_core_bits_intel(uint32_t cpuid_func_max,
     ASMV("movl $0x4, %%eax\nxorl %%ecx, %%ecx\ncpuid" :
          "=a"(eax) : : "ebx", "ecx", "edx");
     int core_index_max = INT_BITS(eax, 26, 31);
-    *core_bits = core_index_max ? bsr(core_index_max) + 1 : 0;
-    int chip_thread_bits = bsr(chip_threads_max - 1) + 1;
+    *core_bits = core_index_max ? bsrq(core_index_max) + 1 : 0;
+    int chip_thread_bits = bsrq(chip_threads_max - 1) + 1;
     *thread_bits = chip_thread_bits - *core_bits;
   }
   else
-    *core_bits = 0, *thread_bits = bsr(chip_threads_max - 1) + 1;
+    *core_bits = 0, *thread_bits = bsrq(chip_threads_max - 1) + 1;
 }
 
 static void get_thread_core_bits_amd(UNUSED uint32_t cpuid_func_max,
@@ -89,13 +83,13 @@ static void get_thread_core_bits_amd(UNUSED uint32_t cpuid_func_max,
     *core_bits = INT_BITS(ecx, 12, 15);
     if (!*core_bits) {
       int core_index_max = INT_BITS(ecx, 0, 7);
-      *core_bits = core_index_max ? bsr(core_index_max) + 1 : 0;
+      *core_bits = core_index_max ? bsrq(core_index_max) + 1 : 0;
     }
-    int chip_thread_bits = bsr(chip_threads_max - 1) + 1;
+    int chip_thread_bits = bsrq(chip_threads_max - 1) + 1;
     *thread_bits = chip_thread_bits - *core_bits;
   }
   else
-    *core_bits = bsr(chip_threads_max - 1) + 1, *thread_bits = 0;
+    *core_bits = bsrq(chip_threads_max - 1) + 1, *thread_bits = 0;
 }
 
 static void get_thread_core_bits(int *thread_bits, int *core_bits) {
@@ -131,7 +125,7 @@ void fill_cpu_descs(int thread_bits, int core_bits) {
         break;
       }
 
-      indexes[mentry->apic_id] = i;
+      __cpu_indexes[mentry->apic_id] = i;
       descs[i].apic_id = mentry->apic_id;
       descs[i].thread = mentry->apic_id & ((1 << thread_bits) - 1);
       descs[i].core = (mentry->apic_id >> thread_bits) &

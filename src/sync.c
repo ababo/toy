@@ -1,6 +1,9 @@
+#include "config.h"
 #include "memory.h"
 #include "schedule.h"
 #include "sync.h"
+
+INTERNAL struct spinlock *__outer_spinlocks[CONFIG_CPUS_MAX] = { };
 
 static struct mem_pool mutex_node_pool;
 

@@ -1,12 +1,11 @@
 #ifndef SYNC_H
 #define SYNC_H
 
-#include "boot.h"
+#include "cpu_info.h"
 #include "util.h"
 
 struct spinlock {
   volatile uint8_t busy;
-  uint8_t sti;
 };
 
 static inline void create_spinlock(struct spinlock *lock) {
@@ -15,30 +14,32 @@ static inline void create_spinlock(struct spinlock *lock) {
 
 // zero tries means (practically) forever
 static inline bool acquire_spinlock(struct spinlock *lock, uint64_t tries) {
-  uint64_t rflags;
-  ASMV("pushfq\npopq %0" : "=m"(rflags));
-  bool sti = !(rflags & RFLAGS_IF);
-  if (sti)
+  extern struct spinlock *__outer_spinlocks[];
+  struct spinlock **outer = &__outer_spinlocks[get_cpu()];
+  if (!cmpxchgq((uint64_t*)outer, 0, (uint64_t)lock))
     ASMV("cli");
 
   uint8_t al;
   do ASMV("mov $1, %%al\nxchgb %%al, %0" : "+m"(lock->busy), "=&a"(al));
   while (al && --tries);
 
-  if (al && sti)
+  if (al && *outer == lock) {
+    *outer = NULL;
     ASMV("sti");
-
-  if (!al)
-    lock->sti = sti;
+  }
 
   return !al;
 }
 
 static inline void release_spinlock(struct spinlock *lock) {
-  bool sti = lock->sti;
   ASMV("xorb %%al, %%al\nxchgb %%al, %0" : "+m"(lock->busy) : : "al");
-  if (sti)
+
+  extern struct spinlock *__outer_spinlocks[];
+  struct spinlock **outer = &__outer_spinlocks[get_cpu()];
+  if (*outer == lock) {
+    *outer = NULL;
     ASMV("sti");
+  }
 }
 
 struct mutex {

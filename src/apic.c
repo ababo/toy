@@ -76,7 +76,7 @@ void start_apic_timer(int interval, bool periodic) {
   stop_apic_timer();
 
   uint64_t initial = (uint64_t)interval * timer_10ms_ticks / 10000;
-  int extra_bits = bsr(initial) - 31, divide;
+  int extra_bits = bsrq(initial) - 31, divide;
   switch (extra_bits) {
   case 1: initial >>= 1, divide = LAPIC_TIMER_DIVIDE_BY_2; break;
   case 2: initial >>= 2, divide = LAPIC_TIMER_DIVIDE_BY_4; break;

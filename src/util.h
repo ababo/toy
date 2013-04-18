@@ -80,13 +80,13 @@ typedef unsigned int size_t;
 #define ASM __asm__
 #define ASMV __asm__ __volatile__
 
-static inline int bsr(uint64_t value) {
+static inline int bsrq(uint64_t value) {
   uint64_t index;
   ASMV("bsrq %1, %0" : "=r"(index) : "mr"(value));
   return (int)index;
 }
 
-static inline int bsf(uint64_t value) {
+static inline int bsfq(uint64_t value) {
   uint64_t index;
   ASMV("bsfq %1, %0" : "=r"(index) : "mr"(value));
   return (int)index;
@@ -123,8 +123,15 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
   ASMV("wrmsr" : : "a"(low), "d"(high), "c"(msr));
 }
 
-char *strcat (char *dst, const char *src);
-char *strcpy (char *dst, const char *src);
+static inline uint64_t cmpxchgq(uint64_t *ptr, uint64_t old, uint64_t new) {
+  uint64_t ret;
+  ASMV("lock\ncmpxchgq %1, %2"
+       : "=a"(ret) : "r"(new), "m"(*ptr), "0"(old) : "memory");
+  return ret;
+}
+
+char *strcat(char *dst, const char *src);
+char *strcpy(char *dst, const char *src);
 size_t strlen(const char *str);
 char *strrev(char *str);
 
