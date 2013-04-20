@@ -17,7 +17,7 @@ INTERNAL err_code __sleep_in_mutex(struct mutex *mutex) {
   bool acquired;
 
   acquire_spinlock(&mutex->ilock, 0);
-  acquired = acquire_spinlock(&mutex->mlock, 1);
+  acquired = acquire_spinlock_int(&mutex->mlock, 1);
   if (!acquired) {
     node = alloc_block(&mutex_node_pool);
     if (node) {
@@ -52,7 +52,7 @@ INTERNAL void __awake_in_mutex(struct mutex *mutex) {
   while (mutex->tail && err);
 
   if (!mutex->tail)
-    release_spinlock(&mutex->mlock);
+    release_spinlock_int(&mutex->mlock);
 }
 
 void init_sync(void) {

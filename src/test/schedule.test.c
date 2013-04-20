@@ -2,11 +2,13 @@
 #include "../memory.h"
 #include "test.h"
 
-#define WAIT_ITERATIONS 10000000
+#define WAIT_ITERATIONS 100000000
 
 static uint64_t counter_proc(uint64_t input) {
+  LOG_DEBUG("started");
   volatile uint64_t *counter = (volatile uint64_t*)input;
   for (; *counter; --*counter);
+  LOG_DEBUG("exiting...");
   return 0;
 }
 
@@ -58,7 +60,7 @@ DEFINE_SUBTEST(resume_thread, thread_id id, volatile uint64_t *counter) {
 
   uint64_t prev_counter = *counter;
   for (volatile int i = 0;
-       i < WAIT_ITERATIONS; i++);
+       prev_counter == *counter && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("making sure it runs", prev_counter != *counter);
 
   ADD_TEST_CASE("resuming of already resumed",

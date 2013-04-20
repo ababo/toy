@@ -53,9 +53,10 @@ static void start_ap_cpus(void) {
   }
 
   for (int i = 0; i < get_cpus(); i++)
-    if (i != get_bsp_cpu() &&
-        !start_ap_cpu(get_cpu_desc(i)->apic_id, BSTART16_ADDR, &started_cpus))
-      LOG_ERROR("failed to start AP CPU %d", i);
+    if (i != get_bsp_cpu() && !start_ap_cpu(i, BSTART16_ADDR, &started_cpus)) {
+      LOG_ERROR("failed to start AP CPU %d, others skipped...", i);
+      break;
+    }
 
   kfree(ap_boot_stack);
 }

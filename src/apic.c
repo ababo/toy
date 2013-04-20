@@ -105,13 +105,14 @@ void stop_apic_timer(void) {
   write_lapic(LAPIC_TIMER_INITIAL_REG, 0);
 }
 
-void issue_cpu_interrupt(int apic_id, int vector) {
-  write_lapic(LAPIC_ICR_HIGH_REG, apic_id << 24);
+void issue_cpu_interrupt(int cpu, int vector) {
+  write_lapic(LAPIC_ICR_HIGH_REG, get_cpu_desc(cpu)->apic_id << 24);
   write_lapic(LAPIC_ICR_LOW_REG, (uint8_t)vector |
               LAPIC_ICR_DELIVERY_FIXED | LAPIC_ICR_LEVEL_ASSERT);
 }
 
-bool start_ap_cpu(int apic_id, int startup_addr, volatile int *started_cpus) {
+bool start_ap_cpu(int cpu, int startup_addr, volatile int *started_cpus) {
+  int apic_id = get_cpu_desc(cpu)->apic_id;
   write_lapic(LAPIC_ICR_HIGH_REG, apic_id << 24);
   write_lapic(LAPIC_ICR_LOW_REG, LAPIC_ICR_DELIVERY_INIT |
               LAPIC_ICR_LEVEL_ASSERT);

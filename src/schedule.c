@@ -131,17 +131,17 @@ err_code detach_thread(thread_id id, struct thread_data **thread) {
   if (thrd->state == THREAD_STATE_PAUSED ||
       thrd->state == THREAD_STATE_STOPPED) {
     if (thrd->next)
-      thrd->next = thrd->prev;
+      thrd->next->prev = thrd->prev;
     if (thrd->prev)
-      thrd->prev = thrd->next;
+      thrd->prev->next = thrd->next;
     if (inactive.tail == thrd)
       inactive.tail = thrd->next;
     inactive.total_threads--;
 
    if (thrd->all_next)
-      thrd->all_next = thrd->all_prev;
+      thrd->all_next->all_prev = thrd->all_prev;
     if (thrd->all_prev)
-      thrd->all_prev = thrd->all_next;
+      thrd->all_prev->all_next = thrd->all_next;
     if (all.tail == thrd)
       all.tail = thrd->next;
     all.total_threads--;
@@ -188,7 +188,7 @@ static void run_cpu_task(int cpu, struct cpu_task *task) {
     handle_task_int(NULL, 0);
   else {
     cpud->task.error = ERR_BUSY;
-    issue_cpu_interrupt(get_cpu_desc(cpu)->apic_id, INT_VECTOR_SCHEDULER_TASK);
+    issue_cpu_interrupt(cpu, INT_VECTOR_SCHEDULER_TASK);
     while (cpud->task.error == ERR_BUSY);
   }
   *task = cpud->task;
@@ -414,20 +414,22 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
   struct cpu_priority *prio = &cpud->priorities[thrd->real_priority];
 
   if (thrd->next)
-    thrd->next = thrd->prev;
+    thrd->next->prev = thrd->prev;
   if (thrd->prev)
-    thrd->prev = thrd->next;
+    thrd->prev->next = thrd->next;
 
-  if (prio->expired_head == thrd)
-    prio->expired_head = thrd->prev;
-  else if (prio->expired_tail == thrd)
-    prio->expired_tail = thrd->next;
-  else if (prio->active_tail == thrd) {
+  if (prio->active_tail == thrd) {
     prio->active_tail = thrd->next;
     if (!prio->active_tail) {
       prio->active_tail = prio->expired_tail;
       prio->expired_tail = prio->expired_head = NULL;
     }
+  }
+  else {
+    if (prio->expired_head == thrd)
+      prio->expired_head = thrd->prev;
+    if (prio->expired_tail == thrd)
+      prio->expired_tail = thrd->next;
   }
 
   if (!--prio->total_threads)
@@ -455,15 +457,19 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
 }
 
 static inline void do_self_halt_task(struct int_stack_frame *stack_frame,
-                                     struct cpu_data *cpud,
+                                     int cpu, struct cpu_data *cpud,
                                      struct cpu_task *task) {
   extern int halt;
+  stack_frame->rflags |= RFLAGS_IF;
   task->thread->context = *stack_frame;
   stack_frame->rip = (uint64_t)&halt;
-  release_spinlock(&cpud->lock);
-  release_spinlock(&inactive.lock);
+
+  extern struct spinlock *__outer_spinlocks[];
+  __outer_spinlocks[cpu] = NULL;
+  release_spinlock_int(&cpud->lock);
+  release_spinlock_int(&inactive.lock);
   if (task->lock)
-    release_spinlock(task->lock);
+    release_spinlock_int(task->lock);
 }
 
 DEFINE_ISR(task, 0) {
@@ -472,10 +478,17 @@ DEFINE_ISR(task, 0) {
   struct cpu_task *task = &cpud->task;
 
   switch (task->type) {
-  case CPU_TASK_RESUME: do_resume_task(cpu, cpud, task); break;
-  case CPU_TASK_PAUSE: do_pause_task(stack_frame, cpu, cpud, task); break;
-  case CPU_TASK_SELF_HALT: do_self_halt_task(stack_frame, cpud, task); break;
-  default: task->error = ERR_BAD_INPUT;
+  case CPU_TASK_RESUME:
+    do_resume_task(cpu, cpud, task);
+    break;
+  case CPU_TASK_PAUSE:
+    do_pause_task(stack_frame, cpu, cpud, task);
+    break;
+  case CPU_TASK_SELF_HALT:
+    do_self_halt_task(stack_frame, cpu, cpud, task);
+    break;
+  default:
+    task->error = ERR_BAD_INPUT;
   }
 
   set_apic_eoi();

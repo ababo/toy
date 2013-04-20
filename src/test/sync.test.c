@@ -1,16 +1,20 @@
 #include "../sync.h"
 #include "test.h"
 
-#define WAIT_ITERATIONS 10000000
+#define WAIT_ITERATIONS 100000000
 
 static struct mutex mutex;
 static volatile bool acquired[2], release;
 
 static uint64_t mutex_proc(UNUSED uint64_t input) {
+  LOG_DEBUG("acquiring...");
   acquire_mutex(&mutex);
+  LOG_DEBUG("acquired");
   acquired[input] = true;
   while (!release);
+  LOG_DEBUG("releasing...");
   release_mutex(&mutex);
+  LOG_DEBUG("released");
   return 0;
 }
 
@@ -28,7 +32,7 @@ DEFINE_SUBTEST(mutex_wait, thread_id id1, thread_id id2) {
 
   release_mutex(&mutex);
   for (volatile int i = 0;
-       (!acquired[0] || !acquired[1]) && i < WAIT_ITERATIONS; i++);
+       !(acquired[0] && acquired[1]) && i < WAIT_ITERATIONS; i++);
   ADD_TEST_CASE("make sure only one acquired", acquired[0] ^ acquired[1]);
 
   release = true;

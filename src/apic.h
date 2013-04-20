@@ -9,10 +9,10 @@ void set_apic_eoi(void);
 void start_apic_timer(int interval, bool periodic);
 void stop_apic_timer(void);
 
-void issue_cpu_interrupt(int apic_id, int vector);
+void issue_cpu_interrupt(int cpu, int vector);
 
 // startup address must be 4096-aligned
-bool start_ap_cpu(int apic_id, int startup_addr, volatile int *started_cpus);
+bool start_ap_cpu(int cpu, int startup_addr, volatile int *started_cpus);
 
 void init_apic(void);
 
