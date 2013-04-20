@@ -1,7 +1,23 @@
-Simple OS-like program for x86-64 which dreams to become a real OS.
+Simple OS-like program for x86-64, which dreams to become a real OS.
 
-Started to work on version 0.2 from scratch in order to avoid a painful
-refactoring. This version will support multiboot specification and SMP from the
-ground up.
+Design vision (to be implemented):
+1. Single address space OS. All available external memory is mapped into it.
+2. Persistent applications. They not only survive reboot, but also can be
+   transferred to another machine (with a same architecture) and resumed there.
+3. Virtual machine for memory protection and security.
 
-The previous version can be found in branch 'ver.0.1'.
+Already implemented:
+1. Multiboot specification support (for GRUB2 or patched GRUB).
+2. Textual VGA-mode (16 colors, limited kprintf).
+3. CPU topology detection (sockets, cores, threads) for Intel and AMD CPUs.
+4. Convenient page mapping interface.
+5. Support of interrupts written in C.
+6. Simple preemptive scheduler with SMP support.
+7. Synchronization primitives: spinlock, mutex.
+
+Supported compilers:
+1. GCC
+2. CLang
+
+Build environment:
+1. Linux (known to work on Ubuntu 12.04).
