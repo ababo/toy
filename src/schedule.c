@@ -189,7 +189,7 @@ static void run_cpu_task(int cpu, struct cpu_task *task) {
   else {
     cpud->task.error = ERR_BUSY;
     issue_cpu_interrupt(cpu, INT_VECTOR_SCHEDULER_TASK);
-    while (cpud->task.error == ERR_BUSY);
+    while (cpud->task.error == ERR_BUSY) { }
   }
   *task = cpud->task;
   if (task->type != CPU_TASK_SELF_HALT)

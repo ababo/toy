@@ -11,7 +11,7 @@ static uint64_t mutex_proc(UNUSED uint64_t input) {
   acquire_mutex(&mutex);
   LOG_DEBUG("acquired");
   acquired[input] = true;
-  while (!release);
+  while (!release) { }
   LOG_DEBUG("releasing...");
   release_mutex(&mutex);
   LOG_DEBUG("released");
@@ -27,17 +27,17 @@ DEFINE_SUBTEST(mutex_wait, thread_id id1, thread_id id2) {
   resume_thread(id1);
   resume_thread(id2);
   for (volatile int i = 0;
-       !acquired[0] && !acquired[1] && i < WAIT_ITERATIONS; i++);
+       !acquired[0] && !acquired[1] && i < WAIT_ITERATIONS; i++) { }
   ADD_TEST_CASE("make sure no one acquired", !acquired[0] && !acquired[1]);
 
   release_mutex(&mutex);
   for (volatile int i = 0;
-       !(acquired[0] && acquired[1]) && i < WAIT_ITERATIONS; i++);
+       !(acquired[0] && acquired[1]) && i < WAIT_ITERATIONS; i++) { }
   ADD_TEST_CASE("make sure only one acquired", acquired[0] ^ acquired[1]);
 
   release = true;
   for (volatile int i = 0;
-       (!acquired[0] || !acquired[1]) && i < WAIT_ITERATIONS; i++);
+       (!acquired[0] || !acquired[1]) && i < WAIT_ITERATIONS; i++) { }
   ADD_TEST_CASE("make sure both acquired", acquired[0] && acquired[1]);
 
   END_TEST();
@@ -58,7 +58,7 @@ DEFINE_SUBTEST(mutex, struct mem_pool *thread_pool) {
   ADD_TEST(mutex_wait, id1, id2);
 
   if (passed) {
-    for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+    for (volatile int i = 0; i < WAIT_ITERATIONS; i++) { }
     LOG_INFO("running on BSP CPU only...");
     detach_thread(id1, &thrd1);
     detach_thread(id2, &thrd2);
@@ -71,7 +71,7 @@ DEFINE_SUBTEST(mutex, struct mem_pool *thread_pool) {
     ADD_TEST(mutex_wait, id1, id2);
   }
 
-  for (volatile int i = 0; i < WAIT_ITERATIONS; i++);
+  for (volatile int i = 0; i < WAIT_ITERATIONS; i++) { }
   detach_thread(id1, &thrd1);
   detach_thread(id2, &thrd2);
   destroy_test_thread(thread_pool, thrd1);

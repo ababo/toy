@@ -72,9 +72,10 @@ DEFINE_INT_HANDLER(default) {
   ASMV("jmp halt");
 }
 
-#define DEFINE_DEFAULT_ISR_WRAPPER(mnemonic)                            \
-  DEFINE_ISR_WRAPPER(mnemonic, default,                                 \
-                     ((uint64_t)INT_VECTOR_##mnemonic << 56) + #mnemonic)
+#define DEFINE_DEFAULT_ISR_WRAPPER(mnemonic)                   \
+  DEFINE_ISR_WRAPPER(mnemonic, default,                        \
+                     ((uint64_t)INT_VECTOR_##mnemonic << 56) + \
+                     (uint64_t)#mnemonic)
 
 DEFINE_DEFAULT_ISR_WRAPPER(DE);
 DEFINE_DEFAULT_ISR_WRAPPER(NMI);
