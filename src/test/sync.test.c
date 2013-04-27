@@ -6,7 +6,7 @@
 static struct mutex mutex;
 static volatile bool acquired[2], release;
 
-static uint64_t mutex_proc(UNUSED uint64_t input) {
+static uint64_t mutex_proc(uint64_t input) {
   LOG_DEBUG("acquiring...");
   acquire_mutex(&mutex);
   LOG_DEBUG("acquired");
@@ -80,8 +80,43 @@ DEFINE_SUBTEST(mutex, struct mem_pool *thread_pool) {
   END_TEST();
 }
 
+static uint64_t sleep_proc(uint64_t input) {
+  LOG_DEBUG("falling asleep for %d seconds... (thread: %lX)",
+            (int)input, get_thread());
+  sleep(input * 1000000);
+  LOG_DEBUG("awaken (thread: %lX)", get_thread());
+  return 0;
+}
+
+DEFINE_SUBTEST(sleep, struct mem_pool *thread_pool) {
+  BEGIN_TEST();
+
+  thread_id id1, id2, id3;
+  struct thread_data *thrd1, *thrd2, *thrd3;
+  thrd1 = create_test_thread(thread_pool, sleep_proc, 2);
+  thrd2 = create_test_thread(thread_pool, sleep_proc, 3);
+  thrd3 = create_test_thread(thread_pool, sleep_proc, 1);
+  if (!thrd1 || !thrd2 || !thrd3)
+    return false;
+
+  set_test_thread_affinity(thrd1, true);
+  set_test_thread_affinity(thrd2, true);
+  set_test_thread_affinity(thrd3, true);
+
+  attach_thread(thrd1, &id1);
+  attach_thread(thrd2, &id2);
+  attach_thread(thrd3, &id3);
+
+  resume_thread(id1);
+  resume_thread(id2);
+  resume_thread(id3);
+
+  END_TEST();
+}
+
 DEFINE_TEST(sync, struct mem_pool *thread_pool) {
   BEGIN_TEST();
-  ADD_TEST(mutex, thread_pool);
+  //  ADD_TEST(mutex, thread_pool);
+  ADD_TEST(sleep, thread_pool);
   END_TEST();
 }

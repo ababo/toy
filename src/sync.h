@@ -80,6 +80,8 @@ static inline void release_mutex(struct mutex *mutex) {
   release_spinlock(&mutex->ilock);
 }
 
+err_code sleep(uint64_t period); // in microseconds
+
 void init_sync(void);
 
 #endif // SYNC_H

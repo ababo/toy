@@ -22,7 +22,11 @@ static inline int get_cpu(void) {
   return __cpu_indexes[INT_BITS(ebx, 24, 31)];
 }
 
-int get_bsp_cpu(void);
+static inline int get_bsp_cpu(void) {
+  extern int __bsp_cpu;
+  return __bsp_cpu;
+}
+
 int get_cpu_vendor(void);
 
 int get_cpus(void);

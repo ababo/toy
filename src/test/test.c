@@ -39,7 +39,7 @@ DEFINE_TEST(all) {
     return false;
   }
 
-  ADD_TEST(scheduler, &pool);
+  //  ADD_TEST(scheduler, &pool);
   ADD_TEST(sync, &pool);
 
   destroy_mem_pool(&pool);

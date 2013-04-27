@@ -4,13 +4,10 @@
 
 #define VENDOR_LEN 12
 
-static int vendor = 0, num = 0, bsp = 0;
+static int vendor = 0, num = 0;
 static struct cpu_desc descs[CONFIG_CPUS_MAX];
 INTERNAL uint8_t __cpu_indexes[256] = { };
-
-int get_bsp_cpu(void) {
-  return bsp;
-}
+INTERNAL int __bsp_cpu = 0;
 
 int get_cpu_vendor(void) {
   if (vendor)
@@ -153,6 +150,6 @@ void init_cpu_info(void) {
   int thread_bits, core_bits;
   get_thread_core_bits(&thread_bits, &core_bits);
   fill_cpu_descs(thread_bits, core_bits);
-  bsp = get_cpu();
+  __bsp_cpu = get_cpu();
   LOG_DEBUG("done");
 }

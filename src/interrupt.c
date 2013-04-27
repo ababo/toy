@@ -62,13 +62,18 @@ void dump_int_stack_frame(const struct int_stack_frame *stack_frame) {
 }
 
 DEFINE_INT_HANDLER(default) {
-  ASMV("cli");
+  ASMV("cli"); int cpu = get_cpu();
+  // make sure calling release_spinlock will not enable interrupts
+  extern struct spinlock *__outer_spinlocks[];
+  __outer_spinlocks[cpu] = (struct spinlock*)1;
+
   kprintf("\nfault: #%s (CPU: %d, thread: %lX",
-          (char*)(data << 8 >> 8), get_cpu(), get_thread());
+          (char*)(data << 8 >> 8), cpu, get_thread());
   if (is_int_error(data >> 56))
     kprintf(", error_code: %X", stack_frame->error_code);
   kprintf("):\n");
   dump_int_stack_frame(stack_frame);
+
   ASMV("jmp halt");
 }
 

@@ -99,7 +99,7 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   thread->magic = THREAD_MAGIC;
   thread->all_next = all.tail;
   if (all.tail)
-    all.tail->prev = thread;
+    all.tail->all_prev = thread;
   all.tail = thread;
   all.total_threads++;
 
@@ -138,12 +138,12 @@ err_code detach_thread(thread_id id, struct thread_data **thread) {
       inactive.tail = thrd->next;
     inactive.total_threads--;
 
-   if (thrd->all_next)
+    if (thrd->all_next)
       thrd->all_next->all_prev = thrd->all_prev;
     if (thrd->all_prev)
       thrd->all_prev->all_next = thrd->all_next;
     if (all.tail == thrd)
-      all.tail = thrd->next;
+      all.tail = thrd->all_next;
     all.total_threads--;
 
     thrd->magic = 0;
@@ -303,6 +303,29 @@ err_code stop_thread(thread_id id, uint64_t output) {
   return deactivate_thread(true, id, output, NULL);
 }
 
+static uint64_t ticks, timer_ticks[CONFIG_CPUS_MAX];
+static timer_proc timer_proc_;
+
+uint64_t get_ticks(void) {
+  return ticks;
+}
+
+timer_proc get_timer_proc(void) {
+  return timer_proc_;
+}
+
+uint64_t get_timer_ticks(void) {
+  return timer_ticks[get_cpu()];
+}
+
+void set_timer_proc(timer_proc proc) {
+  timer_proc_ = proc;
+}
+
+void set_timer_ticks(uint64_t ticks) {
+  timer_ticks[get_cpu()] = ticks;
+}
+
 static inline void add_expired(struct cpu_data *cpud,
                                struct thread_data *thread) {
   struct cpu_priority *prio = &cpud->priorities[thread->real_priority];
@@ -329,10 +352,29 @@ static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
                                        int cpu, struct thread_data *thread) {
   if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
     ASMV("cli");
+    // make sure calling release_spinlock will not enable interrupts
+    extern struct spinlock *__outer_spinlocks[];
+    __outer_spinlocks[cpu] = (struct spinlock*)1;
+
     kprintf("\nstack overrun (CPU: %d, thread: %lX):\n",
             cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
+
     ASMV("jmp halt");
+  }
+}
+
+static inline void handle_timer(int cpu) {
+  if (cpu == get_bsp_cpu())
+    ticks++;
+
+  if (timer_ticks[cpu] && timer_ticks[cpu] <= ticks) {
+    extern struct spinlock *__outer_spinlocks[];
+    // make sure calling release_spinlock will not enable interrupts
+    __outer_spinlocks[cpu] = (struct spinlock*)1;
+    timer_proc_(cpu);
+    __outer_spinlocks[cpu] = NULL;
+    timer_ticks[cpu] = 0;
   }
 }
 
@@ -370,7 +412,9 @@ DEFINE_ISR(timer, 0) {
   update_priority_quantum(thrd);
   add_expired(cpud, thrd);
 
-  if (!prio->active_tail) {
+  if (prio->active_tail)
+    prio->active_tail->prev = NULL;
+  else {
     prio->active_tail = prio->expired_tail;
     prio->expired_tail = prio->expired_head = NULL;
   }
@@ -383,6 +427,7 @@ DEFINE_ISR(timer, 0) {
   }
 
 exit:
+  handle_timer(cpu);
   set_apic_eoi();
 }
 
@@ -504,6 +549,6 @@ void init_scheduler(void) {
   }
 
   create_spinlock(&cpus[cpu].lock);
-  start_apic_timer(CONFIG_SCHEDULER_TIMER_INTERVAL, true);
+  start_apic_timer(CONFIG_SCHEDULER_TICK_INTERVAL, true);
   LOG_DEBUG("done (CPU: %d)", cpu);
 }

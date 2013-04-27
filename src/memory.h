@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-struct mem_pool {
+struct mem_pool { // not thread-safe
   size_t block_size;
 };
 
