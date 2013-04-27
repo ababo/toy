@@ -57,7 +57,7 @@ DEFINE_SUBTEST(mutex, struct mem_pool *thread_pool) {
 
   ADD_TEST(mutex_wait, id1, id2);
 
-  if (passed) {
+  if (tolerate_errors || passed) {
     for (volatile int i = 0; i < WAIT_ITERATIONS; i++) { }
     LOG_INFO("running on BSP CPU only...");
     detach_thread(id1, &thrd1);
@@ -83,9 +83,14 @@ DEFINE_SUBTEST(mutex, struct mem_pool *thread_pool) {
 static uint64_t sleep_proc(uint64_t input) {
   LOG_DEBUG("falling asleep for %d seconds... (thread: %lX)",
             (int)input, get_thread());
-  sleep(input * 1000000);
-  LOG_DEBUG("awaken (thread: %lX)", get_thread());
-  return 0;
+  uint64_t period = input * 1000000;
+  uint64_t before = get_ticks();
+  sleep(period);
+  uint64_t after = get_ticks();
+  int64_t diff = (int64_t)after - (int64_t)before -
+    period / CONFIG_SCHEDULER_TICK_INTERVAL;
+  LOG_DEBUG("awaken with ticks diff: %ld (thread: %lX)", diff, get_thread());
+  return ABS(diff) <= 20;
 }
 
 DEFINE_SUBTEST(sleep, struct mem_pool *thread_pool) {
@@ -98,25 +103,39 @@ DEFINE_SUBTEST(sleep, struct mem_pool *thread_pool) {
   thrd3 = create_test_thread(thread_pool, sleep_proc, 1);
   if (!thrd1 || !thrd2 || !thrd3)
     return false;
-
   set_test_thread_affinity(thrd1, true);
   set_test_thread_affinity(thrd2, true);
   set_test_thread_affinity(thrd3, true);
-
   attach_thread(thrd1, &id1);
   attach_thread(thrd2, &id2);
   attach_thread(thrd3, &id3);
-
   resume_thread(id1);
   resume_thread(id2);
   resume_thread(id3);
+
+  volatile struct thread_data *temp;
+  for (temp = thrd3; temp->state != THREAD_STATE_STOPPED; ) { }
+  ADD_TEST_CASE("first awaken in time", temp->output);
+  if (tolerate_errors || passed)
+    for (temp = thrd1; temp->state != THREAD_STATE_STOPPED; ) { }
+  ADD_TEST_CASE("second awaken in time", temp->output);
+  if (tolerate_errors || passed)
+    for (temp = thrd2; temp->state != THREAD_STATE_STOPPED; ) { }
+  ADD_TEST_CASE("third awaken in time", temp->output);
+
+  detach_thread(id1, &thrd1);
+  detach_thread(id2, &thrd2);
+  detach_thread(id3, &thrd3);
+  destroy_test_thread(thread_pool, thrd1);
+  destroy_test_thread(thread_pool, thrd2);
+  destroy_test_thread(thread_pool, thrd3);
 
   END_TEST();
 }
 
 DEFINE_TEST(sync, struct mem_pool *thread_pool) {
   BEGIN_TEST();
-  //  ADD_TEST(mutex, thread_pool);
+  ADD_TEST(mutex, thread_pool);
   ADD_TEST(sleep, thread_pool);
   END_TEST();
 }

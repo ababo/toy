@@ -59,6 +59,8 @@ typedef unsigned int size_t;
 #define UINT32_MAX (uint32_t)0xFFFFFFFF
 #define UINT64_MAX (uint64_t)0xFFFFFFFFFFFFFFFFL
 
+#define ABS(num) ((num) < 0 ? (-num) : (num))
+
 #define INT_BITS(value, low, high)              \
   (value << (sizeof(value) * 8 - 1 - high) >>   \
    (sizeof(value) * 8 - 1 - high + low))

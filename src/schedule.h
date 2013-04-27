@@ -53,7 +53,7 @@ err_code pause_this_thread(struct spinlock *lock_to_release);
 
 thread_id get_thread(void);
 
-typedef void (*timer_proc)(int cpu);
+typedef void (*timer_proc)(uint64_t ticks);
 
 uint64_t get_ticks(void);
 timer_proc get_timer_proc(void);

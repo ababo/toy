@@ -23,8 +23,8 @@
 
 #define ADD_TEST_CASE(case, result)                          \
   if (tolerate_errors || passed) {                           \
-    bool temp = result; passed = passed && temp;             \
-    LOG_INFO("%s: %s", case, temp ? "passed" : "FAILED");    \
+    bool __temp = result; passed = passed && __temp;         \
+    LOG_INFO("%s: %s", case, __temp ? "passed" : "FAILED");  \
   }
 
 DEFINE_TEST(all);

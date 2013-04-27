@@ -225,6 +225,7 @@ err_code resume_thread(thread_id id) {
 }
 
 static err_code deactivate_running(bool stop, struct thread_data *thread,
+                                   uint64_t output,
                                    struct spinlock *lock_to_release,
                                    bool *self_halt) {
   struct cpu_task task = {
@@ -241,6 +242,8 @@ static err_code deactivate_running(bool stop, struct thread_data *thread,
     inactive.tail->prev = thread;
   inactive.tail = thread;
   inactive.total_threads++;
+  if (stop)
+    thread->output = output;
 
   if (task.type == CPU_TASK_SELF_HALT) {
     ASMV("int %0" : : "i"(INT_VECTOR_SCHEDULER_TASK));
@@ -263,7 +266,8 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output,
   for (int i = 0; i < TASK_RETRY_COUNT; i++) {
     switch (thrd->state) {
     case THREAD_STATE_RUNNING:
-      err = deactivate_running(stop, thrd, lock_to_release, &self_halt);
+      err = deactivate_running(stop, thrd, output,
+                               lock_to_release, &self_halt);
       break;
 
     case THREAD_STATE_PAUSED:
@@ -370,11 +374,13 @@ static inline void handle_timer(int cpu) {
 
   if (timer_ticks[cpu] && timer_ticks[cpu] <= ticks) {
     extern struct spinlock *__outer_spinlocks[];
+    uint64_t prev_ticks = timer_ticks[cpu];
+    timer_ticks[cpu] = 0;
+
     // make sure calling release_spinlock will not enable interrupts
     __outer_spinlocks[cpu] = (struct spinlock*)1;
-    timer_proc_(cpu);
+    timer_proc_(prev_ticks);
     __outer_spinlocks[cpu] = NULL;
-    timer_ticks[cpu] = 0;
   }
 }
 

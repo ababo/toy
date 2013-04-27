@@ -68,8 +68,8 @@ static struct sleep_data {
   struct spinlock lock;
 } sleeping[CONFIG_CPUS_MAX];
 
-static void sleep_timer_proc(int cpu) {
-  struct sleep_data *slp = &sleeping[cpu];
+static void sleep_timer_proc(UNUSED uint64_t ticks) {
+  struct sleep_data *slp = &sleeping[get_cpu()];
   if (slp->tail) {
     struct sleep_node *node = slp->tail;
     slp->tail = slp->tail->next;
