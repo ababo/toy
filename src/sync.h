@@ -52,6 +52,11 @@ static inline void release_spinlock(struct spinlock *lock) {
   }
 }
 
+static inline void set_outer_spinlock(bool exists) {
+  extern struct spinlock *__outer_spinlocks[];
+  __outer_spinlocks[get_cpu()] = exists ? (struct spinlock*)1 : NULL;
+}
+
 struct mutex {
   struct __mutex_node *head, *tail;
   struct spinlock mlock, ilock;

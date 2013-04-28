@@ -356,14 +356,10 @@ static inline void check_stack_overrun(struct int_stack_frame *stack_frame,
                                        int cpu, struct thread_data *thread) {
   if (*(volatile uint64_t*)thread->stack != STACK_OVERRUN_MAGIC) {
     ASMV("cli");
-    // make sure calling release_spinlock will not enable interrupts
-    extern struct spinlock *__outer_spinlocks[];
-    __outer_spinlocks[cpu] = (struct spinlock*)1;
-
+    set_outer_spinlock(true);
     kprintf("\nstack overrun (CPU: %d, thread: %lX):\n",
             cpu, (uint64_t)thread);
     dump_int_stack_frame(stack_frame);
-
     ASMV("jmp halt");
   }
 }
@@ -373,14 +369,11 @@ static inline void handle_timer(int cpu) {
     ticks++;
 
   if (timer_ticks[cpu] && timer_ticks[cpu] <= ticks) {
-    extern struct spinlock *__outer_spinlocks[];
     uint64_t prev_ticks = timer_ticks[cpu];
     timer_ticks[cpu] = 0;
-
-    // make sure calling release_spinlock will not enable interrupts
-    __outer_spinlocks[cpu] = (struct spinlock*)1;
+    set_outer_spinlock(true);
     timer_proc_(prev_ticks);
-    __outer_spinlocks[cpu] = NULL;
+    set_outer_spinlock(false);
   }
 }
 
@@ -508,15 +501,14 @@ static inline void do_pause_task(struct int_stack_frame *stack_frame,
 }
 
 static inline void do_self_halt_task(struct int_stack_frame *stack_frame,
-                                     int cpu, struct cpu_data *cpud,
+                                     struct cpu_data *cpud,
                                      struct cpu_task *task) {
   extern int halt;
   stack_frame->rflags |= RFLAGS_IF;
   task->thread->context = *stack_frame;
   stack_frame->rip = (uint64_t)&halt;
 
-  extern struct spinlock *__outer_spinlocks[];
-  __outer_spinlocks[cpu] = NULL;
+  set_outer_spinlock(false);
   release_spinlock_int(&cpud->lock);
   release_spinlock_int(&inactive.lock);
   if (task->lock)
@@ -536,7 +528,7 @@ DEFINE_ISR(task, 0) {
     do_pause_task(stack_frame, cpu, cpud, task);
     break;
   case CPU_TASK_SELF_HALT:
-    do_self_halt_task(stack_frame, cpu, cpud, task);
+    do_self_halt_task(stack_frame, cpud, task);
     break;
   default:
     task->error = ERR_BAD_INPUT;
