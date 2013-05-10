@@ -40,7 +40,7 @@ static bool get_chip_multithreading(int *chip_threads_max) {
   ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx), "=d"(edx) : : "eax", "ecx");
   bool support = !!(edx & (1 << 28));
   *chip_threads_max = INT_BITS(ebx, 16, 23);
-  LOG_DEBUG("support: %s, chip_threads_max: %d", bool_str(support),
+  LOG_DEBUG("support: %s, chip_threads_max: %d", support ? "yes" : "no",
             *chip_threads_max);
   return support;
 }

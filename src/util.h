@@ -9,6 +9,9 @@
 #define STR(x) #x
 #define STR_EXPAND(x) STR(x)
 
+#define RCAST(from_type, from_value, to_type)                   \
+  ((union { from_type a; to_type b; }) { .a = from_value }).b
+
 #define ALIGNED(n) __attribute__((aligned(n)))
 #define NOINLINE __attribute__((noinline))
 #define PACKED __attribute__((packed))
@@ -25,10 +28,6 @@ typedef __builtin_va_list va_list;
 typedef _Bool bool;
 #define true (bool)1
 #define false (bool)0
-
-static inline const char *bool_str(bool value) {
-  return value ? "true" : "false";
-}
 
 typedef char int8_t;
 typedef short int16_t;
@@ -106,12 +105,22 @@ static inline uint16_t inw(uint16_t port) {
   return value;
 }
 
+static inline uint32_t inl(uint16_t port) {
+  uint32_t value;
+  ASMV("inl %%dx, %%eax" : "=a"(value) : "d"(port));
+  return value;
+}
+
 static inline void outb(uint16_t port, uint8_t value) {
   ASMV("outb %%al, %%dx" : : "a"(value), "d"(port));
 }
 
 static inline void outw(uint16_t port, uint16_t value) {
   ASMV("outw %%ax, %%dx" : : "a"(value), "d"(port));
+}
+
+static inline void outl(uint16_t port, uint32_t value) {
+  ASMV("outl %%eax, %%dx" : : "a"(value), "d"(port));
 }
 
 static inline uint64_t rdmsr(uint32_t msr) {

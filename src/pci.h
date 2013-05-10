@@ -7,56 +7,33 @@
 #define PCI_HEADER_PCI_TO_PCI_BRIDGE 1
 #define PCI_HEADER_PCI_TO_CARDBUS_BRIDGE 2
 
-#define PCI_REG_BAR0 0x10
-#define PCI_REG_BAR1 0x14
-#define PCI_REG_BAR2 0x18
-#define PCI_REG_BAR3 0x1C
-#define PCI_REG_BAR4 0x20
-#define PCI_REG_BAR5 0x24
-
-struct pci_addr {
-  uint32_t zero : 2;
-  uint32_t reg : 6;
-  uint32_t func : 3;
-  uint32_t dev : 5;
-  uint32_t bus : 8;
-  uint32_t reserved : 7;
-  uint32_t one : 1;
+struct pci_field {
+  uint8_t reg, low_bit, high_bit;
 };
 
-struct pci_header_type {
-  uint8_t type : 7;
-  uint8_t mf : 1;
+#define PCI_FIELD_VENDOR_ID (struct pci_field) { 0, 0, 15 }
+#define PCI_FIELD_DEVICE_ID (struct pci_field) { 0, 16, 31 }
+#define PCI_FIELD_COMMAND (struct pci_field) { 1, 0, 15 }
+#define PCI_FIELD_STATUS (struct pci_field) { 1, 16, 31 }
+#define PCI_FIELD_REVISION_ID (struct pci_field) { 2, 0, 7 }
+#define PCI_FIELD_PROG_IF (struct pci_field) { 2, 8, 15 }
+#define PCI_FIELD_SUBCLASS (struct pci_field) { 2, 16, 23 }
+#define PCI_FIELD_CLASS (struct pci_field) { 2, 23, 31 }
+#define PCI_FIELD_CACHE_LINE_SIZE (struct pci_field) { 3, 0, 7 }
+#define PCI_FIELD_LATENCY_TIMER (struct pci_field) { 3, 8, 15 }
+#define PCI_FIELD_HEADER_TYPE (struct pci_field) { 3, 16, 23 }
+#define PCI_FIELD_BIST (struct pci_field) { 3, 23, 31 }
+
+struct pci_device {
+  uint8_t bus, slot, func;
 };
 
-struct pci_header_bist {
-  uint8_t completion : 4;
-  uint8_t reserved : 2;
-  uint8_t start : 1;
-  uint8_t capable : 1;
-};
+uint32_t read_pci_field(struct pci_device device, struct pci_field field);
+void write_pci_field(struct pci_device device, struct pci_field field,
+                     uint32_t value);
 
-struct pci_header {
-  uint16_t vendor_id;
-  uint16_t device_id;
-  uint16_t command;
-  uint16_t status;
-  uint8_t revision_id;
-  uint8_t prog_if;
-  uint8_t subclass;
-  uint8_t class;
-  uint8_t cache_line_size;
-  uint8_t latency_timer;
-  struct pci_header_type header_type;
-  struct pci_header_bist bist;
-};
-
-// reg -1 means register is taken from dev
-uint32_t read_pci(struct pci_addr dev, int reg);
-void write_pci(struct pci_addr dev, int reg, uint32_t value);
-
-bool get_next_pci_dev(struct pci_addr *dev); // start passing dev with .one = 0
-void get_pci_header(struct pci_addr dev, struct pci_header *header);
+typedef void (*pci_scan_proc)(struct pci_device device);
+void scan_pci(pci_scan_proc proc);
 
 void init_pci(void);
 
