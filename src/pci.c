@@ -29,8 +29,49 @@ void write_pci_field(struct pci_device device, struct pci_field field,
   outl(VALUE_PORT, value);
 }
 
-void scan_pci(UNUSED pci_scan_proc proc) {
+static void scan_bus(pci_scan_proc proc, int bus);
 
+static void scan_func(pci_scan_proc proc, int bus, int slot, int func) {
+  struct pci_device dev = { bus, slot, func };
+  proc(dev);
+
+  if (read_pci_field(dev, PCI_FIELD_CLASS) == PCI_CLASS_BRIDGE_DEVICE &&
+      read_pci_field(dev, PCI_FIELD_SUBCLASS) ==
+      PCI_SUBCLASS_BRIDGE_DEVICE_PCI_TO_PCI_BRIDGE)
+    scan_bus(proc, read_pci_field(dev, PCI_FIELD_SECONDARY_BUS));
+}
+
+static void scan_slot(pci_scan_proc proc, int bus, int slot) {
+  struct pci_device dev = { bus, slot, 0 };
+  if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) == 0xFFFF)
+    return;
+
+  scan_func(proc, bus, slot, 0);
+  if (!read_pci_field(dev, PCI_FIELD_MULTIPLE_FUNCTIONS))
+    return;
+
+  for (dev.func = 1; dev.func < 8; dev.func++)
+    if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) != 0xFFFF)
+      scan_func(proc, bus, slot, dev.func);
+}
+
+static void scan_bus(pci_scan_proc proc, int bus) {
+  for (int slot = 0; slot < 32; slot++)
+    scan_slot(proc, bus, slot);
+}
+
+void scan_pci(pci_scan_proc proc) {
+  scan_bus(proc, 0);
+
+  struct pci_device dev = { 0, 0, 0 };
+  if (!read_pci_field(dev, PCI_FIELD_MULTIPLE_FUNCTIONS))
+    return;
+
+  for (dev.func = 1; dev.func < 8; dev.func++)
+    if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) != 0xFFFF)
+      scan_bus(proc, dev.func);
+    else
+      break;
 }
 
 static void scan_proc(struct pci_device device) {

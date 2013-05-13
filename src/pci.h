@@ -3,10 +3,6 @@
 
 #include "util.h"
 
-#define PCI_HEADER_DEVICE 0
-#define PCI_HEADER_PCI_TO_PCI_BRIDGE 1
-#define PCI_HEADER_PCI_TO_CARDBUS_BRIDGE 2
-
 struct pci_field {
   uint8_t reg, low_bit, high_bit;
 };
@@ -21,8 +17,22 @@ struct pci_field {
 #define PCI_FIELD_CLASS (struct pci_field) { 2, 23, 31 }
 #define PCI_FIELD_CACHE_LINE_SIZE (struct pci_field) { 3, 0, 7 }
 #define PCI_FIELD_LATENCY_TIMER (struct pci_field) { 3, 8, 15 }
-#define PCI_FIELD_HEADER_TYPE (struct pci_field) { 3, 16, 23 }
-#define PCI_FIELD_BIST (struct pci_field) { 3, 23, 31 }
+#define PCI_FIELD_HEADER_TYPE (struct pci_field) { 3, 16, 22 }
+#define PCI_FIELD_MULTIPLE_FUNCTIONS (struct pci_field) { 3, 23, 23 }
+#define PCI_FIELD_BIST_COMPLETION_CODE (struct pci_field) { 3, 24, 27 }
+#define PCI_FIELD_BIST_START (struct pci_field) { 3, 30, 30 }
+#define PCI_FIELD_BIST_CAPABLE (struct pci_field) { 3, 31, 31 }
+#define PCI_FIELD_SECONDARY_BUS (struct pci_field) { 6, 8, 15 }
+
+#define PCI_HEADER_DEVICE 0
+#define PCI_HEADER_PCI_TO_PCI_BRIDGE 1
+#define PCI_HEADER_PCI_TO_CARDBUS_BRIDGE 2
+
+#define PCI_CLASS_MASS_STORAGE_CONTROLLER 0x1
+#define PCI_CLASS_BRIDGE_DEVICE 0x6
+
+#define PCI_SUBCLASS_BRIDGE_DEVICE_PCI_TO_PCI_BRIDGE 0x4
+#define PCI_SUBCLASS_MASS_STORAGE_CONTROLLER_SERIAL_ATA 0x6
 
 struct pci_device {
   uint8_t bus, slot, func;

@@ -125,5 +125,5 @@ void kmain_ap(void) {
 static uint64_t kinit_thread(UNUSED uint64_t input) {
   init_pci();
 
-  return test_all(false);
+  return 0; // test_all(false);
 }
