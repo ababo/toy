@@ -14,7 +14,7 @@ struct pci_field {
 #define PCI_FIELD_REVISION_ID (struct pci_field) { 2, 0, 7 }
 #define PCI_FIELD_PROG_IF (struct pci_field) { 2, 8, 15 }
 #define PCI_FIELD_SUBCLASS (struct pci_field) { 2, 16, 23 }
-#define PCI_FIELD_CLASS (struct pci_field) { 2, 23, 31 }
+#define PCI_FIELD_CLASS (struct pci_field) { 2, 24, 31 }
 #define PCI_FIELD_CACHE_LINE_SIZE (struct pci_field) { 3, 0, 7 }
 #define PCI_FIELD_LATENCY_TIMER (struct pci_field) { 3, 8, 15 }
 #define PCI_FIELD_HEADER_TYPE (struct pci_field) { 3, 16, 22 }

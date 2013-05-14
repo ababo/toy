@@ -75,7 +75,7 @@ void scan_pci(pci_scan_proc proc) {
 }
 
 static void scan_proc(struct pci_device device) {
-  LOG_INFO("PCI device found (bus: %d, slot: %d, func: %d)",
+  LOG_INFO("PCI device found (bus: %X, slot: %X, func: %X)",
            device.bus, device.slot, device.func);
 }
 
