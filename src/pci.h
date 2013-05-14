@@ -28,12 +28,6 @@ struct pci_field {
 #define PCI_HEADER_PCI_TO_PCI_BRIDGE 1
 #define PCI_HEADER_PCI_TO_CARDBUS_BRIDGE 2
 
-#define PCI_CLASS_MASS_STORAGE_CONTROLLER 0x1
-#define PCI_CLASS_BRIDGE_DEVICE 0x6
-
-#define PCI_SUBCLASS_BRIDGE_DEVICE_PCI_TO_PCI_BRIDGE 0x4
-#define PCI_SUBCLASS_MASS_STORAGE_CONTROLLER_SERIAL_ATA 0x6
-
 struct pci_device {
   uint8_t bus, slot, func;
 };
@@ -41,6 +35,19 @@ struct pci_device {
 uint32_t read_pci_field(struct pci_device device, struct pci_field field);
 void write_pci_field(struct pci_device device, struct pci_field field,
                      uint32_t value);
+
+struct pci_type {
+  uint8_t class, subclass;
+};
+
+static inline bool has_pci_type(struct pci_device device,
+                                struct pci_type type) {
+  return read_pci_field(device, PCI_FIELD_CLASS) == type.class &&
+    read_pci_field(device, PCI_FIELD_SUBCLASS) == type.subclass;
+}
+
+#define PCI_TYPE_PCI_TO_PCI_BRIDGE (struct pci_type) { 0x06, 0x04 }
+#define PCI_TYPE_SERIAL_ATA (struct pci_type) { 0x01, 0x06 }
 
 typedef void (*pci_scan_proc)(struct pci_device device);
 void scan_pci(pci_scan_proc proc);

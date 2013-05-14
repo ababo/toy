@@ -35,9 +35,7 @@ static void scan_func(pci_scan_proc proc, int bus, int slot, int func) {
   struct pci_device dev = { bus, slot, func };
   proc(dev);
 
-  if (read_pci_field(dev, PCI_FIELD_CLASS) == PCI_CLASS_BRIDGE_DEVICE &&
-      read_pci_field(dev, PCI_FIELD_SUBCLASS) ==
-      PCI_SUBCLASS_BRIDGE_DEVICE_PCI_TO_PCI_BRIDGE)
+  if (has_pci_type(dev, PCI_TYPE_PCI_TO_PCI_BRIDGE))
     scan_bus(proc, read_pci_field(dev, PCI_FIELD_SECONDARY_BUS));
 }
 
