@@ -1,5 +1,10 @@
 Simple OS-like program for x86-64, which dreams to become a real OS.
 
+Note:
+The current master is abandoned. All activity is moved into branch 'ver.0.3'.
+The goal is to support portability from the ground up. Soon the new code will
+become master, and the current master will be renamed into 'ver.0.2'.
+
 Design vision (to be implemented):
 1. Single address space OS. All available external memory is mapped into it.
 2. Persistent applications. They not only survive reboot, but also can be
@@ -20,4 +25,4 @@ Supported compilers:
 2. CLang
 
 Build environment:
-1. Linux (known to work on Ubuntu 12.04).
+1. Linux (known to work on recent Ubuntu).
