@@ -7,7 +7,10 @@
 #define INTERNAL
 
 #define STR(x) #x
+#define EXPAND(x) x
 #define STR_EXPAND(x) STR(x)
+
+#define ARCH_FILE(file) STR_EXPAND(EXPAND(ARCH)file)
 
 #define ALIGNED(n) __attribute__((aligned(n)))
 #define NOINLINE __attribute__((noinline))

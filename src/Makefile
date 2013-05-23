@@ -82,7 +82,8 @@ endif # ifeq ($(ARCH),x86_64)
 
 $(BIN)/%.o: $(SRC)/%.c $(BIN_STAMP)
 	$(CC) -m64 -c $(CC_OPTIONS) $(SRC)/$*.c -o $(BIN)/$*.o
-	$(CC) -m64 -MM -MT '$(BIN)/$*.o' $(SRC)/$*.c > $(BIN)/$*.d
+	$(CC) -m64 -MM -MT '$(BIN)/$*.o' $(CC_OPTIONS) $(SRC)/$*.c > \
+          $(BIN)/$*.d
 
 $(BIN_STAMP):
 	mkdir -p $(BIN_ARCH)
