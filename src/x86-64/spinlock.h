@@ -26,6 +26,7 @@ static inline void release_spinlock_int(struct spinlock *lock) {
   ASMV("xorb %%al, %%al\nxchgb %%al, %0" : "+m"(lock->busy) : : "al");
 }
 
+// zero tries means (practically) forever
 static inline bool acquire_spinlock(struct spinlock *lock, uint64_t tries) {
   extern struct spinlock *__outer_spinlocks[];
   struct spinlock **outer = &__outer_spinlocks[get_cpu()];

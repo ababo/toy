@@ -4,4 +4,19 @@
 #include "common.h"
 #include ARCH_FILE(/spinlock.h)
 
+// no actual need for spinlock forward declarations: just for clarity
+struct spinlock;
+
+void create_spinlock(struct spinlock *lock);
+
+// zero tries means (practically) forever
+bool acquire_spinlock_int(struct spinlock *lock, uint64_t tries);
+void release_spinlock_int(struct spinlock *lock);
+
+// zero tries means (practically) forever
+bool acquire_spinlock(struct spinlock *lock, uint64_t tries); // no interrupts
+void release_spinlock(struct spinlock *lock);
+
+void set_outer_spinlock(bool exists);
+
 #endif // SYNC_H

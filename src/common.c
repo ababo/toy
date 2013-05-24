@@ -1,6 +1,6 @@
 #include "common.h"
+#include "display.h"
 #include "sync.h"
-#include ARCH_FILE(/display.h)
 
 char *strcat(char *dst, const char *src) {
   strcpy(dst + strlen(dst), src);
@@ -84,6 +84,9 @@ char *ultoa(unsigned long value, char *buf, int radix) {
 static int display_row, display_col;
 
 static void put_char(char chr) {
+  int rows, cols;
+  get_display_size(&rows, &cols);
+
   switch (chr) {
   case '\r':
     display_col = 0;
@@ -91,7 +94,7 @@ static void put_char(char chr) {
   case '\n':
   new_line:
     display_col = 0, display_row++;
-    if (display_row == get_display_rows()) {
+    if (display_row == rows) {
       shift_display_rows();
       display_row--;
     }
@@ -99,7 +102,7 @@ static void put_char(char chr) {
     // TODO: implement other escapes
   default:
     set_display_char(display_row, display_col, chr);
-    if (++display_col == get_display_cols())
+    if (++display_col == cols)
       goto new_line;
     break;
   }

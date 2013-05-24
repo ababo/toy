@@ -1,4 +1,4 @@
-ARCH = x86_64
+ARCH = x86-64
 
 CC = gcc
 CC_OPT = 3
@@ -21,7 +21,7 @@ OBJS = $(patsubst $(SRC)/%.c,$(BIN)/%.o,$(wildcard $(SRC)/*.c))
 OBJS_ARCH = $(patsubst $(SRC_ARCH)/%.c,$(BIN_ARCH)/%.o, \
   $(wildcard $(SRC_ARCH)/*.c))
 
-ifeq ($(ARCH),x86_64)
+ifeq ($(ARCH), x86-64)
 
 LD_OPTIONS += -z max-page-size=0x1
 
@@ -74,7 +74,7 @@ runt: $(IMAGE)
 run: $(IMAGE)
 	$(VM) -cdrom $(IMAGE) -boot d $(VM_OPTIONS)
 
-endif # ifeq ($(ARCH),x86_64)
+endif # ifeq ($(ARCH),x86-64)
 
 .PHONY: clean
 
