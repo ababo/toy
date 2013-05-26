@@ -1,8 +1,6 @@
 #ifndef X86_64_VGA_H
 #define X86_64_VGA_H
 
-#include "../display.h" // vga.c implements this API
-
 #define VGA_BLACK 0
 #define VGA_LOW_BLUE 1
 #define VGA_LOW_GREEN 2

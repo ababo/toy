@@ -1,4 +1,4 @@
-ARCH = x86-64
+ARCH = x86_64
 
 CC = gcc
 CC_OPT = 3
@@ -21,7 +21,7 @@ OBJS = $(patsubst $(SRC)/%.c,$(BIN)/%.o,$(wildcard $(SRC)/*.c))
 OBJS_ARCH = $(patsubst $(SRC_ARCH)/%.c,$(BIN_ARCH)/%.o, \
   $(wildcard $(SRC_ARCH)/*.c))
 
-ifeq ($(ARCH), x86-64)
+ifeq ($(ARCH), x86_64)
 
 LD_OPTIONS += -z max-page-size=0x1
 
@@ -55,8 +55,8 @@ $(BOOT32_OBJ): $(BOOT32_SRC) $(BIN_STAMP)
 
 $(BIN_ARCH)/%.o: $(SRC_ARCH)/%.c $(BIN_STAMP)
 	$(CC) -m64 -c $(CC_OPTIONS) $(SRC_ARCH)/$*.c -o $(BIN_ARCH)/$*.o
-	$(CC) -m64 -MM -MT '$(BIN_ARCH)/$*.o' $(SRC_ARCH)/$*.c > \
-	  $(BIN_ARCH)/$*.d
+	$(CC) -m64 -MM -MT '$(BIN_ARCH)/$*.o' $(CC_OPTIONS) \
+          $(SRC_ARCH)/$*.c > $(BIN_ARCH)/$*.d
 
 $(KERNEL): $(LD_SCRIPT) $(BOOT32_OBJ) $(OBJS)
 	cpp -E -P $(LD_SCRIPT) | ld $(LD_OPTIONS) -T /dev/stdin \
@@ -74,7 +74,7 @@ runt: $(IMAGE)
 run: $(IMAGE)
 	$(VM) -cdrom $(IMAGE) -boot d $(VM_OPTIONS)
 
-endif # ifeq ($(ARCH),x86-64)
+endif # ifeq ($(ARCH),x86_64)
 
 .PHONY: clean
 

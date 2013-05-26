@@ -4,7 +4,7 @@
 #define IN
 #define OUT
 #define IN_OUT
-#define INTERNAL
+#define BY_ARCH
 
 #define STR(x) #x
 #define EXPAND(x) x
@@ -94,8 +94,8 @@ void *memmem(const void *buf1, size_t size1, const void *buf2, size_t size2);
 // negative radix means uppercase result string
 char *ultoa(unsigned long value, char *buf, int radix);
 
-int kputchar(int chr);
 int kprintf(const char *format, ...);
+void kclear(void);
 
 #define LOG(severity, format, ...) {     \
     char __buf[256];                     \

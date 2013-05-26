@@ -1,5 +1,5 @@
+#include "../sync.h"
 #include "cpu.h"
-#include "spinlock.h"
 #include "vga.h"
 
 #define VIDEO_ADDR 0xB8000
@@ -56,32 +56,33 @@ struct spinlock *get_vga_lock(void) {
 
 void init_vga(void) {
   create_spinlock(&lock);
-  clear_display();
   outw(0x3D4, 0xE0A); // make cursor visible
   outw(0x3D4, 0xF0B);
-  set_vga_cursor(0, 0);
+  kclear();
 }
 
-void get_display_size(int *rows, int *cols) {
+// portable kprintf and kclear support
+
+void __get_display_size(int *rows, int *cols) {
   if (rows)
     *rows = VGA_ROWS;
   if (cols)
     *cols = VGA_COLS;
 }
 
-struct spinlock *get_display_lock(void) {
+struct spinlock *__get_display_lock(void) {
   return &lock;
 }
 
-void set_display_char(int row, int col, char chr) {
+void __set_display_char(int row, int col, char chr) {
   get_cell(row, col)->chr = chr;
 }
 
-void set_display_cursor(int row, int col) {
+void __set_display_cursor(int row, int col) {
   set_vga_cursor(row, col);
 }
 
-void shift_display_rows(void) {
+void __shift_display_rows(void) {
   for (int row = 1; row < VGA_ROWS; row++)
     for (int col = 0; col < VGA_COLS; col++)
       *get_cell(row - 1, col) = *get_cell(row, col);
@@ -90,7 +91,7 @@ void shift_display_rows(void) {
     get_cell(VGA_ROWS - 1, col)->chr = 0;
 }
 
-void clear_display(void) {
+void __clear_display(void) {
   for (int row = 0; row < VGA_ROWS; row++)
     for (int col = 0; col < VGA_COLS; col++)
       *get_cell(row, col) = (struct vga_cell) { 0, VGA_LIGHT_GRAY, VGA_BLACK };

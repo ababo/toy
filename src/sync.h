@@ -2,9 +2,8 @@
 #define SYNC_H
 
 #include "common.h"
-#include ARCH_FILE(/spinlock.h)
+#include ARCH_FILE(/sync.inc)
 
-// no actual need for spinlock forward declarations: just for clarity
 struct spinlock;
 
 void create_spinlock(struct spinlock *lock);

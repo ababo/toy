@@ -1,14 +1,14 @@
 #include "../config.h"
+#include "../cpu_info.h"
 #include "acpi.h"
 #include "cpu.h"
-#include "cpu_info.h"
 
 #define VENDOR_LEN 12
 
 static int vendor = 0, num = 0;
 static struct cpu_desc descs[CONFIG_CPUS_MAX];
-INTERNAL uint8_t __cpu_indexes[256] = { };
-INTERNAL int __bsp_cpu = 0;
+uint8_t __cpu_indexes[256] = { };
+int __bsp_cpu = 0;
 
 int get_cpu_vendor(void) {
   if (vendor)
@@ -124,7 +124,7 @@ void fill_cpu_descs(int thread_bits, int core_bits) {
       }
 
       __cpu_indexes[mentry->apic_id] = i;
-      descs[i].apic_id = mentry->apic_id;
+      descs[i].id = mentry->apic_id;
       descs[i].thread = mentry->apic_id & ((1 << thread_bits) - 1);
       descs[i].core = (mentry->apic_id >> thread_bits) &
         ((1 << core_bits) - 1);
@@ -139,7 +139,7 @@ void fill_cpu_descs(int thread_bits, int core_bits) {
             ((uint32_t)sentry->prox_domain2 << 24);
 
       LOG_DEBUG("CPU: apic_id: %X, thread: %d, core: %d, chip: %d, domain: %X",
-                descs[i].apic_id, descs[i].thread, descs[i].core,
+                descs[i].id, descs[i].thread, descs[i].core,
                 descs[i].chip, descs[i].domain);
       i++;
     }

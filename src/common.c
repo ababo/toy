@@ -1,5 +1,4 @@
 #include "common.h"
-#include "display.h"
 #include "sync.h"
 
 char *strcat(char *dst, const char *src) {
@@ -81,11 +80,20 @@ char *ultoa(unsigned long value, char *buf, int radix) {
   return strrev(str);
 }
 
+void __get_display_size(int *rows, int *cols);
+struct spinlock *__get_display_lock(void);
+
+void __set_display_char(int row, int col, char chr);
+void __set_display_cursor(int row, int col);
+
+void __shift_display_rows(void);
+void __clear_display(void);
+
 static int display_row, display_col;
 
 static void put_char(char chr) {
   int rows, cols;
-  get_display_size(&rows, &cols);
+  __get_display_size(&rows, &cols);
 
   switch (chr) {
   case '\r':
@@ -95,13 +103,13 @@ static void put_char(char chr) {
   new_line:
     display_col = 0, display_row++;
     if (display_row == rows) {
-      shift_display_rows();
+      __shift_display_rows();
       display_row--;
     }
     break;
     // TODO: implement other escapes
   default:
-    set_display_char(display_row, display_col, chr);
+    __set_display_char(display_row, display_col, chr);
     if (++display_col == cols)
       goto new_line;
     break;
@@ -109,7 +117,7 @@ static void put_char(char chr) {
 }
 
 int kprintf(const char *format, ...) {
-  acquire_spinlock(get_display_lock(), 0);
+  acquire_spinlock(__get_display_lock(), 0);
 
   va_list vargs;
   va_start(vargs, format);
@@ -179,8 +187,16 @@ int kprintf(const char *format, ...) {
     }
   va_end(vargs);
 
-  set_display_cursor(display_row, display_col);
+  __set_display_cursor(display_row, display_col);
 
-  release_spinlock(get_display_lock());
+  release_spinlock(__get_display_lock());
   return num;
+}
+
+void kclear(void) {
+  acquire_spinlock(__get_display_lock(), 0);
+  __clear_display();
+  __set_display_cursor(0, 0);
+  display_row = display_col = 0;
+  release_spinlock(__get_display_lock());
 }
