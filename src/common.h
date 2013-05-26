@@ -5,6 +5,7 @@
 #define OUT
 #define IN_OUT
 #define BY_ARCH
+#define INTERNAL
 
 #define STR(x) #x
 #define EXPAND(x) x

@@ -1,8 +1,11 @@
 #include "../common.h"
 #include "../config.h"
 #include "../cpu_info.h"
+#include "../memory.h"
 #include "acpi.h"
+#include "apic.h"
 #include "cpu.h"
+#include "interrupt.h"
 #include "vga.h"
 
 ASM(".text\n.global kstart\n"
@@ -19,6 +22,9 @@ void boot64(void) {
   init_vga();
   init_acpi();
   init_cpu_info();
+  init_memory();
+  init_interrupts();
+  init_apic();
 
   kmain();
 }
