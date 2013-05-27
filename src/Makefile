@@ -23,6 +23,10 @@ OBJS_ARCH = $(patsubst $(SRC_ARCH)/%.c,$(BIN_ARCH)/%.o, \
 
 ifeq ($(ARCH), x86_64)
 
+ifeq ($(CC), clang) # integrated assembler does not yet support .code16
+CC_OPTIONS += -no-integrated-as
+endif
+
 LD_OPTIONS += -z max-page-size=0x1
 
 VM = qemu-system-x86_64
@@ -50,7 +54,8 @@ all: $(IMAGE)
 
 $(BOOT32_OBJ): $(BOOT32_SRC) $(BIN_STAMP)
 	$(CC) -m32 -c $(CC_OPTIONS) $(BOOT32_SRC) -o $(BOOT32_OBJ)
-	$(CC) -m32 -MM -MT '$(BOOT32_OBJ)' $(BOOT32_SRC) > $(BIN)/$*.d
+	$(CC) -m32 -MM -MT '$(BOOT32_OBJ)' $(CC_OPTIONS) $(BOOT32_SRC) > \
+	  $(BIN)/$*.d
 	objcopy -O elf64-x86-64 $(BOOT32_OBJ)
 
 $(BIN_ARCH)/%.o: $(SRC_ARCH)/%.c $(BIN_STAMP)

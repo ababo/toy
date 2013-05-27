@@ -1,5 +1,6 @@
 #include "common.h"
 
-void kmain(void) {
+uint64_t kmain(UNUSED uint64_t input) {
   kprintf("Hello World!");
+  return 0;
 }

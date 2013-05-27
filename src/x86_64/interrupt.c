@@ -14,14 +14,12 @@ static void create_gdt(void) {
   int cpus = get_cpus();
   isr_stacks = kmalloc(cpus * CONFIG_ISR_STACK_SIZE);
   task_segments = kmalloc(cpus * sizeof(struct task_segment));
-  if (!isr_stacks || !task_segments) {
-    LOG_ERROR("failed to allocate memory");
-    ASMV("jmp halt");
-  }
+  if (!isr_stacks || !task_segments)
+    PANIC("failed to allocate memory");
   memset(task_segments, 0, cpus * sizeof(struct task_segment));
 
-  extern uint8_t gdt[];
-  struct gdt_desc2 *gdt2 = (struct gdt_desc2*)(gdt + 3 * GDT_DESC_SIZE);
+  extern uint8_t __gdt[];
+  struct gdt_desc2 *gdt2 = (struct gdt_desc2*)(__gdt + 3 * GDT_DESC_SIZE);
 
   for (int i = 0; i < cpus; i++) {
     task_segments[i].ists[0] = (uint64_t)&isr_stacks[i + 1];
@@ -70,7 +68,7 @@ DEFINE_INT_HANDLER(default) {
     kprintf(", error_code: %X", stack_frame->error_code);
   kprintf("):\n");
   dump_int_stack_frame(stack_frame);
-  ASMV("jmp halt");
+  ASMV("jmp __halt");
 }
 
 #define DEFINE_DEFAULT_ISR_WRAPPER(mnemonic)                   \
@@ -125,9 +123,9 @@ static void create_idt(void) {
 }
 
 static void load_gdt_idt_tr(void) {
-  extern uint8_t gdt[];
+  extern uint8_t __gdt[];
   struct cpu_table_info gdti = {
-    (3 * GDT_DESC_SIZE) + (get_cpus() * GDT_DESC2_SIZE) - 1, (uint64_t)gdt
+    (3 * GDT_DESC_SIZE) + (get_cpus() * GDT_DESC2_SIZE) - 1, (uint64_t)__gdt
   };
   struct cpu_table_info idti = {
     IDT_DESC_SIZE * INT_VECTORS - 1, (uint64_t)idt

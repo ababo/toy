@@ -36,9 +36,9 @@ void free_block(UNUSED struct mem_pool *pool, UNUSED void *block) {
 void __map_memory(void);
 
 void init_memory(void) {
-  extern int lds_kernel_size;
+  extern int __lds_kernel_size;
   create_spinlock(&lock);
-  next_free = (uint8_t*)(CONFIG_KERNEL_ADDR + (uint64_t)&lds_kernel_size);
+  next_free = (uint8_t*)(CONFIG_KERNEL_ADDR + (uint64_t)&__lds_kernel_size);
   __map_memory();
   LOG_DEBUG("done");
 }

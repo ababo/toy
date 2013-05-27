@@ -6,7 +6,7 @@
 
 #define HEADER_FLAGS (MULTIBOOT_HEADER_MEMOTY_MAP)
 
-SECTION(".mbh") const struct multiboot_header multiboot_header = {
+SECTION(".mbh") const struct multiboot_header __multiboot_header = {
   .magic = MULTIBOOT_HEADER_MAGIC, .flags = HEADER_FLAGS,
   .checksum = -(MULTIBOOT_HEADER_MAGIC + HEADER_FLAGS)
 };
@@ -60,35 +60,35 @@ static void create_gdt(void *gdt, struct cpu_table_info *gdti) {
   gdti->base = (size_t)gdt, gdti->limit = (GDT_DESC_SIZE * 3) - 1;
 }
 
-uint32_t multiboot_info = 0;
-ALIGNED(16) uint8_t bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
+uint32_t __multiboot_info = 0;
+ALIGNED(16) uint8_t __bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
-ASM(".text\n.global bstart32\n.global halt\n"
-    "bstart32: movl $(bsp_boot_stack + "
+ASM(".text\n.global __bstart32\n.global __halt\n"
+    "__bstart32: movl $(__bsp_boot_stack + "
       STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp\n"
-    "movl %ebx, multiboot_info\n"
+    "movl %ebx, __multiboot_info\n"
     "movb $0xFF, %al\noutb %al, $0xA1\noutb %al, $0x21\n" // disable IRQs
     "movl %cr4, %edx\n" // enable SSE
     "orl $" STR_EXPAND(CR4_OSFXSR) ", %edx\n"
     "movl %edx, %cr4\n"
     "call boot32\n"
-    "halt: hlt\njmp halt");
+    "__halt: hlt\njmp __halt");
 
-ALIGNED(4096) uint8_t page_map[PAGE_MAP_SIZE] = { };
-ALIGNED(4) uint8_t gdt[(3 + 2 * CONFIG_CPUS_MAX) * GDT_DESC_SIZE] = { };
+ALIGNED(4096) uint8_t __page_map[PAGE_MAP_SIZE] = { };
+ALIGNED(4) uint8_t __gdt[(3 + 2 * CONFIG_CPUS_MAX) * GDT_DESC_SIZE] = { };
 
 void boot32(void) {
-  extern int lds_kernel_size;
+  extern int __lds_kernel_size;
   struct cpu_table_info gdti;
-  create_page_map(page_map, CONFIG_ADDR_SPACE_SIZE, CONFIG_KERNEL_ADDR,
-                  (size_t)&lds_kernel_size);
-  create_gdt(gdt, &gdti);
+  create_page_map(__page_map, CONFIG_ADDR_SPACE_SIZE, CONFIG_KERNEL_ADDR,
+                  (size_t)&__lds_kernel_size);
+  create_gdt(__gdt, &gdti);
   ASMV("movl %%cr4, %%eax\norl %0, %%eax\nmovl %%eax, %%cr4"
        : : "i"(CR4_PAE) : "eax");
-  ASMV("mov %0, %%cr3" : : "d"((size_t)page_map));
+  ASMV("mov %0, %%cr3" : : "d"((size_t)__page_map));
   wrmsr(MSR_EFER, rdmsr(MSR_EFER) | MSR_EFER_LME);
   ASMV("movl %%cr0, %%eax\norl %0, %%eax\nmovl %%eax, %%cr0"
        : : "i"(CR0_PG) : "eax");
   ASMV("lgdt %0" : : "m"(gdti));
-  ASMV("ljmp %0, $kstart" : : "i"(SEGMENT_CODE));
+  ASMV("ljmp %0, $__kstart" : : "i"(SEGMENT_CODE));
 }

@@ -1,7 +1,7 @@
 #include "../config.h"
 
 OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(bstart32)
+ENTRY(__bstart32)
 SECTIONS {
   . = CONFIG_KERNEL_ADDR;
   .mbh : { *(.mbh) }
@@ -10,7 +10,7 @@ SECTIONS {
   .data : { *(.data) }
   .bss : {
     *(.bss)
-    lds_kernel_size = . - CONFIG_KERNEL_ADDR;
+    __lds_kernel_size = . - CONFIG_KERNEL_ADDR;
   }
   /DISCARD/ : { *(*) }
 }

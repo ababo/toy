@@ -12,6 +12,7 @@
 #define STR_EXPAND(x) STR(x)
 
 #define ARCH_FILE(file) STR_EXPAND(EXPAND(ARCH)file)
+#include ARCH_FILE(/common.inc)
 
 #define ALIGNED(n) __attribute__((aligned(n)))
 #define NOINLINE __attribute__((noinline))
@@ -113,7 +114,7 @@ void kclear(void);
 #define LOG_DEBUG(format, ...)
 #endif
 #define LOG_INFO(format, ...) LOG(info, format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...) LOG(error, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) LOG(ERROR, format, ##__VA_ARGS__)
 
 typedef int err_code;
 #define ERR_NONE 0

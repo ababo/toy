@@ -9,8 +9,9 @@ static volatile struct page_desc *get_page_desc(uint64_t virt_addr) {
   table += 2 + (table / PAGE_TABLE_DESCS);
   entry %= PAGE_TABLE_DESCS;
 
-  extern int page_map;
-  return (struct page_desc*)((uint64_t)&page_map + (table * PAGE_TABLE_SIZE) +
+  extern int __page_map;
+  return (struct page_desc*)((uint64_t)&__page_map +
+                             (table * PAGE_TABLE_SIZE) +
                              (entry * PAGE_DESC_SIZE));
 }
 
