@@ -1,5 +1,5 @@
-#ifndef X86_64_PAGE_MAP_H
-#define X86_64_PAGE_MAP_H
+#ifndef __X86_64_PAGE_MAP_H
+#define __X86_64_PAGE_MAP_H
 
 #include "../common.h"
 #include "../config.h"
@@ -27,4 +27,4 @@ void map_page(uint64_t virt_addr, uint64_t phys_addr, int flags,
               int avail_data); // only 14-bits of avail_data are usable
 void unmap_page(uint64_t virt_addr);
 
-#endif // X86_64_PAGE_MAP_H
+#endif // __X86_64_PAGE_MAP_H

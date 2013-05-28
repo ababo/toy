@@ -1,22 +1,22 @@
-#ifndef SYNC_H
-#define SYNC_H
+#ifndef __SYNC_H
+#define __SYNC_H
 
 #include "common.h"
 #include ARCH_FILE(/sync.inc)
 
 struct spinlock;
 
-void create_spinlock(struct spinlock *lock);
+static inline void create_spinlock(struct spinlock *lock);
 
 // does not disable interrupts; zero tries means (practically) forever;
-bool acquire_spinlock_int(struct spinlock *lock, uint64_t tries);
-void release_spinlock_int(struct spinlock *lock);
+static inline bool acquire_spinlock_int(struct spinlock *lock, uint64_t tries);
+static inline void release_spinlock_int(struct spinlock *lock);
 
 // disables interrupts; zero tries means (practically) forever;
-bool acquire_spinlock(struct spinlock *lock, uint64_t tries);
-void release_spinlock(struct spinlock *lock);
+static inline bool acquire_spinlock(struct spinlock *lock, uint64_t tries);
+static inline void release_spinlock(struct spinlock *lock);
 
-void set_outer_spinlock(bool exists);
+static inline void set_outer_spinlock(bool exists);
 
 struct mutex {
   struct __mutex_node *head, *tail;
@@ -50,4 +50,4 @@ err_code sleep(uint64_t period); // in microseconds
 
 void init_sync(void);
 
-#endif // SYNC_H
+#endif // __SYNC_H

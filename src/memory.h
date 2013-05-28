@@ -1,5 +1,5 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef __MEMORY_H
+#define __MEMORY_H
 
 #include "common.h"
 
@@ -18,4 +18,4 @@ void free_block(struct mem_pool *pool, void *block);
 
 void init_memory(void);
 
-#endif // MEMORY_H
+#endif // __MEMORY_H

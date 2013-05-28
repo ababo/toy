@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef __CONFIG_H
+#define __CONFIG_H
 
 #define CONFIG_ADDR_SPACE_SIZE ((uint64_t)1 << 40)
 #define CONFIG_AP_BOOT_STACK_SIZE 0x1000
@@ -11,4 +11,4 @@
 #define CONFIG_SCHEDULER_PRIORITIES 8
 #define CONFIG_SCHEDULER_TICK_INTERVAL 1000 // in microseconds
 
-#endif // CONFIG_H
+#endif // __CONFIG_H

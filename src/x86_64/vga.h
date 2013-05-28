@@ -1,5 +1,5 @@
-#ifndef X86_64_VGA_H
-#define X86_64_VGA_H
+#ifndef __X86_64_VGA_H
+#define __X86_64_VGA_H
 
 #define VGA_BLACK 0
 #define VGA_LOW_BLUE 1
@@ -31,4 +31,4 @@ struct spinlock *get_vga_lock(void);
 
 void init_vga(void);
 
-#endif // X86_64_VGA_H
+#endif // __X86_64_VGA_H

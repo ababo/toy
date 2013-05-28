@@ -1,5 +1,5 @@
-#ifndef X86_64_ACPI_H
-#define X86_64_ACPI_H
+#ifndef __X86_64_ACPI_H
+#define __X86_64_ACPI_H
 
 #include "../common.h"
 
@@ -145,4 +145,4 @@ bool get_next_acpi_entry(const void *table, void *entry_pptr, int type);
 
 void init_acpi(void);
 
-#endif // X86_64_ACPI_H
+#endif // __X86_64_ACPI_H

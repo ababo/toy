@@ -1,5 +1,5 @@
-#ifndef CPU_INFO_H
-#define CPU_INFO_H
+#ifndef __CPU_INFO_H
+#define __CPU_INFO_H
 
 #include "common.h"
 #include ARCH_FILE(/cpu_info.inc)
@@ -16,8 +16,9 @@ struct cpu_desc {
   uint32_t domain;
 };
 
-int get_cpu(void);
-int get_bsp_cpu(void);
+static inline int get_cpu(void);
+static inline int get_bsp_cpu(void);
+
 int get_cpu_vendor(void);
 
 int get_cpus(void);
@@ -25,4 +26,4 @@ const struct cpu_desc *get_cpu_desc(int cpu);
 
 void init_cpu_info(void);
 
-#endif // CPU_INFO_H
+#endif // __CPU_INFO_H

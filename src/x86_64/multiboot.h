@@ -1,5 +1,5 @@
-#ifndef X86_64_MULTIBOOT_H
-#define X86_64_MULTIBOOT_H
+#ifndef __X86_64_MULTIBOOT_H
+#define __X86_64_MULTIBOOT_H
 
 #include "../common.h"
 
@@ -53,4 +53,4 @@ struct multiboot_info {
   uint16_t vbe_interface_len;
 };
 
-#endif // X86_64_MULTIBOOT_H
+#endif // __X86_64_MULTIBOOT_H

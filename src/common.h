@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef __COMMON_H
+#define __COMMON_H
 
 #define IN
 #define OUT
@@ -124,4 +124,4 @@ typedef int err_code;
 #define ERR_NOT_FOUND 4
 #define ERR_OUT_OF_MEMORY 5
 
-#endif // COMMON_H
+#endif // __COMMON_H

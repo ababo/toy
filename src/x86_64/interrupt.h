@@ -1,5 +1,5 @@
-#ifndef X86_64_INTERRUPT_H
-#define X86_64_INTERRUPT_H
+#ifndef __X86_64_INTERRUPT_H
+#define __X86_64_INTERRUPT_H
 
 #include "../common.h"
 
@@ -80,4 +80,4 @@ void set_isr(int vector, void *isr);
 
 void init_interrupts(void);
 
-#endif // X86_64_INTERRUPT_H
+#endif // __X86_64_INTERRUPT_H

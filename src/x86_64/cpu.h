@@ -1,5 +1,5 @@
-#ifndef X86_64_CPU_H
-#define X86_64_CPU_H
+#ifndef __X86_64_CPU_H
+#define __X86_64_CPU_H
 
 #include "../common.h"
 
@@ -164,4 +164,4 @@ static inline uint64_t cmpxchgq(uint64_t *ptr, uint64_t old, uint64_t new) {
   return ret;
 }
 
-#endif // X86_64_CPU_H
+#endif // __X86_64_CPU_H

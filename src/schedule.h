@@ -1,5 +1,5 @@
-#ifndef SCHEDULE_H
-#define SCHEDULE_H
+#ifndef __SCHEDULE_H
+#define __SCHEDULE_H
 
 #include "common.h"
 #include "config.h"
@@ -13,6 +13,8 @@
 #define THREAD_STATE_RUNNING 1
 #define THREAD_STATE_PAUSED 2
 #define THREAD_STATE_STOPPED 3
+
+// typedef ... thread_context;
 
 // IN fields should be set before calling attach_thread
 struct thread_data {
@@ -33,6 +35,7 @@ struct thread_data {
 };
 
 struct spinlock;
+// typedef ... thread_id;
 typedef uint64_t (*thread_proc)(uint64_t input);
 
 // set stack and stack_size fields before calling this function
@@ -50,7 +53,7 @@ err_code stop_thread(thread_id id, uint64_t output);
 // a given spinlock is released atomically (within an interrupt)
 err_code pause_this_thread(struct spinlock *lock_to_release);
 
-thread_id get_thread(void);
+static inline thread_id get_thread(void);
 
 typedef void (*timer_proc)(uint64_t ticks);
 
@@ -62,4 +65,4 @@ void set_timer_ticks(uint64_t ticks); // not thread-safe
 
 void init_scheduler(void);
 
-#endif // SCHEDULE_H
+#endif // __SCHEDULE_H

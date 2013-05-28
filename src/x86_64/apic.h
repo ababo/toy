@@ -1,5 +1,5 @@
-#ifndef X86_64_APIC_H
-#define X86_64_APIC_H
+#ifndef __X86_64_APIC_H
+#define __X86_64_APIC_H
 
 #include "../common.h"
 
@@ -18,4 +18,4 @@ bool start_ap_cpu(int cpu, int startup_addr, volatile int *started_cpus);
 
 void init_apic(void);
 
-#endif // X86_64_APIC_H
+#endif // __X86_64_APIC_H
