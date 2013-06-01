@@ -103,23 +103,23 @@ static void create_idt(void) {
         .cs = CODE_SEGMENT, .ist = 1, .type = IDT_GATE_INT, .present = false
       };
 
-  set_isr(INT_VECTOR_DE, get_DE_isr());
-  set_isr(INT_VECTOR_NMI, get_NMI_isr());
-  set_isr(INT_VECTOR_BP, get_BP_isr());
-  set_isr(INT_VECTOR_OF, get_OF_isr());
-  set_isr(INT_VECTOR_BR, get_BR_isr());
-  set_isr(INT_VECTOR_UD, get_UD_isr());
-  set_isr(INT_VECTOR_NM, get_NM_isr());
-  set_isr(INT_VECTOR_DF, get_DF_isr());
-  set_isr(INT_VECTOR_TS, get_TS_isr());
-  set_isr(INT_VECTOR_NP, get_NP_isr());
-  set_isr(INT_VECTOR_SS, get_SS_isr());
-  set_isr(INT_VECTOR_GP, get_GP_isr());
-  set_isr(INT_VECTOR_PF, get_PF_isr());
-  set_isr(INT_VECTOR_MF, get_MF_isr());
-  set_isr(INT_VECTOR_AC, get_AC_isr());
-  set_isr(INT_VECTOR_MC, get_MC_isr());
-  set_isr(INT_VECTOR_XM, get_XM_isr());
+  set_isr(INT_VECTOR_DE, __get_DE_isr());
+  set_isr(INT_VECTOR_NMI, __get_NMI_isr());
+  set_isr(INT_VECTOR_BP, __get_BP_isr());
+  set_isr(INT_VECTOR_OF, __get_OF_isr());
+  set_isr(INT_VECTOR_BR, __get_BR_isr());
+  set_isr(INT_VECTOR_UD, __get_UD_isr());
+  set_isr(INT_VECTOR_NM, __get_NM_isr());
+  set_isr(INT_VECTOR_DF, __get_DF_isr());
+  set_isr(INT_VECTOR_TS, __get_TS_isr());
+  set_isr(INT_VECTOR_NP, __get_NP_isr());
+  set_isr(INT_VECTOR_SS, __get_SS_isr());
+  set_isr(INT_VECTOR_GP, __get_GP_isr());
+  set_isr(INT_VECTOR_PF, __get_PF_isr());
+  set_isr(INT_VECTOR_MF, __get_MF_isr());
+  set_isr(INT_VECTOR_AC, __get_AC_isr());
+  set_isr(INT_VECTOR_MC, __get_MC_isr());
+  set_isr(INT_VECTOR_XM, __get_XM_isr());
 }
 
 static void load_gdt_idt_tr(void) {

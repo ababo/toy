@@ -156,8 +156,8 @@ void init_apic(void) {
   if (cpu == get_bsp_cpu()) {
     map_page(LAPIC_ADDR, LAPIC_ADDR,
              PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT | PAGE_MAPPING_PCD, 0);
-    set_isr(INT_VECTOR_APIC_SPURIOUS, get_empty_isr());
-    set_isr(INT_VECTOR_APIC_TIMER, get_empty_isr());
+    set_isr(INT_VECTOR_APIC_SPURIOUS, __get_empty_isr());
+    set_isr(INT_VECTOR_APIC_TIMER, __get_empty_isr());
   }
 
   wrmsr(LAPIC_BASE_MSR, LAPIC_ADDR | LAPIC_ENABLE);

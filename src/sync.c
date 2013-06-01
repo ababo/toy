@@ -120,4 +120,6 @@ void init_sync(void) {
   for (int i = 0; i < get_cpus(); i++)
     if (create_mem_pool(sizeof(struct sleep_node), &sleeping[i].pool))
       PANIC(MEM_POOL_ERROR);
+
+  LOG_DEBUG("done");
 }

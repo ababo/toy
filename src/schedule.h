@@ -14,7 +14,10 @@
 #define THREAD_STATE_PAUSED 2
 #define THREAD_STATE_STOPPED 3
 
+struct spinlock;
+// typedef ... thread_id;
 // typedef ... thread_context;
+typedef uint64_t (*thread_proc)(uint64_t input);
 
 // IN fields should be set before calling attach_thread
 struct thread_data {
@@ -33,10 +36,6 @@ struct thread_data {
   INTERNAL uint8_t state: 2;
   IN uint8_t fixed_priority : 1;
 };
-
-struct spinlock;
-// typedef ... thread_id;
-typedef uint64_t (*thread_proc)(uint64_t input);
 
 // set stack and stack_size fields before calling this function
 err_code set_thread_context(struct thread_data *thread, thread_proc proc,
