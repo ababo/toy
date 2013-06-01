@@ -1,6 +1,6 @@
 #include "common.h"
+#include "test/test.h"
 
 uint64_t kmain(UNUSED uint64_t input) {
-  kprintf("Hello World!");
-  return 0;
+  return test_all(false);
 }

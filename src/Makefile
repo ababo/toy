@@ -12,12 +12,15 @@ LD_OPTIONS =
 
 SRC = ../src
 SRC_ARCH = $(SRC)/$(ARCH)
+SRC_TEST = $(SRC)/test
 
 BIN = ../bin
 BIN_ARCH = $(BIN)/$(ARCH)
+BIN_TEST = $(BIN)/test
 BIN_STAMP = $(BIN)/.stamp
 
 OBJS = $(patsubst $(SRC)/%.c,$(BIN)/%.o,$(wildcard $(SRC)/*.c))
+OBJS += $(patsubst $(SRC_TEST)/%.c,$(BIN_TEST)/%.o,$(wildcard $(SRC_TEST)/*.c))
 OBJS_ARCH = $(patsubst $(SRC_ARCH)/%.c,$(BIN_ARCH)/%.o, \
   $(wildcard $(SRC_ARCH)/*.c))
 
@@ -50,7 +53,6 @@ OBJS += $(filter-out $(BOOT32_OBJ),$(OBJS_ARCH))
 all: $(IMAGE)
 
 -include $(BOOT32_OBJ:.o=.d)
--include $(OBJS_ARCH:.o=.d)
 
 $(BOOT32_OBJ): $(BOOT32_SRC) $(BIN_STAMP)
 	$(CC) -m32 -c $(CC_OPTIONS) $(BOOT32_SRC) -o $(BOOT32_OBJ)
@@ -90,8 +92,14 @@ $(BIN)/%.o: $(SRC)/%.c $(BIN_STAMP)
 	$(CC) -m64 -MM -MT '$(BIN)/$*.o' $(CC_OPTIONS) $(SRC)/$*.c > \
           $(BIN)/$*.d
 
+$(BIN_TEST)/%.o: $(SRC_TEST)/%.c $(BIN_STAMP)
+	$(CC) -m64 -c $(CC_OPTIONS) $(SRC_TEST)/$*.c -o $(BIN_TEST)/$*.o
+	$(CC) -m64 -MM -MT '$(BIN_TEST)/$*.o' $(CC_OPTIONS) \
+          $(SRC_TEST)/$*.c > $(BIN_TEST)/$*.d
+
 $(BIN_STAMP):
 	mkdir -p $(BIN_ARCH)
+	mkdir -p $(BIN_TEST)
 	touch $@
 
 clean:
