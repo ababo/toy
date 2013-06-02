@@ -8,6 +8,7 @@
 #include "apic.h"
 #include "cpu.h"
 #include "interrupt.h"
+#include "pci.h"
 #include "vga.h"
 
 #define BSTART16_ADDR 0x1000
@@ -99,6 +100,7 @@ void boot64(void) {
   init_memory();
   init_interrupts();
   init_apic();
+  init_pci();
   ASMV("sti");
   start_ap_cpus();
   init_scheduler();
