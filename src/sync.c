@@ -5,12 +5,21 @@
 
 struct spinlock *__outer_spinlocks[CONFIG_CPUS_MAX] = { };
 
-static struct mem_pool mutex_node_pool;
-
 struct __mutex_node {
   struct __mutex_node *next;
   thread_id id;
 };
+
+err_code create_mutex(struct mutex *mutex) {
+  mutex->head = mutex->tail = NULL;
+  create_spinlock(&mutex->mlock);
+  create_spinlock(&mutex->ilock);
+  return create_mem_pool(sizeof(struct __mutex_node), &mutex->pool);
+}
+
+void destroy_mutex(struct mutex *mutex) {
+  destroy_mem_pool(&mutex->pool);
+}
 
 err_code __sleep_in_mutex(struct mutex *mutex) {
   struct __mutex_node *node = NULL;
@@ -19,7 +28,7 @@ err_code __sleep_in_mutex(struct mutex *mutex) {
   acquire_spinlock(&mutex->ilock, 0);
   acquired = acquire_spinlock_int(&mutex->mlock, 1);
   if (!acquired) {
-    node = alloc_block(&mutex_node_pool);
+    node = alloc_block(&mutex->pool);
     if (node) {
       node->next = NULL;
       node->id = get_thread();
@@ -47,7 +56,7 @@ void __awake_in_mutex(struct mutex *mutex) {
     if (mutex->head == node)
       mutex->head = NULL;
     err = resume_thread(node->id);
-    free_block(&mutex_node_pool, node);
+    free_block(&mutex->pool, node);
   }
   while (mutex->tail && err);
 
@@ -110,16 +119,11 @@ err_code sleep(uint64_t period) {
   return err;
 }
 
-#define MEM_POOL_ERROR "Failed to create a memory pool"
-
 void init_sync(void) {
-  if (create_mem_pool(sizeof(struct __mutex_node), &mutex_node_pool))
-    PANIC(MEM_POOL_ERROR);
-
   set_timer_proc(sleep_timer_proc);
   for (int i = 0; i < get_cpus(); i++)
     if (create_mem_pool(sizeof(struct sleep_node), &sleeping[i].pool))
-      PANIC(MEM_POOL_ERROR);
+      PANIC("Failed to create a memory pool");
 
   LOG_DEBUG("done");
 }

@@ -2,6 +2,7 @@
 #define __SYNC_H
 
 #include "common.h"
+#include "memory.h"
 #include ARCH_FILE(/sync.inc)
 
 struct spinlock;
@@ -18,16 +19,16 @@ static inline void release_spinlock(struct spinlock *lock);
 
 static inline void set_outer_spinlock(bool exists);
 
+struct __mutex_node;
+
 struct mutex {
   struct __mutex_node *head, *tail;
   struct spinlock mlock, ilock;
+  struct mem_pool pool;
 };
 
-static inline void create_mutex(struct mutex *mutex) {
-  mutex->head = mutex->tail = NULL;
-  create_spinlock(&mutex->mlock);
-  create_spinlock(&mutex->ilock);
-}
+err_code create_mutex(struct mutex *mutex);
+void destroy_mutex(struct mutex *mutex);
 
 static inline err_code acquire_mutex(struct mutex *mutex) {
   extern err_code __sleep_in_mutex(struct mutex *mutex);

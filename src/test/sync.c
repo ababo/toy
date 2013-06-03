@@ -39,6 +39,7 @@ DEFINE_SUBTEST(mutex_wait, thread_id id1, thread_id id2) {
   for (volatile int i = 0;
        (!acquired[0] || !acquired[1]) && i < WAIT_ITERATIONS; i++) { }
   ADD_TEST_CASE("make sure both acquired", acquired[0] && acquired[1]);
+  destroy_mutex(&mutex);
 
   END_TEST();
 }
