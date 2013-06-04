@@ -3,7 +3,7 @@
 static inline int get_cpu(void) {
   uint32_t ebx;
   extern uint8_t __cpu_indexes[];
-  ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
+  ASMV("movl $1, %%eax; cpuid" : "=b"(ebx) : : "eax", "ecx", "edx");
   return __cpu_indexes[INT_BITS(ebx, 24, 31)];
 }
 

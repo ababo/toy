@@ -51,19 +51,19 @@ struct int_stack_frame {
 
 #define DEFINE_ISR_WRAPPER(name, handler_name, data)                 \
   NOINLINE void *__get_##name##_isr(void) {                          \
-    ASMV("jmp 2f\n.align 16\n1: andq $(~0xF), %rsp");                \
-    ASMV("subq $512, %rsp\nfxsave (%rsp)");                          \
-    ASMV("push %rax\npush %rbx\npush %rcx\npush %rdx\npush %rbp\n"); \
-    ASMV("push %rsi\npush %rdi\npush %r8\npush %r9\npush %r10");     \
-    ASMV("push %r11\npush %r12\npush %r13\npush %r14\npush %r15");   \
-    ASMV("movq %%rsp, %%rdi\nmovabsq $%P0, %%rsi" : : "i"(data));    \
+    ASMV("jmp 2f; .align 16; 1: andq $(~0xF), %rsp");                \
+    ASMV("subq $512, %rsp; fxsave (%rsp)");                          \
+    ASMV("push %rax; push %rbx; push %rcx; push %rdx; push %rbp");   \
+    ASMV("push %rsi; push %rdi; push %r8; push %r9; push %r10");     \
+    ASMV("push %r11; push %r12; push %r13; push %r14; push %r15");   \
+    ASMV("movq %%rsp, %%rdi; movabsq $%P0, %%rsi" : : "i"(data));    \
     ASMV("callq %P0" : : "i"(__handle_##handler_name##_int));        \
-    ASMV("pop %r15\npop %r14\npop %r13\npop %r12\npop %r11");        \
-    ASMV("pop %r10\npop %r9\npop %r8\npop %rdi\npop %rsi");          \
-    ASMV("pop %rbp\npop %rdx\npop %rcx\npop %rbx\npop %rax");        \
-    ASMV("fxrstor (%rsp)\naddq $(512 + 8), %rsp");                   \
+    ASMV("pop %r15; pop %r14; pop %r13; pop %r12; pop %r11");        \
+    ASMV("pop %r10; pop %r9; pop %r8; pop %rdi; pop %rsi");          \
+    ASMV("pop %rbp; pop %rdx; pop %rcx; pop %rbx; pop %rax");        \
+    ASMV("fxrstor (%rsp); addq $(512 + 8), %rsp");                   \
     void *isr;                                                       \
-    ASMV("iretq\n2: movq $1b, %0" : "=m"(isr));                      \
+    ASMV("iretq; 2: movq $1b, %0" : "=m"(isr));                      \
     return isr;                                                      \
   }
 

@@ -131,7 +131,7 @@ static void load_gdt_idt_tr(void) {
     IDT_DESC_SIZE * INT_VECTORS - 1, (uint64_t)idt
   };
   uint16_t sel = GDT_DESC_SIZE * 3 + GDT_DESC2_SIZE * get_cpu();
-  ASMV("lgdt %0\nlidt %1\nmovw %2, %%ax\nltr %%ax"
+  ASMV("lgdt %0; lidt %1; movw %2, %%ax; ltr %%ax"
        : : "m"(gdti), "m"(idti), "m"(sel) : "ax");
 }
 

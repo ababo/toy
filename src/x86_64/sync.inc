@@ -12,13 +12,13 @@ static inline void create_spinlock(struct spinlock *lock) {
 static inline bool acquire_spinlock_int(struct spinlock *lock,
                                         uint64_t tries) {
   uint8_t al;
-  do ASMV("mov $1, %%al\nxchgb %%al, %0" : "+m"(lock->busy), "=&a"(al));
+  do ASMV("mov $1, %%al; xchgb %%al, %0" : "+m"(lock->busy), "=&a"(al));
   while (al && --tries);
   return !al;
 }
 
 static inline void release_spinlock_int(struct spinlock *lock) {
-  ASMV("xorb %%al, %%al\nxchgb %%al, %0" : "+m"(lock->busy) : : "al");
+  ASMV("xorb %%al, %%al; xchgb %%al, %0" : "+m"(lock->busy) : : "al");
 }
 
 static inline bool acquire_spinlock(struct spinlock *lock, uint64_t tries) {

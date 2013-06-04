@@ -15,7 +15,7 @@ int get_cpu_vendor(void) {
     return vendor;
   else {
     uint32_t buf[4] = { };
-    ASMV("xorl %%eax, %%eax\ncpuid" :
+    ASMV("xorl %%eax, %%eax; cpuid" :
          "=b"(buf[0]), "=d"(buf[1]), "=c"(buf[2]) : : "eax");
     if (!memcmp(buf, "GenuineIntel", VENDOR_LEN))
       vendor = CPU_VENDOR_INTEL;
@@ -38,7 +38,7 @@ const struct cpu_desc *get_cpu_desc(int cpu) {
 
 static bool get_chip_multithreading(int *chip_threads_max) {
   uint32_t ebx, edx;
-  ASMV("movl $1, %%eax\ncpuid" : "=b"(ebx), "=d"(edx) : : "eax", "ecx");
+  ASMV("movl $1, %%eax; cpuid" : "=b"(ebx), "=d"(edx) : : "eax", "ecx");
   bool support = !!(edx & (1 << 28));
   *chip_threads_max = INT_BITS(ebx, 16, 23);
   LOG_DEBUG("support: %s, chip_threads_max: %d", support ? "yes" : "no",
@@ -52,15 +52,15 @@ static void get_thread_core_bits_intel(uint32_t cpuid_func_max,
                                        int *core_bits) {
   uint32_t eax;
   if (cpuid_func_max >= 0xB) {
-    ASMV("movl $0xB, %%eax\nxorl %%ecx, %%ecx\ncpuid" :
+    ASMV("movl $0xB, %%eax; xorl %%ecx, %%ecx; cpuid" :
          "=a"(eax) : : "ebx", "ecx", "edx");
     *thread_bits = INT_BITS(eax, 0, 4);
-    ASMV("movl $0xB, %%eax\nmovl $1, %%ecx\ncpuid" :
+    ASMV("movl $0xB, %%eax; movl $1, %%ecx; cpuid" :
          "=a"(eax) : : "ebx", "ecx", "edx");
     *core_bits = INT_BITS(eax, 0, 4) - *thread_bits;
   }
   else if (cpuid_func_max >= 0x4) {
-    ASMV("movl $0x4, %%eax\nxorl %%ecx, %%ecx\ncpuid" :
+    ASMV("movl $0x4, %%eax; xorl %%ecx, %%ecx; cpuid" :
          "=a"(eax) : : "ebx", "ecx", "edx");
     int core_index_max = INT_BITS(eax, 26, 31);
     *core_bits = core_index_max ? bsrq(core_index_max) + 1 : 0;
@@ -77,7 +77,7 @@ static void get_thread_core_bits_amd(UNUSED uint32_t cpuid_func_max,
                                      int *core_bits) {
   if (cpuid_ex_func_max >= 0x80000008) {
     uint32_t ecx;
-    ASMV("movl $0x80000008, %%eax\ncpuid" : "=c"(ecx) : : "eax", "ebx", "edx");
+    ASMV("movl $0x80000008, %%eax; cpuid" : "=c"(ecx) : : "eax", "ebx", "edx");
     *core_bits = INT_BITS(ecx, 12, 15);
     if (!*core_bits) {
       int core_index_max = INT_BITS(ecx, 0, 7);
@@ -92,9 +92,9 @@ static void get_thread_core_bits_amd(UNUSED uint32_t cpuid_func_max,
 
 static void get_thread_core_bits(int *thread_bits, int *core_bits) {
   uint32_t cpuid_func_max, cpuid_ex_func_max;
-  ASMV("xorl %%eax, %%eax\ncpuid" :
+  ASMV("xorl %%eax, %%eax; cpuid" :
        "=a"(cpuid_func_max) : : "ebx", "ecx", "edx");
-  ASMV("movl $0x80000000, %%eax\ncpuid" :
+  ASMV("movl $0x80000000, %%eax; cpuid" :
        "=a"(cpuid_ex_func_max) : : "ebx", "ecx", "edx");
 
   int chip_threads_max;

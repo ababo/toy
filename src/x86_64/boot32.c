@@ -63,16 +63,16 @@ static void create_gdt(void *gdt, struct cpu_table_info *gdti) {
 uint32_t __multiboot_info = 0;
 ALIGNED(16) uint8_t __bsp_boot_stack[CONFIG_BSP_BOOT_STACK_SIZE] = { };
 
-ASM(".text\n.global __bstart32\n.global __halt\n"
+ASM(".text; .global __bstart32; .global __halt;"
     "__bstart32: movl $(__bsp_boot_stack + "
-      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp\n"
-    "movl %ebx, __multiboot_info\n"
-    "movb $0xFF, %al\noutb %al, $0xA1\noutb %al, $0x21\n" // disable IRQs
-    "movl %cr4, %edx\n" // enable SSE
-    "orl $" STR_EXPAND(CR4_OSFXSR) ", %edx\n"
-    "movl %edx, %cr4\n"
-    "call boot32\n"
-    "__halt: hlt\njmp __halt");
+      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %esp;"
+    "movl %ebx, __multiboot_info;"
+    "movb $0xFF, %al; outb %al, $0xA1; outb %al, $0x21;" // disable IRQs
+    "movl %cr4, %edx;" // enable SSE
+    "orl $" STR_EXPAND(CR4_OSFXSR) ", %edx;"
+    "movl %edx, %cr4;"
+    "call boot32;"
+    "__halt: hlt; jmp __halt");
 
 ALIGNED(4096) uint8_t __page_map[PAGE_MAP_SIZE] = { };
 ALIGNED(4) uint8_t __gdt[(3 + 2 * CONFIG_CPUS_MAX) * GDT_DESC_SIZE] = { };
@@ -83,11 +83,11 @@ void boot32(void) {
   create_page_map(__page_map, CONFIG_ADDR_SPACE_SIZE, CONFIG_KERNEL_ADDR,
                   (size_t)&__lds_kernel_size);
   create_gdt(__gdt, &gdti);
-  ASMV("movl %%cr4, %%eax\norl %0, %%eax\nmovl %%eax, %%cr4"
+  ASMV("movl %%cr4, %%eax; orl %0, %%eax; movl %%eax, %%cr4"
        : : "i"(CR4_PAE) : "eax");
   ASMV("mov %0, %%cr3" : : "d"((size_t)__page_map));
   wrmsr(MSR_EFER, rdmsr(MSR_EFER) | MSR_EFER_LME);
-  ASMV("movl %%cr0, %%eax\norl %0, %%eax\nmovl %%eax, %%cr0"
+  ASMV("movl %%cr0, %%eax; orl %0, %%eax; movl %%eax, %%cr0"
        : : "i"(CR0_PG) : "eax");
   ASMV("lgdt %0" : : "m"(gdti));
   ASMV("ljmp %0, $__kstart" : : "i"(SEGMENT_CODE));

@@ -13,38 +13,38 @@
 
 #define BSTART16_ADDR 0x1000
 
-ASM(".text\n.global __kstart\n"
-    "__kstart: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax\n"
-    "movw %ax, %ds\nmovw %ax, %ss\n"
+ASM(".text; .global __kstart;"
+    "__kstart: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax;"
+    "movw %ax, %ds; movw %ax, %ss;"
     "movq $(__bsp_boot_stack + "
-      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %rsp\n"
-    "call boot64\n"
+      STR_EXPAND(CONFIG_BSP_BOOT_STACK_SIZE) "), %rsp;"
+    "call boot64;"
     "jmp __halt");
 
 // ap cpu trampoline
-ASM(".text\n.code16\n.global __bstart16\n"
-    "__bstart16: inb $0x92, %al\norb $2, %al\noutb %al, $0x92\n" // enable A20
-    "movb $0xFF, %al\noutb %al, $0xA1\noutb %al, $0x21\n" // disable IRQs
-    "movl $" STR_EXPAND(CR4_PAE) ", %eax\nmovl %eax, %cr4\n"
-    "movl $__page_map, %eax\nmovl %eax, %cr3\n"
-    "movl $" STR_EXPAND(MSR_EFER) ", %ecx\nrdmsr\norl $"
-      STR_EXPAND(MSR_EFER_LME) ", %eax\nwrmsr\n"
-    "movl %cr0, %eax\norl $" STR_EXPAND(CR0_PE | CR0_PG)
-      ", %eax\nmovl %eax, %cr0\n"
-    "lgdt (" STR_EXPAND(BSTART16_ADDR) " + gdti - __bstart16)\n"
-    "ljmpl $" STR_EXPAND(SEGMENT_CODE) ", $__kstart_ap\n"
-    "gdti: .word 3 * 8 - 1\n.long __gdt\n"
-    ".global __bstart16_end\n__bstart16_end:\n.code64");
+ASM(".text; .code16; .global __bstart16;"
+    "__bstart16: inb $0x92, %al; orb $2, %al; outb %al, $0x92;" // enable A20
+    "movb $0xFF, %al; outb %al, $0xA1; outb %al, $0x21;" // disable IRQs
+    "movl $" STR_EXPAND(CR4_PAE) ", %eax; movl %eax, %cr4;"
+    "movl $__page_map, %eax; movl %eax, %cr3;"
+    "movl $" STR_EXPAND(MSR_EFER) ", %ecx; rdmsr; orl $"
+      STR_EXPAND(MSR_EFER_LME) ", %eax; wrmsr;"
+    "movl %cr0, %eax; orl $" STR_EXPAND(CR0_PE | CR0_PG)
+      ", %eax; movl %eax, %cr0;"
+    "lgdt (" STR_EXPAND(BSTART16_ADDR) " + gdti - __bstart16);"
+    "ljmpl $" STR_EXPAND(SEGMENT_CODE) ", $__kstart_ap;"
+    "gdti: .word 3 * 8 - 1; .long __gdt;"
+    ".global __bstart16_end; __bstart16_end:; .code64");
 
-ASM(".text\n.global __kstart_ap\n"
-    "__kstart_ap: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax\n"
-    "movw %ax, %ds\nmovw %ax, %ss\n"
-    "movq (ap_boot_stack), %rsp\n"
-    "addq $" STR_EXPAND(CONFIG_AP_BOOT_STACK_SIZE) ", %rsp\n"
-    "movq %cr4, %rax\n" // enable SSE
-    "orl $" STR_EXPAND(CR4_OSFXSR) ", %eax\n"
-    "movq %rax, %cr4\n"
-    "call boot64_ap\n"
+ASM(".text; .global __kstart_ap;"
+    "__kstart_ap: movw $" STR_EXPAND(SEGMENT_DATA) ", %ax;"
+    "movw %ax, %ds; movw %ax, %ss;"
+    "movq (ap_boot_stack), %rsp;"
+    "addq $" STR_EXPAND(CONFIG_AP_BOOT_STACK_SIZE) ", %rsp;"
+    "movq %cr4, %rax;" // enable SSE
+    "orl $" STR_EXPAND(CR4_OSFXSR) ", %eax;"
+    "movq %rax, %cr4;"
+    "call boot64_ap;"
     "jmp __halt");
 
 static uint8_t *ap_boot_stack = NULL;

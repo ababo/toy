@@ -7,10 +7,10 @@
 
 #define STACK_OVERRUN_MAGIC 0x3979853562951413
 
-ASM(".global __exit_thread\n__exit_thread:\n"
-    "pushq %rax\nmovl $" STR_EXPAND(MSR_FS_BASE) ", %ecx\n"
-    "rdmsr\nmovl %edx, %edi\nshll $32, %edi\nmovl %eax, %edi\n"
-    "popq %rsi\ncallq stop_thread");
+ASM(".global __exit_thread; __exit_thread:;"
+    "pushq %rax; movl $" STR_EXPAND(MSR_FS_BASE) ", %ecx;"
+    "rdmsr; movl %edx, %edi; shll $32, %edi; movl %eax, %edi;"
+    "popq %rsi; callq stop_thread");
 
 err_code set_thread_context(struct thread_data *thread, thread_proc proc,
                             uint64_t input) {
