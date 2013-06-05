@@ -2,14 +2,14 @@
 #define __DRIVER_H
 
 #include "common.h"
-#include "retained.h"
 
 #define DRIVER_TYPE_STORAGE 1
 
 typedef uint64_t device_id;
 
-struct idriver {
-  struct retained retained;
+struct driver {
+  INTERNAL uint64_t magic;
+  INTERNAL struct driver *prev, *next;
   int type;
   bool (*get_next_device)(device_id *device); // start with device == 0
   err_code (*start_device)(device_id device);
@@ -17,16 +17,18 @@ struct idriver {
   
 };
 
-struct istorage_driver {
-  struct idriver idriver;
+struct storage_driver {
+  struct driver driver;
   int block_size;
   
 };
 
-bool get_next_driver(struct idriver **driver); // start with *driver == NULL
+err_code add_driver(struct driver *driver);
+err_code remove_driver(struct driver *driver);
 
-void add_driver(void *driver);
-void remove_driver(void *driver);
+// start enumerating with *driver == NULL
+// ignores type if a given type parameter is equal to -1
+bool get_next_driver(const struct driver **driver, int type);
 
 void init_drivers(void);
 

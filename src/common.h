@@ -115,6 +115,7 @@ void kclear(void);
 #endif
 #define LOG_INFO(format, ...) LOG(info, format, ##__VA_ARGS__)
 #define LOG_ERROR(format, ...) LOG(ERROR, format, ##__VA_ARGS__)
+// #define PANIC ...
 
 typedef int err_code;
 #define ERR_NONE 0
