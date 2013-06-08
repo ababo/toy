@@ -5,7 +5,7 @@
 #include "cpu.h"
 #include "interrupt.h"
 
-#define STACK_OVERRUN_MAGIC 0x3979853562951413
+#define STACK_OVERRUN_MAGIC 0x2384626433832795
 
 ASM(".global __exit_thread; __exit_thread:;"
     "pushq %rax; movl $" STR_EXPAND(MSR_FS_BASE) ", %ecx;"

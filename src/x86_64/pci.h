@@ -54,7 +54,9 @@ static inline int get_pci_type(int device) {
 #define PCI_TYPE_SERIAL_ATA 0x0106
 
 typedef void (*pci_scan_proc)(int device);
-void scan_pci(pci_scan_proc proc);
+
+// ignores type if a given type parameter is equal to -1
+void scan_pci(pci_scan_proc proc, int type);
 
 void init_pci(void);
 

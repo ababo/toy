@@ -34,7 +34,10 @@ LD_OPTIONS += -z max-page-size=0x1
 
 VM = qemu-system-x86_64
 VM_ACC = -no-kvm
-VM_OPTIONS = $(VM_ACC) -smp sockets=1,cores=2,threads=2
+VM_DRIVES = -device ahci,id=ahci -drive id=disk,file=toy.qcow2,if=none \
+  -device ide-drive,drive=disk,bus=ahci.0
+VM_SMP = -smp sockets=1,cores=2,threads=2
+VM_OPTIONS = $(VM_ACC) $(VM_DRIVES) $(SMP)
 
 GRUB_CONF = $(SRC_ARCH)/grub.cfg
 IMAGE = $(BIN)/toy.iso

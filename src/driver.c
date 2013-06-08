@@ -1,7 +1,7 @@
 #include "driver.h"
 #include "sync.h"
 
-#define DRIVER_MAGIC 0x2718281828459045
+#define DRIVER_MAGIC 0x0288419716939937
 
 static struct driver *tail;
 static struct mutex mutex;
@@ -41,6 +41,9 @@ err_code remove_driver(struct driver *driver) {
 }
 
 bool get_next_driver(const struct driver **driver, int type) {
+  if (!driver)
+    return false;
+
   if (*driver) {
     if ((*driver)->magic != DRIVER_MAGIC)
       return false;

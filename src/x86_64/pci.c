@@ -31,39 +31,41 @@ void write_pci_field(int device, int field, uint32_t value) {
   outl(VALUE_PORT, value);
 }
 
-static void scan_bus(pci_scan_proc proc, int bus);
+static void scan_bus(pci_scan_proc proc, int type, int bus);
 
-static void scan_func(pci_scan_proc proc, int bus, int slot, int func) {
+static void scan_func(pci_scan_proc proc, int type, int bus, int slot,
+                      int func) {
   int dev = get_pci_device(bus, slot, func);
-  proc(dev);
+  if (type == -1 || type == get_pci_type(dev))
+    proc(dev);
 
   if (get_pci_type(dev) == PCI_TYPE_PCI_TO_PCI_BRIDGE)
-    scan_bus(proc, read_pci_field(dev, PCI_FIELD_SECONDARY_BUS));
+    scan_bus(proc, type, read_pci_field(dev, PCI_FIELD_SECONDARY_BUS));
 }
 
-static void scan_slot(pci_scan_proc proc, int bus, int slot) {
+static void scan_slot(pci_scan_proc proc, int type, int bus, int slot) {
   int dev = get_pci_device(bus, slot, 0);
   if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) == 0xFFFF)
     return;
 
-  scan_func(proc, bus, slot, 0);
+  scan_func(proc, type, bus, slot, 0);
   if (!read_pci_field(dev, PCI_FIELD_MULTIPLE_FUNCTIONS))
     return;
 
   for (int func = 1; func < 8; func++) {
     int dev = get_pci_device(bus, slot, func);
     if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) != 0xFFFF)
-      scan_func(proc, bus, slot, func);
+      scan_func(proc, type, bus, slot, func);
   }
 }
 
-static void scan_bus(pci_scan_proc proc, int bus) {
+static void scan_bus(pci_scan_proc proc, int type, int bus) {
   for (int slot = 0; slot < 32; slot++)
-    scan_slot(proc, bus, slot);
+    scan_slot(proc, type, bus, slot);
 }
 
-void scan_pci(pci_scan_proc proc) {
-  scan_bus(proc, 0);
+void scan_pci(pci_scan_proc proc, int type) {
+  scan_bus(proc, type, 0);
 
   if (!read_pci_field(0, PCI_FIELD_MULTIPLE_FUNCTIONS))
     return;
@@ -71,7 +73,7 @@ void scan_pci(pci_scan_proc proc) {
   for (int func = 1; func < 8; func++) {
     int dev = get_pci_device(0, 0, func);
     if (read_pci_field(dev, PCI_FIELD_VENDOR_ID) != 0xFFFF)
-      scan_bus(proc, func);
+      scan_bus(proc, type, func);
     else
       break;
   }
@@ -84,5 +86,5 @@ static void scan_proc(int device) {
 }
 
 void init_pci(void) {
-  scan_pci(scan_proc);
+  scan_pci(scan_proc, -1);
 }

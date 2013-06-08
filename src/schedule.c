@@ -24,7 +24,7 @@ void __panic_stack_overrun(struct int_stack_frame *stack_frame,
 void __init_scheduler(void);
 
 #define THREAD_MAGIC 0x3141592653589793
-#define STACK_OVERRUN_MAGIC 0x3979853562951413
+#define STACK_OVERRUN_MAGIC 0x2384626433832795
 
 struct cpu_priority {
   struct thread_data *expired_head, *expired_tail, *active_tail;

@@ -11,6 +11,7 @@ struct driver {
   INTERNAL uint64_t magic;
   INTERNAL struct driver *prev, *next;
   int type;
+  err_code (*scan_devices)(void);
   bool (*get_next_device)(device_id *device); // start with device == 0
   err_code (*start_device)(device_id device);
   err_code (*stop_device)(device_id device);
@@ -19,7 +20,6 @@ struct driver {
 
 struct storage_driver {
   struct driver driver;
-  int block_size;
   
 };
 

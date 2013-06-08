@@ -10,6 +10,7 @@ struct ahci_driver {
 
 const struct ahci_driver *get_ahci_driver(void);
 
-err_code init_ahci(void);
+void init_ahci(void); // not thread-safe
+void dispose_ahci(void); // not thread-safe
 
 #endif // __X86_64_AHCI_H
