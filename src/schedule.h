@@ -15,7 +15,7 @@
 #define THREAD_STATE_STOPPED 3
 
 struct spinlock;
-// typedef ... thread_id;
+typedef uint64_t thread_id;
 // typedef ... thread_context;
 typedef uint64_t (*thread_proc)(uint64_t input);
 

@@ -73,9 +73,9 @@ static void *find_psdt_table(char signature[4]) {
   return NULL;
 }
 
-bool get_next_acpi_entry(const void *table, void *entry_pptr, int type) {
+err_code get_next_acpi_entry(const void *table, void *entry_pptr, int type) {
   if (!table || !entry_pptr)
-    return false;
+    return ERR_BAD_INPUT;
 
   int tsize;
   if (table == get_acpi_madt())
@@ -83,7 +83,7 @@ bool get_next_acpi_entry(const void *table, void *entry_pptr, int type) {
   else if (table == get_acpi_srat())
     tsize = sizeof(struct acpi_srat);
   else
-    return false;
+    return ERR_BAD_INPUT;
 
   const struct acpi_entry_header **entry = entry_pptr;
   if (*entry)
@@ -94,11 +94,11 @@ bool get_next_acpi_entry(const void *table, void *entry_pptr, int type) {
   uint32_t length = ((struct acpi_header*)table)->length;
   while ((uint64_t)*entry - (uint64_t)table < length)
     if (type == -1 || (*entry)->type == type)
-      return true;
+      return ERR_NONE;
     else
       *entry = (void*)((uint64_t)*entry + (*entry)->length);
 
-  return false;
+  return ERR_NO_MORE;
 }
 
 void init_acpi(void) {

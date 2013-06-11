@@ -115,7 +115,7 @@ static void get_thread_core_bits(int *thread_bits, int *core_bits) {
 void fill_cpu_descs(int thread_bits, int core_bits) {
   int i = 0;
   struct acpi_madt_lapic *mentry = NULL;
-  while (get_next_acpi_entry(get_acpi_madt(), &mentry, ACPI_MADT_LAPIC_TYPE))
+  while (!get_next_acpi_entry(get_acpi_madt(), &mentry, ACPI_MADT_LAPIC_TYPE))
     if (mentry->enabled) {
       if (i >= CONFIG_CPUS_MAX) {
         LOG_ERROR("detected more than %s=%d cpus",
@@ -131,8 +131,8 @@ void fill_cpu_descs(int thread_bits, int core_bits) {
       descs[i].chip = mentry->apic_id >> (thread_bits + core_bits);
 
       struct acpi_srat_lapic *sentry = NULL;
-      while (get_next_acpi_entry(get_acpi_srat(), &sentry,
-                                 ACPI_SRAT_LAPIC_TYPE))
+      while (!get_next_acpi_entry(get_acpi_srat(), &sentry,
+                                  ACPI_SRAT_LAPIC_TYPE))
         if (sentry->enabled && sentry->apic_id == mentry->apic_id)
           descs[i].domain = sentry->prox_domain0 +
             ((uint32_t)sentry->prox_domain1 << 8) +

@@ -117,6 +117,20 @@ void kclear(void);
 #define LOG_ERROR(format, ...) LOG(ERROR, format, ##__VA_ARGS__)
 // #define PANIC ...
 
+// #define PACKED_POINTER_DATA_BITS ...
+
+static inline uint64_t pack_pointer(void *ptr, int data) {
+  return (uint64_t)(size_t)ptr |
+    ((uint64_t)data << (64 - PACKED_POINTER_DATA_BITS));
+}
+
+static inline void *unpack_pointer(uint64_t pack, int *data) {
+  if (data)
+    *data = (int)(pack >> (64 - PACKED_POINTER_DATA_BITS));
+  return (void*)(size_t)
+    (pack << PACKED_POINTER_DATA_BITS >> PACKED_POINTER_DATA_BITS);
+}
+
 typedef int err_code;
 #define ERR_NONE 0
 #define ERR_BUSY 1
@@ -124,5 +138,7 @@ typedef int err_code;
 #define ERR_BAD_STATE 3
 #define ERR_NOT_FOUND 4
 #define ERR_OUT_OF_MEMORY 5
+#define ERR_NO_MORE 6
+#define ERR_EXPIRED 7
 
 #endif // __COMMON_H

@@ -140,8 +140,10 @@ static inline const struct acpi_xsdt *get_acpi_xsdt(void) {
   return rsdp ? (struct acpi_xsdt*)rsdp->xsdt_addr : NULL;
 }
 
-// ignores type if a given type parameter is equal to -1
-bool get_next_acpi_entry(const void *table, void *entry_pptr, int type);
+// starts enumerating with *entry_pptr == NULL 
+// ignores entry type if it is equal to -1
+// returns ERR_NO_MORE when no more entries remain
+err_code get_next_acpi_entry(const void *table, void *entry_pptr, int type);
 
 void init_acpi(void);
 
