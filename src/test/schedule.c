@@ -93,7 +93,7 @@ DEFINE_SUBTEST(pause_thread, thread_id id, volatile uint64_t *counter) {
   END_TEST();
 }
 
-DEFINE_SUBTEST(detach_thread, thread_id id, volatile uint64_t *counter) {
+DEFINE_SUBTEST(detach_thread, thread_id *id, volatile uint64_t *counter) {
   BEGIN_TEST();
 
   struct thread_data *thrd;
@@ -101,14 +101,14 @@ DEFINE_SUBTEST(detach_thread, thread_id id, volatile uint64_t *counter) {
                 detach_thread(1234, &thrd) == ERR_NOT_FOUND);
 
   ADD_TEST_CASE("detaching running",
-                detach_thread(id, &thrd) == ERR_BAD_STATE);
+                detach_thread(*id, &thrd) == ERR_BAD_STATE);
 
   ADD_TEST_CASE("pausing and detaching right",
-                !pause_thread(id) && !detach_thread(id, &thrd) &&
+                !pause_thread(*id) && !detach_thread(*id, &thrd) &&
                 thrd->state == THREAD_STATE_PAUSED);
 
   ADD_TEST_CASE("attaching and resuming",
-                !attach_thread(thrd, &id) && !resume_thread(id));
+                !attach_thread(thrd, id) && !resume_thread(*id));
 
   uint64_t prev_counter = *counter;
   for (volatile int i = 0;
@@ -155,7 +155,7 @@ DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *thread_pool) {
   ADD_TEST(attach_thread, thrd, &id);
   ADD_TEST(resume_thread, id, &counter);
   ADD_TEST(pause_thread, id, &counter);
-  ADD_TEST(detach_thread, id, &counter);
+  ADD_TEST(detach_thread, &id, &counter);
   ADD_TEST(stop_thread, id, &counter);
 
   if (passed) {
@@ -166,7 +166,7 @@ DEFINE_SUBTEST(scheduler_sanity, struct mem_pool *thread_pool) {
   ADD_TEST(attach_thread, thrd, &id);
   ADD_TEST(resume_thread, id, &counter);
   ADD_TEST(pause_thread, id, &counter);
-  ADD_TEST(detach_thread, id, &counter);
+  ADD_TEST(detach_thread, &id, &counter);
   ADD_TEST(stop_thread, id, &counter);
 
   destroy_test_thread(thread_pool, thrd);

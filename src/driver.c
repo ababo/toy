@@ -14,7 +14,9 @@ err_code add_driver(struct driver *driver, driver_id *id) {
   err_code err = ERR_NONE;
   acquire_mutex(&mutex);
 
-  driver->magic = DRIVER_MAGIC, driver->stamp = stamp++;
+  driver->magic = DRIVER_MAGIC;
+  driver->stamp = stamp;
+  stamp = (stamp + 1) % (1 << PACKED_POINTER_DATA_BITS);
   driver->prev = NULL, driver->next = tail;
   tail->prev = driver, tail = driver;
 

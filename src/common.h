@@ -119,7 +119,7 @@ void kclear(void);
 
 // #define PACKED_POINTER_DATA_BITS ...
 
-static inline uint64_t pack_pointer(void *ptr, int data) {
+static inline uint64_t pack_pointer(const void *ptr, int data) {
   return (uint64_t)(size_t)ptr |
     ((uint64_t)data << (64 - PACKED_POINTER_DATA_BITS));
 }

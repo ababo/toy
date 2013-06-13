@@ -7,8 +7,8 @@ typedef struct int_stack_frame thread_context;
 typedef uint64_t thread_id;
 struct thread_data;
 
-static inline thread_id get_thread(void) {
-  return rdmsr(MSR_FS_BASE);
+static inline const struct thread_data *__get_thread(void) {
+  return (struct thread_data*)rdmsr(MSR_FS_BASE);
 }
 
 static inline void __set_thread(const struct thread_data *thread) {

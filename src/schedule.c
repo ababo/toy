@@ -52,13 +52,15 @@ static struct cpu_data {
   struct cpu_task task;
   struct spinlock lock;
   bool load_context;
-} cpus[CONFIG_CPUS_MAX];
+} cpus[CONFIG_MAX_CPUS];
 
 static struct thread_list {
   struct spinlock lock;
   int total_threads;
   struct thread_data *tail;
 } all, inactive;
+
+static int stamp;
 
 err_code attach_thread(struct thread_data *thread, thread_id *id) {
   if (thread->magic == THREAD_MAGIC) // already attached
@@ -81,6 +83,8 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   acquire_spinlock(&inactive.lock, 0);
 
   thread->magic = THREAD_MAGIC;
+  thread->stamp = stamp;
+  stamp = (stamp + 1) % (1 << PACKED_POINTER_DATA_BITS);
   thread->all_next = all.tail;
   if (all.tail)
     all.tail->all_prev = thread;
@@ -96,51 +100,55 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   release_spinlock(&inactive.lock);
   release_spinlock(&all.lock);
 
-  *id = (thread_id)thread;
+  if (id)
+    *id = pack_pointer(thread, thread->stamp);
   return ERR_NONE;
 }
 
-#define CAST_TO_THREAD(thrd, id)                        \
-  struct thread_data *thrd = (struct thread_data*)id;   \
-  if (thrd->magic != THREAD_MAGIC)                      \
-    return ERR_NOT_FOUND;
+#define DO_THREAD(thrd, id)                              \
+  int stamp;                                             \
+  struct thread_data *thrd = unpack_pointer(id, &stamp); \
+  if (thrd->magic != THREAD_MAGIC)                       \
+    err = ERR_NOT_FOUND;                                 \
+  else if (thrd->stamp != stamp)                         \
+    err = ERR_EXPIRED;                                   \
+  else
 
 err_code detach_thread(thread_id id, struct thread_data **thread) {
   err_code err = ERR_NONE;
-  CAST_TO_THREAD(thrd, id);
-
   acquire_spinlock(&all.lock, 0);
   acquire_spinlock(&inactive.lock, 0);
 
-  if (thrd->state == THREAD_STATE_PAUSED ||
-      thrd->state == THREAD_STATE_STOPPED) {
-    if (thrd->next)
-      thrd->next->prev = thrd->prev;
-    if (thrd->prev)
-      thrd->prev->next = thrd->next;
-    if (inactive.tail == thrd)
-      inactive.tail = thrd->next;
-    inactive.total_threads--;
+  DO_THREAD(thrd, id) {
+    if (thrd->state == THREAD_STATE_PAUSED ||
+        thrd->state == THREAD_STATE_STOPPED) {
+      if (thrd->next)
+        thrd->next->prev = thrd->prev;
+      if (thrd->prev)
+        thrd->prev->next = thrd->next;
+      if (inactive.tail == thrd)
+        inactive.tail = thrd->next;
+      inactive.total_threads--;
 
-    if (thrd->all_next)
-      thrd->all_next->all_prev = thrd->all_prev;
-    if (thrd->all_prev)
-      thrd->all_prev->all_next = thrd->all_next;
-    if (all.tail == thrd)
-      all.tail = thrd->all_next;
-    all.total_threads--;
+      if (thrd->all_next)
+        thrd->all_next->all_prev = thrd->all_prev;
+      if (thrd->all_prev)
+        thrd->all_prev->all_next = thrd->all_next;
+      if (all.tail == thrd)
+        all.tail = thrd->all_next;
+      all.total_threads--;
 
-    thrd->magic = 0;
-    thrd->prev = thrd->next = NULL;
-    thrd->all_prev = thrd->all_next = NULL;
-    *thread = thrd;
+      thrd->magic = 0;
+      thrd->prev = thrd->next = NULL;
+      thrd->all_prev = thrd->all_next = NULL;
+      *thread = thrd;
+    }
+    else
+      err = ERR_BAD_STATE;
   }
-  else
-    err = ERR_BAD_STATE;
 
   release_spinlock(&inactive.lock);
   release_spinlock(&all.lock);
-
   return err;
 }
 
@@ -182,29 +190,30 @@ static void run_cpu_task(int cpu, struct cpu_task *task) {
 
 err_code resume_thread(thread_id id) {
   err_code err = ERR_NONE;
-  CAST_TO_THREAD(thrd, id);
-
   acquire_spinlock(&inactive.lock, 0);
-  if (thrd->state == THREAD_STATE_PAUSED) {
-    if (thrd->next)
-      thrd->next->prev = thrd->prev;
-    if (thrd->prev)
-      thrd->prev->next = thrd->next;
-    if (inactive.tail == thrd)
-      inactive.tail = thrd->next;
-    inactive.total_threads--;
 
-    thrd->real_priority = thrd->priority;
-    thrd->quantum = 0;
-    update_priority_quantum(thrd);
+  DO_THREAD(thrd, id) {
+    if (thrd->state == THREAD_STATE_PAUSED) {
+      if (thrd->next)
+        thrd->next->prev = thrd->prev;
+      if (thrd->prev)
+        thrd->prev->next = thrd->next;
+      if (inactive.tail == thrd)
+        inactive.tail = thrd->next;
+      inactive.total_threads--;
 
-    struct cpu_task task = { .type = CPU_TASK_RESUME, .thread = thrd };
-    run_cpu_task(find_least_loaded_cpu(thrd->affinity), &task);
+      thrd->real_priority = thrd->priority;
+      thrd->quantum = 0;
+      update_priority_quantum(thrd);
+
+      struct cpu_task task = { .type = CPU_TASK_RESUME, .thread = thrd };
+      run_cpu_task(find_least_loaded_cpu(thrd->affinity), &task);
+    }
+    else
+      err = ERR_BAD_STATE;
   }
-  else
-    err = ERR_BAD_STATE;
-  release_spinlock(&inactive.lock);
 
+  release_spinlock(&inactive.lock);
   return err;
 }
 
@@ -241,42 +250,44 @@ static err_code deactivate_running(bool stop, struct thread_data *thread,
 
 static err_code deactivate_thread(bool stop, thread_id id, uint64_t output,
                                   struct spinlock *lock_to_release) {
-  err_code err;
   bool self_halt = false;
-  CAST_TO_THREAD(thrd, id);
-
+  err_code err = ERR_NONE;
   acquire_spinlock(&inactive.lock, 0);
 
-  for (int i = 0; i < TASK_RETRY_COUNT; i++) {
-    switch (thrd->state) {
-    case THREAD_STATE_RUNNING:
-      err = deactivate_running(stop, thrd, output,
-                               lock_to_release, &self_halt);
-      break;
+  DO_THREAD(thrd, id) {
+    for (int i = 0; i < TASK_RETRY_COUNT; i++) {
+      switch (thrd->state) {
+      case THREAD_STATE_RUNNING:
+        err = deactivate_running(stop, thrd, output,
+                                 lock_to_release, &self_halt);
+        break;
 
-    case THREAD_STATE_PAUSED:
-      if (stop) {
-        thrd->state = THREAD_STATE_STOPPED;
-        thrd->output = output;
-        err = ERR_NONE;
-      }
-      else
+      case THREAD_STATE_PAUSED:
+        if (stop) {
+          thrd->state = THREAD_STATE_STOPPED;
+          thrd->output = output;
+          err = ERR_NONE;
+        }
+        else
+          err = ERR_BAD_STATE;
+        break;
+
+      case THREAD_STATE_STOPPED:
         err = ERR_BAD_STATE;
-      break;
+        break;
+      }
 
-    case THREAD_STATE_STOPPED:
-      err = ERR_BAD_STATE;
-      break;
+      if (err != ERR_NOT_FOUND)
+        break;
     }
 
-    if (err != ERR_NOT_FOUND)
-      break;
+    if (err == ERR_NOT_FOUND)
+      err = ERR_BUSY;
   }
 
   if (!self_halt)
     release_spinlock(&inactive.lock);
-
-  return (err == ERR_NOT_FOUND) ? ERR_BUSY : err;
+  return err;
 }
 
 err_code pause_thread(thread_id id) {
@@ -291,7 +302,7 @@ err_code pause_this_thread(struct spinlock *lock_to_release) {
   return deactivate_thread(false, get_thread(), 0, lock_to_release);
 }
 
-static uint64_t ticks, timer_ticks[CONFIG_CPUS_MAX];
+static uint64_t ticks, timer_ticks[CONFIG_MAX_CPUS];
 static timer_proc timer_proc_;
 
 uint64_t get_ticks(void) {

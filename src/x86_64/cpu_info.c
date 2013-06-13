@@ -6,7 +6,7 @@
 #define VENDOR_LEN 12
 
 static int vendor = 0, num = 0;
-static struct cpu_desc descs[CONFIG_CPUS_MAX];
+static struct cpu_desc descs[CONFIG_MAX_CPUS];
 uint8_t __cpu_indexes[256] = { };
 int __bsp_cpu = 0;
 
@@ -117,9 +117,9 @@ void fill_cpu_descs(int thread_bits, int core_bits) {
   struct acpi_madt_lapic *mentry = NULL;
   while (!get_next_acpi_entry(get_acpi_madt(), &mentry, ACPI_MADT_LAPIC_TYPE))
     if (mentry->enabled) {
-      if (i >= CONFIG_CPUS_MAX) {
+      if (i >= CONFIG_MAX_CPUS) {
         LOG_ERROR("detected more than %s=%d cpus",
-                  STR(CONFIG_CPUS_MAX), CONFIG_CPUS_MAX);
+                  STR(CONFIG_MAX_CPUS), CONFIG_MAX_CPUS);
         break;
       }
 

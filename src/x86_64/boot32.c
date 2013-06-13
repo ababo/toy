@@ -75,7 +75,7 @@ ASM(".text; .global __bstart32; .global __halt;"
     "__halt: hlt; jmp __halt");
 
 ALIGNED(4096) uint8_t __page_map[PAGE_MAP_SIZE] = { };
-ALIGNED(4) uint8_t __gdt[(3 + 2 * CONFIG_CPUS_MAX) * GDT_DESC_SIZE] = { };
+ALIGNED(4) uint8_t __gdt[(3 + 2 * CONFIG_MAX_CPUS) * GDT_DESC_SIZE] = { };
 
 void boot32(void) {
   extern int __lds_kernel_size;

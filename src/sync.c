@@ -3,7 +3,7 @@
 #include "schedule.h"
 #include "sync.h"
 
-struct spinlock *__outer_spinlocks[CONFIG_CPUS_MAX] = { };
+struct spinlock *__outer_spinlocks[CONFIG_MAX_CPUS] = { };
 
 struct __mutex_node {
   struct __mutex_node *next;
@@ -74,7 +74,7 @@ static struct sleep_data {
   struct sleep_node *tail;
   struct mem_pool pool;
   struct spinlock lock;
-} sleeping[CONFIG_CPUS_MAX];
+} sleeping[CONFIG_MAX_CPUS];
 
 static void sleep_timer_proc(UNUSED uint64_t ticks) {
   struct sleep_data *slp = &sleeping[get_cpu()];

@@ -7,7 +7,7 @@
 
 #define THREAD_STACK_SIZE_MIN 16
 
-#define THREAD_AFFINITY_SIZE SIZE_ELEMENTS(CONFIG_CPUS_MAX, 64)
+#define THREAD_AFFINITY_SIZE SIZE_ELEMENTS(CONFIG_MAX_CPUS, 64)
 
 #define THREAD_STATE_UNKNOWN 0
 #define THREAD_STATE_RUNNING 1
@@ -15,7 +15,7 @@
 #define THREAD_STATE_STOPPED 3
 
 struct spinlock;
-typedef uint64_t thread_id;
+// typedef uint64_t thread_id;
 // typedef ... thread_context;
 typedef uint64_t (*thread_proc)(uint64_t input);
 
@@ -32,10 +32,17 @@ struct thread_data {
   IN uint8_t priority;
   INTERNAL uint8_t real_priority;
   INTERNAL uint16_t quantum;
+  INTERNAL int stamp;
   INTERNAL uint8_t cpu;
   INTERNAL uint8_t state: 2;
   IN uint8_t fixed_priority : 1;
 };
+
+static inline thread_id get_thread(void) {
+  // static inline const struct thread_data *__get_thread(void);
+  const struct thread_data *thread = __get_thread();
+  return thread ? pack_pointer(thread, thread->stamp) : 0;
+}
 
 // set stack and stack_size fields before calling this function
 err_code set_thread_context(struct thread_data *thread, thread_proc proc,
@@ -61,6 +68,11 @@ timer_proc get_timer_proc(void);
 uint64_t get_timer_ticks(void); // is zeroed after triggering
 void set_timer_proc(timer_proc proc); // called within a timer interrupt
 void set_timer_ticks(uint64_t ticks); // not thread-safe
+
+// start enumerating with *id == 0
+// returns ERR_NO_MORE when no more threads remain
+// returns ERR_EXPIRED in case of need to restart enumeration
+err_code get_next_thread(thread_id *id);
 
 void init_scheduler(void);
 

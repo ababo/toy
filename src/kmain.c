@@ -14,5 +14,5 @@ uint64_t kmain(UNUSED uint64_t input) {
   if (drv->get_next_device(&dev_id))
     PANIC("no storage device found");
 
-  return 0; //test_all(false);
+  return test_all(false);
 }
