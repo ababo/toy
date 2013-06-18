@@ -4,7 +4,7 @@
 #include "interrupt.h"
 
 typedef struct int_stack_frame thread_context;
-typedef uint64_t thread_id;
+typedef stamp_id thread_id;
 struct thread_data;
 
 static inline const struct thread_data *__get_thread(void) {

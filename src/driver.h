@@ -2,11 +2,12 @@
 #define __DRIVER_H
 
 #include "common.h"
+#include "stamp_id.h"
 
 #define DRIVER_TYPE_STORAGE 1
 
-typedef uint64_t driver_id;
-typedef uint64_t device_id;
+typedef stamp_id driver_id;
+typedef stamp_id device_id;
 
 struct driver {
   INTERNAL uint64_t magic;
@@ -29,7 +30,7 @@ struct storage_driver {
 };
 
 static inline const struct driver *get_driver(driver_id id) {
-  return unpack_pointer(id, NULL);
+  return get_stamp_id_ptr(id);
 }
 
 err_code add_driver(struct driver *driver, driver_id *id);

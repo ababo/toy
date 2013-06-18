@@ -83,8 +83,7 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   acquire_spinlock(&inactive.lock, 0);
 
   thread->magic = THREAD_MAGIC;
-  thread->stamp = stamp;
-  stamp = (stamp + 1) % (1 << PACKED_POINTER_DATA_BITS);
+  assign_stamp_id_stamp(&thread->stamp, &stamp);
   thread->all_next = all.tail;
   if (all.tail)
     all.tail->all_prev = thread;
@@ -101,25 +100,16 @@ err_code attach_thread(struct thread_data *thread, thread_id *id) {
   release_spinlock(&all.lock);
 
   if (id)
-    *id = pack_pointer(thread, thread->stamp);
+    *id = get_stamp_id(thread, thread->stamp);
   return ERR_NONE;
 }
-
-#define DO_THREAD(thrd, id)                              \
-  int stamp;                                             \
-  struct thread_data *thrd = unpack_pointer(id, &stamp); \
-  if (thrd->magic != THREAD_MAGIC)                       \
-    err = ERR_NOT_FOUND;                                 \
-  else if (thrd->stamp != stamp)                         \
-    err = ERR_EXPIRED;                                   \
-  else
 
 err_code detach_thread(thread_id id, struct thread_data **thread) {
   err_code err = ERR_NONE;
   acquire_spinlock(&all.lock, 0);
   acquire_spinlock(&inactive.lock, 0);
 
-  DO_THREAD(thrd, id) {
+  WITH_STAMP_ID(struct thread_data, thrd, id, THREAD_MAGIC) {
     if (thrd->state == THREAD_STATE_PAUSED ||
         thrd->state == THREAD_STATE_STOPPED) {
       if (thrd->next)
@@ -192,7 +182,7 @@ err_code resume_thread(thread_id id) {
   err_code err = ERR_NONE;
   acquire_spinlock(&inactive.lock, 0);
 
-  DO_THREAD(thrd, id) {
+  WITH_STAMP_ID(struct thread_data, thrd, id, THREAD_MAGIC) {
     if (thrd->state == THREAD_STATE_PAUSED) {
       if (thrd->next)
         thrd->next->prev = thrd->prev;
@@ -254,7 +244,7 @@ static err_code deactivate_thread(bool stop, thread_id id, uint64_t output,
   err_code err = ERR_NONE;
   acquire_spinlock(&inactive.lock, 0);
 
-  DO_THREAD(thrd, id) {
+  WITH_STAMP_ID(struct thread_data, thrd, id, THREAD_MAGIC) {
     for (int i = 0; i < TASK_RETRY_COUNT; i++) {
       switch (thrd->state) {
       case THREAD_STATE_RUNNING:

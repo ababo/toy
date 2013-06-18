@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "config.h"
+#include "stamp_id.h"
 #include ARCH_FILE(/schedule.inc)
 
 #define THREAD_STACK_SIZE_MIN 16
@@ -15,7 +16,7 @@
 #define THREAD_STATE_STOPPED 3
 
 struct spinlock;
-// typedef uint64_t thread_id;
+// typedef stamp_id thread_id;
 // typedef ... thread_context;
 typedef uint64_t (*thread_proc)(uint64_t input);
 
@@ -41,7 +42,7 @@ struct thread_data {
 static inline thread_id get_thread(void) {
   // static inline const struct thread_data *__get_thread(void);
   const struct thread_data *thread = __get_thread();
-  return thread ? pack_pointer(thread, thread->stamp) : 0;
+  return thread ? get_stamp_id(thread, thread->stamp) : 0;
 }
 
 // set stack and stack_size fields before calling this function
