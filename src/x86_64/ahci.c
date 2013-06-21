@@ -9,14 +9,6 @@
 #define MAX_DRIVES 8
 #define MAX_PORTS 32
 
-#define DET_PRESENT 3
-#define IPM_ACTIVE 1
-
-#define SIG_ATA 0x00000101
-#define SIG_ATAPI 0xEB140101
-#define	SIG_SEMB 0xC33C0101
-#define	SIG_PM 0x96690101
-
 struct port {
   uint32_t clb, clbu, fb, fbu, is, ie, cmd, reserved0, tfd, sig, ssts, sctl;
   uint32_t serr, sact, ci, sntf, fbs;
@@ -54,45 +46,64 @@ const struct ahci_driver *get_ahci_driver(void) {
   return &driver;
 }
 
-static void add_drive(int hba_pci_address, struct hba *hba, int hba_port) {
+static void add_drive(int device, struct hba *hba, int hba_port) {
+  if (scan_error)
+    return;
+
   for (int i = 0; i < MAX_DRIVES; i++)
     if (!drives[i].in_use) {
-      drives[i].hba_pci_address = hba_pci_address;
-      drives[i].hba = hba, drives[i].hba_port = hba_port;
-      drives[i].used = drives[i].in_use = true;
-      drives[i].magic = DRIVE_MAGIC, drives[i].stamp = stamp;
-      stamp = (stamp + 1) % (1 << PACKED_POINTER_DATA_BITS);
+      drives[i].magic = DRIVE_MAGIC;
+      assign_stamp_id_stamp(&drives[i].stamp, &stamp);
+      drives[i].hba_pci_address = device, drives[i].hba = hba;
+      drives[i].hba_port = hba_port;
+      drives[i].in_use = true;
 
+      if (!drives[i].used && !(scan_error = create_mutex(&drives[i].lock)))
+        drives[i].used = true;
 
       LOG_INFO("AHCI HBA %X:%X.%X: SATA drive added on port %d",
-               get_pci_bus(hba_pci_address), get_pci_slot(hba_pci_address),
-               get_pci_func(hba_pci_address), hba_port);
+               get_pci_bus(device), get_pci_slot(device), get_pci_func(device),
+               hba_port);
       return;
     }
 
   scan_error = ERR_NO_MORE;
 }
 
-static void scan_next_drive(int hba_pci_address, struct hba *hba, int port) {
+static void scan_next_drive(int device, struct hba *hba, int port) {
   if (scan_error)
     return;
 
   for (int i = 0; i < MAX_DRIVES; i++)
-    if (drives[i].in_use && drives[i].hba_pci_address == hba_pci_address &&
+    if (drives[i].in_use && drives[i].hba_pci_address == device &&
         drives[i].hba_port == port) {
       drives[i].scanned = true;
       return;
     }
 
   if (scan_add_drives)
-    add_drive(hba_pci_address, hba, port);
+    add_drive(device, hba, port);
 }
+
+#define HBA_RESET_TIMEOUT_TRIES 10
+#define HBA_RESET_TIMEOUT 50000
+
+#define POWER_STATE_D0 0
+#define POWER_STATE_D3 3
+
+#define DET_PRESENT 3
+#define IPM_ACTIVE 1
+
+#define SIG_ATA 0x00000101
+#define SIG_ATAPI 0xEB140101
+#define	SIG_SEMB 0xC33C0101
+#define	SIG_PM 0x96690101
 
 static void scan_next_hba(int device) {
   if (scan_error)
     return;
 
-  uint64_t bar5 = read_pci_field(device, PCI_FIELD_BAR5) & ~0x1FFF;
+  uint64_t bar5 = read_pci_field(device, PCI_FIELD_BAR5) & ~0xF;
   map_page(bar5, bar5, PAGE_MAPPING_WRITE | PAGE_MAPPING_PWT |
            PAGE_MAPPING_PCD, 0);
   struct hba *hba = (struct hba*)bar5;
@@ -102,6 +113,7 @@ static void scan_next_hba(int device) {
       uint32_t det = INT_BITS(hba->ports[port].ssts, 0, 3);
       uint32_t ipm = INT_BITS(hba->ports[port].ssts, 8, 11);
       uint32_t sig = hba->ports[port].sig;
+
       if (det == DET_PRESENT && ipm == IPM_ACTIVE &&
           sig != SIG_ATAPI && sig != SIG_SEMB && sig != SIG_PM)
         scan_next_drive(device, hba, port);
@@ -147,7 +159,7 @@ static err_code scan_devices(void) {
 }
 
 static err_code get_next_device(device_id *id) {
-  if (id)
+  if (!id)
     return ERR_BAD_INPUT;
 
   err_code err;
@@ -155,8 +167,9 @@ static err_code get_next_device(device_id *id) {
 
     int i = 0;
     if (*id) {
-      WITH_STAMP_ID(struct drive, drv, *id, DRIVE_MAGIC)
+      WITH_STAMP_ID(struct drive, drv, *id, DRIVE_MAGIC) {
         i = drv - drives + 1;
+      }
     }
 
     for (; i < MAX_DRIVES; i++)
@@ -165,7 +178,7 @@ static err_code get_next_device(device_id *id) {
         break;
       }
 
-    if (i >= MAX_DRIVES)
+    if (i == MAX_DRIVES)
       err = ERR_NO_MORE;
 
     release_mutex(&lock);
