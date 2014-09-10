@@ -1,0 +1,60 @@
+SUPPORTED_ARCHS = ['x86_64', 'aarch64']
+SUPPORTED_COMPS = ['gcc', 'clang']
+
+DEFAULT_ARCH = 'aarch64'
+DEFAULT_COMP = 'gcc'
+DEFAULT_OPT = '3'
+
+
+def options(opt):
+    grp = opt.get_option_group('configure options')
+    grp.add_option('-c', '--comp', action='store',
+                   default=DEFAULT_COMP, dest='comp',
+                   help="Compiler to use [default: '%s']"%DEFAULT_COMP)
+    grp.add_option('-a', '--architecture', action='store',
+                   default=DEFAULT_ARCH, dest='arch',
+                   help="target architecture [default: '%s']"%DEFAULT_ARCH)
+    grp.add_option('-p', '--optimization', action='store',
+                   default=DEFAULT_OPT, dest='opt',
+                   help="code optimization [default: %s]"%DEFAULT_OPT)
+
+
+def configure(cnf):
+    if cnf.options.arch in SUPPORTED_ARCHS:
+        cnf.env.arch = cnf.options.arch
+    else:
+        cnf.fatal('Supported architectures: %s' % SUPPORTED_ARCHS)
+    if cnf.options.comp in SUPPORTED_COMPS:
+        cnf.env.comp = cnf.options.comp
+    else:
+        cnf.fatal('Supported compilers: %s' % SUPPORTED_COMPS)
+
+    cnf.env.append_value('INCLUDES', cnf.path.abspath())
+    cnf.env.append_value('INCLUDES', '%s/third_party' % cnf.path.abspath())
+
+    cnf.env.append_value('CXXFLAGS',
+                         '-D __TOY_ARCH='+cnf.env.arch.upper())
+    cnf.env.append_value('CXXFLAGS', '-std=c++11')
+    cnf.env.append_value('CXXFLAGS', '-fno-stack-protector')
+    cnf.env.append_value('CXXFLAGS', '-O'+cnf.options.opt)
+    cnf.env.append_value('CXXFLAGS', ['-Wall', '-Wextra',
+                                      '-Wno-missing-field-initializers'])
+    cnf.env.append_value('CXXFLAGS', ['-nostdinc', '-nostdinc++',
+                                      '-ffreestanding'])
+
+    cnf.env.append_value('LDFLAGS', '-nostdlib')
+    cnf.env.append_value('LDFLAGS', '-Wl,--build-id=none')
+    cnf.env.append_value('LDFLAGS', '-Wl,-T %s/%s/link.lds' %
+                                    (cnf.path.abspath(), cnf.env.arch))
+
+    cnf.recurse(cnf.env.arch)
+    cnf.load('gxx gas')
+
+
+def build(bld):
+    bld.load('gxx gas')
+    bld.recurse(bld.env.arch)
+
+
+def run(run):
+    run.recurse(run.env.arch)
