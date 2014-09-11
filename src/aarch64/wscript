@@ -6,36 +6,46 @@ COMP_CXXS = {
 CXX_FLAGS = []
 CXX_COMP_FLAGS = {
     'gcc': [],
-    'clang': ['-target', 'aarch64']
+    'clang': ['-target', 'aarch64-none-linux-gnu']
 }
 
 AS = 'aarch64-linux-gnu-as'
 AS_FLAGS = []
 
+LD = 'aarch64-linux-gnu-ld'
 LD_FLAGS = []
-LD_COMP_FLAGS = {
-    'gcc': [],
-    'clang': ['-target', 'aarch64']
-}
 
+AR = 'aarch64-linux-gnu-ar'
+OBJCOPY = 'aarch64-linux-gnu-objcopy'
 
 def configure(cnf):
+    cnf.find_program(OBJCOPY, var='OBJCOPY')
+
     cnf.env.CXX = COMP_CXXS[cnf.env.comp]
-    cnf.env.LD = cnf.env.CXX
     cnf.env.AS = AS
+    cnf.env.LD = LD
+    cnf.env.AR = AR # just to avoid searching for native ar
 
     cnf.env.append_value('CXXFLAGS', CXX_FLAGS)
     cnf.env.append_value('CXXFLAGS', CXX_COMP_FLAGS[cnf.env.comp])
-
     cnf.env.append_value('ASFLAGS', AS_FLAGS)
-
     cnf.env.append_value('LDFLAGS', LD_FLAGS)
-    cnf.env.append_value('LDFLAGS', LD_COMP_FLAGS[cnf.env.comp])
 
 
 def build(bld):
     s_objs = bld.objects(source=bld.path.ant_glob('**/*.s'))
     cc_objs = bld.objects(source=bld.path.ant_glob('**/*.cc'))
+    s_objs.post(); cc_objs.post()
+    objs = [t.outputs[0] for t in s_objs.tasks] + \
+           [t.outputs[0] for t in cc_objs.tasks]
+
+    kern = bld(rule='${LD} ${LDFLAGS} ${SRC} -o ${TGT}',
+               source=objs, target='kernel.elf')
+    kern.post();
+    kern.tasks[0].dep_nodes = [bld.path.find_resource('link.lds')]
+
+    bld(rule='${OBJCOPY} -O binary ${SRC} ${TGT}',
+        source='kernel.elf', target='kernel.bin')
 
 
 def run(run):

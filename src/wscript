@@ -43,9 +43,10 @@ def configure(cnf):
                                       '-ffreestanding'])
 
     cnf.env.append_value('LDFLAGS', '-nostdlib')
-    cnf.env.append_value('LDFLAGS', '-Wl,--build-id=none')
-    cnf.env.append_value('LDFLAGS', '-Wl,-T %s/%s/link.lds' %
+    cnf.env.append_value('LDFLAGS', '--build-id=none')
+    cnf.env.append_value('LDFLAGS', '-T %s/%s/link.lds' %
                                     (cnf.path.abspath(), cnf.env.arch))
+    cnf.env.append_value('LDFLAGS', ['-z', 'max-page-size=0x1'])
 
     cnf.recurse(cnf.env.arch)
     cnf.load('gxx gas')
