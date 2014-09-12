@@ -18,13 +18,20 @@ LD_FLAGS = []
 AR = 'aarch64-linux-gnu-ar'
 OBJCOPY = 'aarch64-linux-gnu-objcopy'
 
+EMU = 'qemu-system-aarch64'
+EMUFLAGS = ['-machine', 'virt', '-cpu', 'cortex-a57', '-machine', 'type=virt',
+            '-nographic']
+
+
 def configure(cnf):
     cnf.find_program(OBJCOPY, var='OBJCOPY')
+    cnf.find_program(EMU, var='EMU', mandatory=False)
 
     cnf.env.CXX = COMP_CXXS[cnf.env.comp]
     cnf.env.AS = AS
     cnf.env.LD = LD
     cnf.env.AR = AR # just to avoid searching for native ar
+    cnf.env.EMUFLAGS = EMUFLAGS
 
     cnf.env.append_value('CXXFLAGS', CXX_FLAGS)
     cnf.env.append_value('CXXFLAGS', CXX_COMP_FLAGS[cnf.env.comp])
@@ -41,7 +48,7 @@ def build(bld):
 
     kern = bld(rule='${LD} ${LDFLAGS} ${SRC} -o ${TGT}',
                source=objs, target='kernel.elf')
-    kern.post();
+    kern.post(); # depends_on doesn't work here
     kern.tasks[0].dep_nodes = [bld.path.find_resource('link.lds')]
 
     bld(rule='${OBJCOPY} -O binary ${SRC} ${TGT}',
@@ -49,4 +56,8 @@ def build(bld):
 
 
 def run(run):
-    pass
+    from subprocess import call
+
+    build(run)
+    kern = run.path.get_bld().find_resource('kernel.bin').abspath()
+    call([str(run.env.EMU)] + run.env.EMUFLAGS + ['-kernel', kern])
