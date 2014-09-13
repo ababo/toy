@@ -29,11 +29,9 @@ def configure(cnf):
     else:
         cnf.fatal('Supported compilers: %s' % SUPPORTED_COMPS)
 
-    cnf.env.append_value('INCLUDES', cnf.path.abspath())
-    cnf.env.append_value('INCLUDES', '%s/third_party' % cnf.path.abspath())
-
-    cnf.env.append_value('CXXFLAGS',
-                         '-D __TOY_ARCH='+cnf.env.arch.upper())
+    cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()])
+    cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()+'/third_party'])
+    cnf.env.append_value('CXXFLAGS', ['-D', '__AARCH64'])
     cnf.env.append_value('CXXFLAGS', '-std=c++11')
     cnf.env.append_value('CXXFLAGS', '-fno-stack-protector')
     cnf.env.append_value('CXXFLAGS', '-O'+cnf.options.opt)
