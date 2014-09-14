@@ -20,4 +20,5 @@ def build(bld):
 
 
 def run(run):
+    build(run)
     run.recurse('src')

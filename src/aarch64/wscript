@@ -9,8 +9,6 @@ CXX_COMP_FLAGS = {
     'clang': ['-target', 'aarch64-none-linux-gnu']
 }
 
-AS_FLAGS = ['-Qunused-arguments']
-
 LD = 'aarch64-linux-gnu-ld'
 LD_FLAGS = []
 
@@ -27,10 +25,6 @@ def configure(cnf):
     cnf.env.append_value('CXXFLAGS', CXX_FLAGS)
     cnf.env.append_value('CXXFLAGS', CXX_COMP_FLAGS[cnf.env.comp])
 
-    cnf.env.AS = cnf.env.CXX # for C-preprocessing
-    cnf.env.ASFLAGS = cnf.env.CXXFLAGS
-    cnf.env.append_value('ASFLAGS', AS_FLAGS)
-
     cnf.env.LD = LD
     cnf.env.append_value('LDFLAGS', LD_FLAGS)
 
@@ -42,11 +36,9 @@ def configure(cnf):
 
 
 def build(bld):
-    s_objs = bld.objects(source=bld.path.ant_glob('**/*.S'))
-    cc_objs = bld.objects(source=bld.path.ant_glob('**/*.cc'))
-    s_objs.post(); cc_objs.post()
-    objs = [t.outputs[0] for t in s_objs.tasks] + \
-           [t.outputs[0] for t in cc_objs.tasks]
+    objs = bld.objects(source=bld.path.ant_glob('*.cc'))
+    objs.post()
+    objs = [t.outputs[0] for t in objs.tasks] + bld.src_objs
 
     kern = bld(rule='${LD} ${LDFLAGS} ${SRC} -o ${TGT}',
                source=objs, target='kernel.elf')

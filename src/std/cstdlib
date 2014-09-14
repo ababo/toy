@@ -1,0 +1,13 @@
+#ifndef __STD_CSTDLIB_
+#define __STD_CSTDLIB_
+
+#include <stdlib.h>
+
+namespace std {
+
+  using ::ultoa;
+
+  using ::abort;
+}
+
+#endif // __STD_CSTDLIB_

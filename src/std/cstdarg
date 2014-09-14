@@ -1,0 +1,12 @@
+#ifndef __STD_CSTDARG_
+#define __STD_CSTDARG_
+
+#include <stdarg.h>
+
+namespace std {
+
+  using ::va_list;
+
+}
+
+#endif // __STD_CSTARG_

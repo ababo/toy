@@ -1,6 +1,6 @@
 SECTIONS {
   . = 0;
-  .text : { KEEP(*(.boot)) *(.text) }
+  .text : { KEEP(*(.boot)) *(.text*) }
   .rodata : { *(.rodata*) }
   .data : { *(.data) }
   .bss : { *(.bss) }

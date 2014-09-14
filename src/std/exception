@@ -1,0 +1,14 @@
+#ifndef __STD_EXCEPTION_
+#define __STD_EXCEPTION_
+
+namespace std {
+
+typedef void (*terminate_handler)();
+
+void terminate() noexcept;
+terminate_handler get_terminate() noexcept;
+terminate_handler set_terminate(terminate_handler f) noexcept;
+
+}
+
+#endif // __STD_EXCEPTION_

@@ -1,0 +1,14 @@
+#ifndef __STD_CSTRING_
+#define __STD_CSTRING_
+
+#include <string.h>
+
+namespace std {
+
+  using ::memset;
+
+  using ::strlen;
+  using ::_strrev;
+}
+
+#endif // __STD_CSTRING_

@@ -30,6 +30,7 @@ def configure(cnf):
         cnf.fatal('Supported compilers: %s' % SUPPORTED_COMPS)
 
     cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()])
+    cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()+'/std'])
     cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()+'/third_party'])
     cnf.env.append_value('CXXFLAGS', ['-D', '__AARCH64'])
     cnf.env.append_value('CXXFLAGS', '-std=c++11')
@@ -47,13 +48,21 @@ def configure(cnf):
     cnf.env.append_value('LDFLAGS', ['-z', 'max-page-size=0x1'])
 
     cnf.recurse(cnf.env.arch)
-    cnf.load('gxx gas')
+    cnf.load('gxx')
 
 
 def build(bld):
-    bld.load('gxx gas')
+    bld.load('gxx')
+
+    src_objs = bld.objects(source=bld.path.ant_glob('*.cc'))
+    std_objs = bld.objects(source=bld.path.ant_glob('std/*.cc'))
+    src_objs.post(); std_objs.post()
+    bld.src_objs = [t.outputs[0] for t in src_objs.tasks] + \
+                   [t.outputs[0] for t in std_objs.tasks]
+
     bld.recurse(bld.env.arch)
 
 
 def run(run):
+    build(run)
     run.recurse(run.env.arch)
