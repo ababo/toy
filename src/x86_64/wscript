@@ -1,0 +1,30 @@
+COMP_CXXS = {
+    'gcc': 'g++',
+    'clang': 'clang++'
+}
+
+CXX_FLAGS = []
+CXX_COMP_FLAGS = {
+    'gcc': [],
+    'clang': []
+}
+
+LD = 'ld'
+LD_FLAGS = []
+
+OBJCOPY = 'objcopy'
+
+EMU = 'qemu-system-x86_64'
+EMUFLAGS = []
+
+
+def configure(cnf):
+    pass
+
+
+def build(bld):
+    pass
+
+
+def run(run):
+    pass

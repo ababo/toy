@@ -16,8 +16,8 @@ AR = 'aarch64-linux-gnu-ar'
 OBJCOPY = 'aarch64-linux-gnu-objcopy'
 
 EMU = 'qemu-system-aarch64'
-EMUFLAGS = ['-machine', 'virt', '-cpu', 'cortex-a57', '-machine', 'type=virt',
-            '-nographic']
+EMU_FLAGS = ['-machine', 'virt', '-cpu', 'cortex-a57', '-machine', 'type=virt',
+             '-nographic']
 
 
 def configure(cnf):
@@ -29,7 +29,9 @@ def configure(cnf):
     cnf.env.append_value('LDFLAGS', LD_FLAGS)
 
     cnf.env.AR = AR # just to avoid searching for native ar
-    cnf.env.EMUFLAGS = EMUFLAGS
+
+    cnf.env.append_value('EMUFLAGS', EMU_FLAGS)
+    cnf.env.kernel = 'kernel.bin'
 
     cnf.find_program(OBJCOPY, var='OBJCOPY')
     cnf.find_program(EMU, var='EMU', mandatory=False)
@@ -46,14 +48,8 @@ def build(bld):
     kern.tasks[0].dep_nodes = [bld.path.find_resource('link.lds')]
 
     bld(rule='${OBJCOPY} -O binary ${SRC} ${TGT}',
-        source='kernel.elf', target='kernel.bin')
+        source='kernel.elf', target=bld.env.kernel)
 
 
 def run(run):
-    def call_emu(task):
-        from subprocess import call
-        call([run.env.EMU] + run.env.EMUFLAGS +
-             ['-kernel', task.inputs[0].abspath()])
-
     build(run)
-    run(rule=call_emu, source="kernel.bin", always=True)

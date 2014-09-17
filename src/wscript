@@ -1,22 +1,34 @@
 SUPPORTED_ARCHS = ['x86_64', 'aarch64']
 SUPPORTED_COMPS = ['gcc', 'clang']
 
-DEFAULT_ARCH = 'aarch64'
+DEFAULT_ARCH = 'x86_64'
 DEFAULT_COMP = 'gcc'
 DEFAULT_OPT = '3'
 
+EMU_FLAGS = []
 
 def options(opt):
     grp = opt.get_option_group('configure options')
     grp.add_option('-c', '--comp', action='store',
                    default=DEFAULT_COMP, dest='comp',
-                   help="Compiler to use [default: '%s']"%DEFAULT_COMP)
+                   help="compiler to use [default: '%s']"%DEFAULT_COMP)
     grp.add_option('-a', '--architecture', action='store',
                    default=DEFAULT_ARCH, dest='arch',
                    help="target architecture [default: '%s']"%DEFAULT_ARCH)
     grp.add_option('-p', '--optimization', action='store',
                    default=DEFAULT_OPT, dest='opt',
-                   help="code optimization [default: %s]"%DEFAULT_OPT)
+                   help='code optimization [default: %s]'%DEFAULT_OPT)
+
+    grp = opt.add_option_group('run options')
+    grp.add_option('-n', '--no-kvm', action='store_true',
+                   default=False, dest='no_kvm',
+                   help="don't use KVM if it's available")
+    grp.add_option('-s', '--sockets', action='store', dest='sockets', type=int,
+                   default=1, help='number of CPU sockets [default: 1]')
+    grp.add_option('-c', '--cores', action='store', dest='cores', type=int,
+                   default=1, help='number of CPU cores [default: 1]')
+    grp.add_option('-t', '--threads', action='store', dest='threads', type=int,
+                   default=1, help='number of CPU core threads [default: 1]')
 
 
 def configure(cnf):
@@ -47,6 +59,8 @@ def configure(cnf):
                                     (cnf.path.abspath(), cnf.env.arch))
     cnf.env.append_value('LDFLAGS', ['-z', 'max-page-size=0x1'])
 
+    cnf.env.EMUFLAGS = EMU_FLAGS
+
     cnf.recurse(cnf.env.arch)
     cnf.load('gxx')
 
@@ -64,5 +78,25 @@ def build(bld):
 
 
 def run(run):
+    smp = ['-smp', '%d,sockets=%d,cores=%d,threads=%d' % \
+           (run.options.sockets * run.options.cores * run.options.threads,
+            run.options.sockets, run.options.cores, run.options.threads)]
+    flags = (['-no-kvm'] + smp) if run.options.no_kvm else smp
+    run.env.append_value('EMUFLAGS', flags)
+
     build(run)
     run.recurse(run.env.arch)
+
+    def call_emu(task):
+        cmd = [run.env.EMU] + run.env.EMUFLAGS + \
+              ['-kernel', task.inputs[0].abspath()]
+
+        if run.options.verbose:
+            from waflib import Logs
+            Logs.info(str(cmd))
+
+        from subprocess import call
+        call(cmd)
+
+    run(always=True, rule=call_emu,
+        source='%s/%s'%(run.env.arch, run.env.kernel))

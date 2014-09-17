@@ -1,5 +1,5 @@
 # Toy OS (version 0.4)
-##Simple OS-like program for x86-64 and AArch64 which dreams to become a real OS.
+###Simple OS-like program for x86-64 and AArch64 which dreams to become a real OS.
 
 The system is under development now. See [my blog](http://ababo.github.io/toy) and [the previous version](https://github.com/ababo/toy/tree/ver.0.3).
 
@@ -21,8 +21,8 @@ Not ready yet, see [the previous version](https://github.com/ababo/toy/tree/ver.
 3. Build and install QEMU 2.1.0 or higher to get qemu-system-aarch64.
 
 4. Cd into the project directory and configure it:
-   * *./waf configure -c gcc* (using GCC) or
-   * *./waf conigure -c clang* (using CLang)
+   * *./waf configure -a aarch64 -c gcc* (using GCC) or
+   * *./waf conigure -a aarch64 -c clang* (using CLang)
 
 5. Build and run it in emulator:
    * *./waf run*
