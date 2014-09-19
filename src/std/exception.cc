@@ -7,6 +7,7 @@ namespace std {
 static terminate_handler termf = abort;
 
 void terminate() noexcept {
+  // TODO: add thread safety
   termf();
 }
 

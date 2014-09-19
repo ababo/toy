@@ -17,7 +17,7 @@ OBJCOPY = 'aarch64-linux-gnu-objcopy'
 
 EMU = 'qemu-system-aarch64'
 EMU_FLAGS = ['-machine', 'virt', '-cpu', 'cortex-a57', '-machine', 'type=virt',
-             '-nographic']
+             '-nographic', '-kernel', '${kernel}']
 
 
 def configure(cnf):

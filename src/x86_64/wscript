@@ -3,7 +3,7 @@ COMP_CXXS = {
     'clang': 'clang++'
 }
 
-CXX_FLAGS = []
+CXX_FLAGS = ['-m64']
 CXX_COMP_FLAGS = {
     'gcc': [],
     'clang': []
@@ -13,18 +13,63 @@ LD = 'ld'
 LD_FLAGS = []
 
 OBJCOPY = 'objcopy'
+MKISOFS = 'mkisofs'
 
 EMU = 'qemu-system-x86_64'
-EMUFLAGS = []
+EMU_FLAGS = ['-cdrom', '${kernel}', '-boot', 'd']
 
 
 def configure(cnf):
-    pass
+    cnf.env.CXX = COMP_CXXS[cnf.env.comp]
+    cnf.env.append_value('CXXFLAGS', CXX_FLAGS)
+    cnf.env.append_value('CXXFLAGS', CXX_COMP_FLAGS[cnf.env.comp])
+
+    cnf.env.LD = LD
+    cnf.env.append_value('LDFLAGS', LD_FLAGS)
+
+    cnf.env.append_value('EMUFLAGS', EMU_FLAGS)
+    cnf.env.kernel = 'toy.iso'
+
+    cnf.find_program(OBJCOPY, var='OBJCOPY')
+    cnf.find_program('xorriso')
+    cnf.find_program('grub-mkrescue')
+    cnf.find_program(EMU, var='EMU', mandatory=False)
 
 
 def build(bld):
-    pass
+    env = bld.env.derive()
+    env.CXXFLAGS = ['-m32' if f == '-m64' else f for f in env.CXXFLAGS]
+    boot32 = bld.objects(source=bld.path.ant_glob('boot32.cc'),
+                         target='boot32.o', env=env)
+    boot32.post()
+
+    boot32_64 = bld(rule='${OBJCOPY} -O elf64-x86-64 ${SRC} ${TGT}',
+                    source=boot32.tasks[0].outputs[0], target='boot32_64.o')
+    boot32_64.post()
+
+    objs = bld.objects(source=bld.path.ant_glob('*.cc', excl='boot32.cc'))
+    objs.post()
+    objs = [t.outputs[0] for t in objs.tasks] + bld.src_objs
+
+    kern = bld(rule='${LD} ${LDFLAGS} ${SRC} -o ${TGT}',
+               source=['boot32_64.o']+objs, target='kernel.elf')
+    kern.post(); # depends_on doesn't work here
+    kern.tasks[0].dep_nodes = [bld.path.find_resource('link.lds')]
+
+    bld(rule='${OBJCOPY} -O binary ${SRC} ${TGT}',
+        source='kernel.elf', target='kernel.bin')
+
+    boot = bld.path.get_bld().make_node('iso/boot')
+    config = boot.make_node('grub/grub.cfg')
+    kernel = boot.make_node('kernel.bin')
+    bld(rule='cp ${SRC} ${TGT}', source='grub.cfg', target=config)
+    bld(rule='cp ${SRC} ${TGT}', source='kernel.bin', target=kernel)
+    bld(rule='grub-mkrescue -o ${TGT} %s 2> /dev/null' % boot.parent.abspath(),
+        source=[config, kernel], target=bld.env.kernel)
 
 
 def run(run):
-    pass
+    build(run)
+
+    if run.options.terminal:
+        run.env.append_value('EMUFLAGS', '-curses')

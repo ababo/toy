@@ -15,7 +15,7 @@ def options(opt):
     grp.add_option('-a', '--architecture', action='store',
                    default=DEFAULT_ARCH, dest='arch',
                    help="target architecture [default: '%s']"%DEFAULT_ARCH)
-    grp.add_option('-p', '--optimization', action='store',
+    grp.add_option('-o', '--optimization', action='store',
                    default=DEFAULT_OPT, dest='opt',
                    help='code optimization [default: %s]'%DEFAULT_OPT)
 
@@ -23,12 +23,14 @@ def options(opt):
     grp.add_option('-n', '--no-kvm', action='store_true',
                    default=False, dest='no_kvm',
                    help="don't use KVM if it's available")
-    grp.add_option('-s', '--sockets', action='store', dest='sockets', type=int,
+    grp.add_option('--sockets', action='store', dest='sockets', type=int,
                    default=1, help='number of CPU sockets [default: 1]')
-    grp.add_option('-c', '--cores', action='store', dest='cores', type=int,
+    grp.add_option('--cores', action='store', dest='cores', type=int,
                    default=1, help='number of CPU cores [default: 1]')
-    grp.add_option('-t', '--threads', action='store', dest='threads', type=int,
+    grp.add_option('--threads', action='store', dest='threads', type=int,
                    default=1, help='number of CPU core threads [default: 1]')
+    grp.add_option('-t', '--terminal', action='store_true', default=False,
+                   dest='terminal', help='run in terminal (for x86_64 only)')
 
 
 def configure(cnf):
@@ -44,7 +46,7 @@ def configure(cnf):
     cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()])
     cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()+'/std'])
     cnf.env.append_value('CXXFLAGS', ['-I', cnf.path.abspath()+'/third_party'])
-    cnf.env.append_value('CXXFLAGS', ['-D', '__AARCH64'])
+    cnf.env.append_value('CXXFLAGS', ['-D', '__%s'%cnf.env.arch.upper()])
     cnf.env.append_value('CXXFLAGS', '-std=c++11')
     cnf.env.append_value('CXXFLAGS', '-fno-stack-protector')
     cnf.env.append_value('CXXFLAGS', '-O'+cnf.options.opt)
@@ -88,8 +90,12 @@ def run(run):
     run.recurse(run.env.arch)
 
     def call_emu(task):
-        cmd = [run.env.EMU] + run.env.EMUFLAGS + \
-              ['-kernel', task.inputs[0].abspath()]
+        env = run.env.derive()
+        env.kernel = task.inputs[0].abspath()
+
+        from waflib import Utils
+        cmd = [Utils.subst_vars(s, env) \
+               for s in [env.EMU] + env.EMUFLAGS]
 
         if run.options.verbose:
             from waflib import Logs
