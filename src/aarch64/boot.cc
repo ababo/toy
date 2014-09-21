@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "aarch64/aarch64.h"
-#include "aarch64/config.h"
+#include "config.h"
 #include "klog.h"
 
 using namespace toy;
@@ -21,7 +21,7 @@ void Stub () {
         add sp, x1, x2
 
         mov x0, %1
-        msr cpacr_el1, x0
+        msr cpacr_el1, x0 // disable FP and SIMD traps
 
         bl __boot
         bl __wfi

@@ -56,14 +56,11 @@ def build(bld):
     kern.post(); # depends_on doesn't work here
     kern.tasks[0].dep_nodes = [bld.path.find_resource('link.lds')]
 
-    bld(rule='${OBJCOPY} -O binary ${SRC} ${TGT}',
-        source='kernel.elf', target='kernel.bin')
-
     boot = bld.path.get_bld().make_node('iso/boot')
     config = boot.make_node('grub/grub.cfg')
-    kernel = boot.make_node('kernel.bin')
+    kernel = boot.make_node('kernel.elf')
     bld(rule='cp ${SRC} ${TGT}', source='grub.cfg', target=config)
-    bld(rule='cp ${SRC} ${TGT}', source='kernel.bin', target=kernel)
+    bld(rule='cp ${SRC} ${TGT}', source='kernel.elf', target=kernel)
     bld(rule='grub-mkrescue -o ${TGT} %s 2> /dev/null' % boot.parent.abspath(),
         source=[config, kernel], target=bld.env.kernel)
 

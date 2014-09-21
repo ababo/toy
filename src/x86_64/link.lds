@@ -1,8 +1,12 @@
+ENTRY(__bstart32)
+
 SECTIONS {
-  . = 0;
-  .text : { KEEP(*(.boot)) *(.text*) }
+  . = 0x100000;
+  .mbh : { *(.mbh) }
+  .text : { *(.text) }
   .rodata : { *(.rodata*) }
   .data : { *(.data) }
   .bss : { *(.bss) }
   /DISCARD/ : { *(*) }
 }
+
