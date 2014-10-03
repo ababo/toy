@@ -18,43 +18,88 @@ uint32_t __multiboot_info = 0;
 __attribute__((aligned(16)))
 uint8_t __boot_stack[kBootStackSize] = {};
 
+__attribute__((aligned(4096)))
+PageEntry __pml4[kPageTableEntries + 1] = {};
+
+__attribute__((aligned(4)))
+ToyGdtTable __gdt = {};
+
 namespace {
 
 __attribute__((used))
 void Stub() {
   __asm__(R"!!!(
 
-.text
+        .text
+        .global __start32
+__start32:
+        movl %%ebx, __multiboot_info
 
-.global __bstart32
-__bstart32:
+        movb $0xFF, %%al
+        outb %%al, %0
+        outb %%al, %1 # disable IRQs
 
-  movl __boot_stack, %%esp
-  addl %0, %%esp
+        movl %%cr4, %%edx
+        orl %2, %%edx
+        movl %%edx, %%cr4 # enable PAE and SSE
 
-  movl %%ebx, __multiboot_info
+        movl $__pml4, %%eax
+        movl %%eax, %%cr3 # assign page map
 
-  movb $0xFF, %%al
-  outb %%al, $0xA1
-  outb %%al, $0x21 # disable IRQs
+        movl __boot_stack, %%esp
+        addl %3, %%esp
+        call __boot32
+halt:
+        hlt
+        jmp halt
 
-  movl %%cr4, %%edx
-  orl %1, %%edx
-  movl %%edx, %%cr4 # enable SSE
-
-  call __boot32
-  call __hlt
-
-  )!!!" : : "i"(kBootStackSize), "i"(Cr4::kOsfxsr));
+  )!!!" : : "i"(Port::kPic1Data)
+          , "i"(Port::kPic2Data)
+          , "i"(Cr4::kPae | Cr4::kOsfxsr)
+          , "i"(kBootStackSize));
 }
 
 }
 
 extern "C" void __boot32() {
-  *(char*)0xB8000 = '!';
+  // map 1:1 first 1GiB of RAM
+  volatile PageEntry& pml4e = __pml4[0];
+  volatile PageEntry& pde = __pml4[kPageTableEntries];
+  pml4e.present = 1;
+  pml4e.write = 1;
+  pml4e.SetChildTable(&pde);
+  pde.present = 1;
+  pde.write = 1;
+  pde.ps_pat = 1;
 
-}
+  // prepare GDT
+  __gdt.code.type = GdtEntry::Type::kCode;
+  __gdt.code.nonsys = 1;
+  __gdt.code.present = 1;
+  __gdt.code.bits64 = 1;
+  __gdt.data.type = GdtEntry::Type::kData;
+  __gdt.data.nonsys = 1;
+  __gdt.data.present = 1;
+  __gdt.data.bits32 = 1;
 
-extern "C" void __hlt(void) {
-  while(true) __asm__ __volatile__("hlt");
+  TableInfo gdti;
+  gdti.limit = sizeof(ToyGdtTable) - 1;
+  gdti.base = reinterpret_cast<uint64_t>(&__gdt);
+
+  // enable long mode
+  SetMsr(Msr::kEfer, GetMsr(Msr::kEfer) | MsrEfer::kLme);
+
+  __asm__(R"!!!(
+
+        movl %%cr0, %%eax
+        orl %0, %%eax
+        movl %%eax, %%cr0 # enable paging
+
+        lgdt %1 # load GDT
+
+        ljmp %2, $__start # jump to 64-bit code
+
+  )!!!" : : "i"(Cr0::kPg)
+          , "m"(gdti)
+          , "i"(ToyGdtTable::Segment::kCode));
 }

@@ -6,6 +6,7 @@
 namespace toy {
 
 const uint32_t kBootStackSize = 0x2000;
+const unsigned kMaxCpus = 16;
 
 }
 

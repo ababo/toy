@@ -24,7 +24,7 @@ void Stub () {
         msr cpacr_el1, x0 // disable FP and SIMD traps
 
         bl __boot
-        bl __wfi
+        bl __halt
 
   )!!!" : : "i"(kBootStackSize), "i"(CpacrEl1::kNoFpSimdTraps));
 }
@@ -43,13 +43,13 @@ extern "C" void __boot(void) {
 
 }
 
-extern "C" void __wfi(void) {
+extern "C" void __halt(void) {
   while(true) __asm__ __volatile__("wfi");
 }
 
 extern "C" void abort(void) {
   klog.Error("The system is stopped: 'abort' was called");
-  __wfi();
+  __halt();
 }
 
 extern "C" void* __cxa_begin_catch(void* exceptionObject) {
