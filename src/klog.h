@@ -6,13 +6,17 @@
 
 namespace toy {
 
-enum class KLogLevel { kInfo, kWarning, kError };
-
 class KLog {
  public:
   typedef void (*PutcFunc)(uint32_t chr);
 
-  void Initialize(PutcFunc putc, KLogLevel level) {
+  enum class Level {
+    kInfo,
+    kWarning,
+    kError
+  };
+
+  void Initialize(PutcFunc putc, Level level) {
     putc_ = putc; level_ = level;
   }
 
@@ -25,7 +29,7 @@ class KLog {
 
  private:
   PutcFunc putc_;
-  KLogLevel level_;
+  Level level_;
 };
 
 extern KLog klog;

@@ -5,31 +5,8 @@
 
 #include "config.h"
 
-namespace {
-
-inline uint64_t GetMsr(uint32_t msr) {
-  uint32_t low, high;
-  __asm__("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
-  return (static_cast<uint64_t>(high) << 32) + low;
-}
-
-inline void SetMsr(uint32_t msr, uint64_t value) {
-  uint32_t low = static_cast<uint32_t>(value);
-  uint32_t high = static_cast<uint32_t>(value >> 32);
-  __asm__("wrmsr" : : "a"(low), "d"(high), "c"(msr));
-}
-
-}
-
 namespace toy {
 namespace x86_64 {
-
-enum Port : uint16_t {
-  kPic1Code = 0x20,
-  kPic1Data = 0x21,
-  kPic2Code = 0xA0,
-  kPic2Data = 0xA1
-};
 
 enum Cr0 : uint32_t {
   kPe = 1 << 0,
@@ -121,7 +98,9 @@ struct TableInfo {
 
 struct GdtEntry {
   enum Type : uint8_t {
-    kData = 0x2, kTss = 0x9, kCode = 0xA
+    kData = 0x2,
+    kTss = 0x9,
+    kCode = 0xA
   };
 
   uint16_t limit0;
@@ -148,12 +127,39 @@ struct GdtEntryEx : GdtEntry {
 
 struct ToyGdtTable {
   enum Segment : uint16_t {
-    kCode = 0x8, kData = 0x10
+    kCode = 0x8,
+    kData = 0x10
   };
 
-  GdtEntry zero, code, data;
+  GdtEntry zero;
+  GdtEntry code;
+  GdtEntry data;
   GdtEntryEx cpus[kMaxCpus];
 };
+
+inline uint64_t GetMsr(uint32_t msr) {
+  uint32_t low, high;
+  asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+  return (static_cast<uint64_t>(high) << 32) + low;
+}
+
+inline void SetMsr(uint32_t msr, uint64_t value) {
+  uint32_t low = static_cast<uint32_t>(value);
+  uint32_t high = static_cast<uint32_t>(value >> 32);
+  asm volatile("wrmsr" : : "a"(low), "d"(high), "c"(msr));
+}
+
+template<typename T>
+inline void SendToPort(uint16_t port, T value) {
+  asm volatile("out %0, %1" : : "a"(value), "d"(port));
+}
+
+template<typename T>
+inline T ReceiveFromPort(uint16_t port) {
+  T value;
+  asm volatile("in %1, %0" : "=a"(value) : "d"(port));
+  return value;
+}
 
 }
 }

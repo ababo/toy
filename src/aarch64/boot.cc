@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 
 #include "aarch64/aarch64.h"
 #include "config.h"
@@ -14,7 +15,7 @@ namespace {
 
 __attribute__((used, section(".boot")))
 void Stub () {
-  __asm__(R"!!!(
+  asm(R"!!!(
 
         adr x1, __boot_stack
         mov x2, %0
@@ -38,18 +39,13 @@ void putc(uint32_t chr) {
 }
 
 extern "C" void __boot(void) {
-  klog.Initialize(putc, KLogLevel::kInfo);
+  klog.Initialize(putc, KLog::Level::kInfo);
   klog.Info("Hello from %s!", "kernel");
 
 }
 
 extern "C" void __halt(void) {
-  while(true) __asm__ __volatile__("wfi");
-}
-
-extern "C" void abort(void) {
-  klog.Error("The system is stopped: 'abort' was called");
-  __halt();
+  while(true) asm volatile("wfi");
 }
 
 extern "C" void* __cxa_begin_catch(void* exceptionObject) {

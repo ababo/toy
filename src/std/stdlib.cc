@@ -2,6 +2,10 @@
 
 #include <string.h>
 
+#include "klog.h"
+
+using namespace toy;
+
 extern "C" {
 
 char* ultoa(unsigned long value, char* buf, int radix) {
@@ -23,6 +27,13 @@ char* ultoa(unsigned long value, char* buf, int radix) {
 
   *buf = 0;
   return _strrev(str);
+}
+
+void __halt(void);
+
+void abort(void) {
+  klog.Error("The system is stopped: 'abort' was called");
+  __halt();
 }
 
 }

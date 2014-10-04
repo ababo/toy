@@ -1,4 +1,8 @@
+#include <cstdlib>
+
 #include "config.h"
+#include "klog.h"
+#include "x86_64/vga.h"
 #include "x86_64/x86_64.h"
 
 using namespace toy;
@@ -8,7 +12,7 @@ namespace {
 
 __attribute__((used))
 void Stub() {
-  __asm__(R"!!!(
+  asm(R"!!!(
 
         .global __start
 __start:
@@ -21,22 +25,20 @@ __start:
         call __boot
         call __halt
 
-  )!!!" : : "i"(ToyGdtTable::Segment::kData)
-          , "i"(kBootStackSize));
+  )!!!" : : "i"(ToyGdtTable::Segment::kData), "i"(kBootStackSize));
 }
 
 }
 
 extern "C" void __boot(void) {
-  *(char*)0xB8000 = '!';
+  Vga::Initialize(Vga::Color::kLightGray, Vga::Color::kBlack);
+  klog.Initialize(Vga::Putc, KLog::Level::kInfo);
+  klog.Info("Hello from %s!", "kernel");
+
 }
 
 extern "C" void __halt(void) {
-  while(true) __asm__ __volatile__("hlt");
-}
-
-extern "C" void abort(void) {
-  __halt();
+  while(true) asm volatile("hlt");
 }
 
 extern "C" void* __cxa_begin_catch(void* exceptionObject) {

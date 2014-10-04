@@ -92,7 +92,7 @@ int KLog::Print(const char* format, ...) {
 }
 
 void KLog::Info(const char* format, ...) {
-  if (level_ > KLogLevel::kInfo)
+  if (level_ > Level::kInfo)
     return;
   va_list vargs;
   va_start(vargs, format);
@@ -103,7 +103,7 @@ void KLog::Info(const char* format, ...) {
 }
 
 void KLog::Warning(const char* format, ...) {
-  if (level_ > KLogLevel::kWarning)
+  if (level_ > Level::kWarning)
     return;
   va_list vargs;
   va_start(vargs, format);

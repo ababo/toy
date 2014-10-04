@@ -26,9 +26,12 @@ ToyGdtTable __gdt = {};
 
 namespace {
 
+const uint16_t kPic1DataPort = 0x21;
+const uint16_t kPic2DataPort = 0xA1;
+
 __attribute__((used))
 void Stub() {
-  __asm__(R"!!!(
+  asm(R"!!!(
 
         .text
         .global __start32
@@ -53,10 +56,8 @@ halt:
         hlt
         jmp halt
 
-  )!!!" : : "i"(Port::kPic1Data)
-          , "i"(Port::kPic2Data)
-          , "i"(Cr4::kPae | Cr4::kOsfxsr)
-          , "i"(kBootStackSize));
+  )!!!" : : "i"(kPic1DataPort), "i"(kPic2DataPort),
+            "i"(Cr4::kPae | Cr4::kOsfxsr), "i"(kBootStackSize));
 }
 
 }
@@ -89,7 +90,7 @@ extern "C" void __boot32() {
   // enable long mode
   SetMsr(Msr::kEfer, GetMsr(Msr::kEfer) | MsrEfer::kLme);
 
-  __asm__(R"!!!(
+  asm(R"!!!(
 
         movl %%cr0, %%eax
         orl %0, %%eax
@@ -99,7 +100,5 @@ extern "C" void __boot32() {
 
         ljmp %2, $__start # jump to 64-bit code
 
-  )!!!" : : "i"(Cr0::kPg)
-          , "m"(gdti)
-          , "i"(ToyGdtTable::Segment::kCode));
+  )!!!" : : "i"(Cr0::kPg), "m"(gdti), "i"(ToyGdtTable::Segment::kCode));
 }
