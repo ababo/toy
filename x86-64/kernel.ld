@@ -1,6 +1,10 @@
+/*
+ * Linker script to build kernel.
+ */
+
 OUTPUT_FORMAT(elf64-x86-64)
 
-ENTRY(__start32)
+ENTRY(start32)
 
 SECTIONS {
   . = 0x100000;
@@ -8,6 +12,6 @@ SECTIONS {
   .text : { *(.text) }
   .rodata : { *(.rodata*) }
   .data : { *(.data) }
-  .bss : { *(.bss); __kernel_size = . - 0x100000; }
+  .bss : { *(.bss); kernel_size = . - 0x100000; }
   /DISCARD/ : { *(*) }
 }

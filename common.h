@@ -1,6 +1,6 @@
-/*
- * Common kernel definitions.
- */
+//
+// Common kernel definitions.
+//
 
 #ifndef __COMMON_H_
 #define __COMMON_H_

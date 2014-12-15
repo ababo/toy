@@ -16,14 +16,16 @@ ARCH_OBJS := `find $(BUILD_DIR)/$(ARCH) -name '*.o'`
 
 KERNEL := $(TGT_DIR)/kernel
 
-.PHONY: all clean
+.PHONY: all clean arch
 
 all: $(KERNEL)
 
-$(KERNEL): $(OBJS)
+$(KERNEL): $(OBJS) arch
 	@echo Linking $(abspath $(KERNEL))
+	@$(LD) $(LD_OPTIONS) -o $(KERNEL) $(OBJS) $(ARCH_OBJS)
+
+arch:
 	@cd $(ARCH) && make -s
-	$(LD) $(LD_OPTIONS) -o $(KERNEL) $(OBJS) $(ARCH_OBJS)
 
 $(TGT_STAMP):
 	@echo Creating $(TGT_DIR)
