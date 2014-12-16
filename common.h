@@ -1,11 +1,11 @@
-//
-// Common kernel definitions.
-//
+/*
+ *Common kernel definitions.
+ */
 
 #ifndef __COMMON_H_
 #define __COMMON_H_
 
-// from stdint.h
+/* from stdint.h */
 typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
@@ -16,4 +16,4 @@ typedef long int64_t;
 typedef unsigned long uint64_t;
 typedef unsigned long size_t;
 
-#endif // __COMMON_H_
+#endif /* __COMMON_H_ */

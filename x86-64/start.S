@@ -1,6 +1,6 @@
-//
-// Boot sequences before switching to long mode.
-//
+/*
+ * Boot sequences before switching to long mode.
+ */
 
 #include "config.h"
 #include "cpu.h"

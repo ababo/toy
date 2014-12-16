@@ -1,6 +1,6 @@
-//
-// x86-64-specific CPU constants and structures.
-//
+/*
+ * x86-64-specific CPU constants and structures.
+ */
 
 #ifndef __X86_64_CPU_H_
 #define __X86_64_CPU_H_
@@ -31,6 +31,6 @@ struct page_entry {
   uint32_t noexec : 1;
 };
 
-#endif // __ASSEMBLER__
+#endif /* __ASSEMBLER__ */
 
-#endif // __X86_64_CPU_H_
+#endif /* __X86_64_CPU_H_ */
