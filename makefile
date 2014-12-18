@@ -2,7 +2,7 @@
 # Kernel makefile.
 #
 
-ARCH := x86-64
+ARCH := x86_64
 
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUILD_DIR := $(ROOT_DIR)/build
@@ -23,10 +23,10 @@ AS := $(CC)
 AS_INCLUDES := $(CC_INCLUDES)
 AS_FLAGS := -c $(AS_INCLUDES)
 
-LD :q= ld
-LD_BARE := -nostdlib --build-id=none -z max-page-size=0x1
-LD_SCRIPT := -T $(ARCH)/kernel.ld
-LD_OPTIONS := $(LD_BARE) $(LD_SCRIPT)
+LD := ld
+LD_BARE := -nostdlib --build-id=none -z max-page-size=8
+LD_SCRIPT := -T $(ARCH)/linker.ld
+LD_FLAGS := $(LD_BARE) $(LD_SCRIPT)
 
 ifeq ($(ARCH), x86-64)
 	CC_FLAGS += -m64
@@ -42,13 +42,21 @@ ARCH_OBJS := $(patsubst %.S, $(TGT_DIR)/%.o, $(ARCH_OBJS))
 
 KERNEL := $(TGT_DIR)/kernel
 
-.PHONY: all clean
+EMU := qemu-system-$(ARCH)
+EMU_CONSOLE := -nographic
+EMU_FLAGS := -kernel $(KERNEL) $(EMU_CONSOLE)
+
+.PHONY: all clean run
 
 all: $(KERNEL)
 
+run: $(KERNEL)
+	@echo "Running QEMU (to exit press Ctrl-a x)"
+	@$(EMU) $(EMU_FLAGS)
+
 $(KERNEL): $(OBJS) $(ARCH_OBJS)
 	@echo Linking $(abspath $(KERNEL))
-	@$(LD) $(LD_OPTIONS) -o $(KERNEL) $(OBJS) $(ARCH_OBJS)
+	@$(LD) $(LD_FLAGS) -o $(KERNEL) $(OBJS) $(ARCH_OBJS)
 
 $(TGT_STAMP):
 	@echo Creating $(TGT_DIR)

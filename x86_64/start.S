@@ -23,6 +23,11 @@ start32:
         movl $pml4, %eax
         movl %eax, %cr3
 
+        movw 0x400, %dx
+        movb $'!', %al
+        outb %al, %dx
+        
+	jmp halt
 
         movl boot_stack, %esp
         addl $BOOT_STACK_SIZE, %esp
