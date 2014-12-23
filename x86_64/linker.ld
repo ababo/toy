@@ -8,10 +8,14 @@ ENTRY(start32)
 
 SECTIONS {
   . = 1M;
-  .mbh : { *(.mbh) }
+  .multiboot : { *(.multiboot) }
   .text : { *(.text) }
   .rodata : { *(.rodata*) }
   .data : { *(.data) }
-  .bss : { *(.bss); kernel_size = . - 1M; }
+  .bss : {
+    *(.bss);
+    *(COMMON);
+    kernel_size = . - 1M;
+  }
   /DISCARD/ : { *(*) }
 }
