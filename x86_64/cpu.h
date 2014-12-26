@@ -62,7 +62,7 @@
 
 #ifndef __ASSEMBLER__
 
-#include "common.h"
+#include "std.h"
 
 struct page_table_entry {
   uint32_t present : 1;

@@ -2,10 +2,11 @@
  * Boot sequence after switching to long mode.
  **/
 
-#include "common.h"
 #include "config.h"
-#include "cpu.h"
-#include "multiboot.h"
+#include "klog.h"
+#include "std.h"
+#include "x86_64/cpu.h"
+#include "x86_64/multiboot.h"
 
 #define HEADER_FLAGS (MULTIBOOT_MEMORY_INFO)
 
@@ -43,8 +44,12 @@ struct desc_table_info __gdti = { sizeof(gdt) - 1, (uint64_t)&gdt };
 
 uint8_t boot_stack[BOOT_STACK_SIZE] __attribute__((aligned(16)));
 
-void boot() {
-  __asm__ volatile ("movw 0x400, %dx; movb $'~', %al; outb %al, %dx");
-  //  while (1) {};
+static void putc(void *arg, uint32_t chr) {
+  (void)arg;
+  __asm__ volatile ("movw 0x400, %%dx; movb %0, %%al; outb %%al, %%dx" : : "r"((char)chr));
+}
 
+void boot() {
+  klog_init(putc, NULL, INFO);
+  klog(INFO, "Hello worl%c!", 'd');
 }
