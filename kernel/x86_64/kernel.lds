@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf32-i386)
 
-ENTRY(start32)
+ENTRY(__start32)
 
 SECTIONS {
   . = 1M;

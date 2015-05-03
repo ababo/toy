@@ -1,4 +1,4 @@
-#![feature(no_std, core)]
+#![feature(asm, core, no_std)]
 #![no_std]
 
 extern crate core;
