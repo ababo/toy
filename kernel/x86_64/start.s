@@ -23,7 +23,7 @@
 	.set SEGMENT_CODE, 0x8
 	.set SEGMENT_DATA, 0x10
 
-	.set BOOT_STACK_SIZE, 8192
+	.set BOOT_STACK_SIZE, 8 * 1024
 
 	.global __boot_stack
 	.global __pml4

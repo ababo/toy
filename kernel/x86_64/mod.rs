@@ -19,9 +19,12 @@ pub static MULTIBOOT_HEADER: multiboot::Header = multiboot::Header{
 };
 
 #[no_mangle]
-pub extern fn __boot(_magic: u32, _info: &multiboot::Info) {
+pub extern fn __boot(magic: u32, _info: &multiboot::Info) {
+    if magic != multiboot::BOOTLOADER_MAGIC {
+        return
+    }
+
     unsafe {
-        let ptr = 0xB8000 as *mut u8;
-        *ptr = '!' as u8;
+        asm!("movw 0x400, %dx; movb $$('!'), %al; outb %al, %dx");
     }
 }

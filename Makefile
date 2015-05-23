@@ -1,10 +1,15 @@
-ARCH := x86_64
+ARCH := $(shell uname -m)
 OPT := 3
+
+SUPPORTED_ARCHS := x86_64 aarch64
+ifeq ($(filter $(ARCH),$(SUPPORTED_ARCHS)),)
+    $(error Unsupported target architecture)
+endif
 
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 KERNEL_DIR := $(ROOT_DIR)/kernel
 ARCH_DIR := $(KERNEL_DIR)/$(ARCH)
-BUILD_DIR := $(ROOT_DIR)/build
+BUILD_DIR := $(ROOT_DIR)/build-$(ARCH)
 
 LDS := $(ARCH_DIR)/kernel.lds
 BUILD_STAMP := $(BUILD_DIR)/.stamp
@@ -21,7 +26,9 @@ RUSTC_EMIT := --crate-type lib --emit obj
 RUSTC_TGT := --target $(ARCH)-unknown-linux-gnu
 RUSTC_OPT := -C opt-level=$(OPT)
 RUSTC_CFG := --cfg arch_$(ARCH)
-RUSTC_FLAGS := $(RUSTC_EMIT) $(RUSTC_TGT) $(RUSTC_OPT) $(RUSTC_CFG)
+RUSTC_LPATH := --sysroot $(ARCH_DIR) -L $(ARCH_DIR)
+RUSTC_FLAGS := $(RUSTC_EMIT) $(RUSTC_TGT) $(RUSTC_OPT) $(RUSTC_CFG) \
+	$(RUSTC_LPATH)
 
 RUST_SRCS := $(KERNEL_DIR)/*.rs $(ARCH_DIR)/*.rs
 RUST_OBJ := $(BUILD_DIR)/kernel.o
@@ -32,8 +39,9 @@ LD_BARE := -nostdlib --build-id=none -z max-page-size=4096
 LD_FLAGS := $(LD_BARE) $(LD_SCRIPT)
 
 EMU := qemu-system-$(ARCH)
-EMU_UI := #-nographic
-EMU_FLAGS := -kernel $(KERNEL) $(EMU_UI)
+EMU_UI := -nographic
+EMU_MACHINE :=
+EMU_FLAGS = -kernel $(KERNEL) $(EMU_UI) $(EMU_MACHINE)
 
 HOST := $(shell uname)
 ifeq ($(HOST), Linux)
@@ -43,6 +51,10 @@ endif
 ifeq ($(HOST), Darwin)
 AS := $(ARCH)-elf-as
 LD := $(ARCH)-elf-ld
+endif
+
+ifeq ($(ARCH), aarch64)
+EMU_MACHINE := -machine type=virt -cpu cortex-a57
 endif
 
 .PHONY: all clean run

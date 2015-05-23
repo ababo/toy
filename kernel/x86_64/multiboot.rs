@@ -6,6 +6,9 @@ pub const HEADER_MAGIC: u32 = 0x1BADB002;
 // Must pass memory information to OS.
 pub const HEADER_MEMORY_INFO: u32 = 0x00000002;
 
+// This should be in %eax.
+pub const BOOTLOADER_MAGIC: u32 = 0x2BADB002;
+
 #[repr(C)]
 pub struct Header {
     // Must be MAGIC - see above.
